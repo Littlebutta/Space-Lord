@@ -50,7 +50,8 @@ func _initialize() -> void:
 	for k in 30:
 		_step(ship, f)
 	_check(_runs(ship) == 0, "a full hold stops everyone")
-	_check(ship.sim.crew.all(func(c): return c.cargo <= 0.0), "carriers let go")
+	_check(ship.sim.crew.all(func(c): return c.cargo <= 0.0 or c.job and c.job.type == &"haul"),
+			"carriers let go")  # haulers restocking modules may still hold supplies
 	print("mining tests: %s" % ("FAILED %d" % _fails if _fails else "ok"))
 	quit(1 if _fails else 0)
 
