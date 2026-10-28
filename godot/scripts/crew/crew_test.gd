@@ -19,7 +19,10 @@ var _site := ""  # what's here, from the map site we arrived at
 
 func _ready() -> void:
 	var d := SiteScene.prepare(_design())
-	_ship.setup(d, maxi(int(d.total(&"berths")), int(d.total(&"crew")) + 2))
+	_ship.setup(d, 0)
+	for sid in Wallet.crew_for(d):
+		_ship.sim.add_crew(CrewSpecies.by_id(sid))
+	Wallet.board(_ship.sim.state.storage)
 	$Panel.bind(_ship.sim)
 	$UI/Tags.bind(_ship)
 	$UI/Orders.bind(_ship)
@@ -106,7 +109,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		KEY_V: _ship.hulk.outside = not _ship.hulk.outside
 		KEY_F: _fire()
 		KEY_SPACE: _follow = not _follow
-		KEY_ESCAPE: get_tree().change_scene_to_file("res://scenes/main.tscn")
+		KEY_ESCAPE:
+			Wallet.unload(_ship.sim.state.storage,
+					_ship.sim.crew.map(func(c): return c.species.id))
+			get_tree().change_scene_to_file("res://scenes/main.tscn")
 
 
 ## Every working weapon fires once, a little staggered.

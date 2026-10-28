@@ -97,14 +97,25 @@ func _click(button: MouseButton) -> void:
 		design.remove_at(_cell)
 		if sym and twin >= 0 and twin != i:
 			design.remove_at(_twin(_cell))
+	elif button == MOUSE_BUTTON_MIDDLE and _locked(design.index_at(_cell)):
+		return
 	elif button == MOUSE_BUTTON_MIDDLE:
 		design.paint(_cell, theme_id)
 		if sym:
 			design.paint(_twin(_cell), theme_id)
 
 
+## Flashes why module i can't wear the picked style; true if locked.
+func _locked(i: int) -> bool:
+	var why := Blueprint.why_locked(design.modules[i], theme_id) if i >= 0 else ""
+	if why:
+		_ui.flash(why)
+	return not why.is_empty()
+
+
 func _place() -> void:
 	var why := ShipRules.why_not(design, picked, _origin(), turn)
+	why = why if why else Blueprint.why_locked(picked, theme_id)
 	if why:
 		_ui.flash(why)
 		return
@@ -195,7 +206,8 @@ func _update_ghost() -> void:
 		return
 	var size := ShipDesign.turned(picked, turn)
 	var r := Rect2i(_origin(), size)
-	BuildAids.tint(_holos[0], design.fits(picked, r.position, turn))
+	BuildAids.tint(_holos[0], design.fits(picked, r.position, turn)
+			and Blueprint.why_locked(picked, theme_id).is_empty())
 	_holos[0].position = ShipView.center(r) + Vector3.UP * 0.05
 	if _holos.size() > 1:
 		var m := Rect2i(ShipDesign.mirror_cell(r.position, size), size)

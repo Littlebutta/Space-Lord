@@ -38,6 +38,7 @@ jobs:
           godot --headless --path godot -s res://tests/test_battle.gd
           godot --headless --path godot -s res://tests/test_power.gd
           godot --headless --path godot -s res://tests/test_mining.gd
+          godot --headless --path godot -s res://tests/test_station.gd
       - name: Export Windows and Linux
         run: |
           mkdir -p build/windows build/linux

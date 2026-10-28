@@ -2,10 +2,11 @@ extends Node3D
 ## The player's ship on the system map, and the sites around it. Right
 ## click to fly somewhere (or to a site); it moves with game time, so it
 ## stops when paused and hurries when sped up. Reaching a site opens its
-## local scene.
+## local scene, or the trade window at a station.
 
 const SCENE := "res://scenes/crew/crew_test.tscn"
-const COLORS := {&"wreck": Color(1.0, 0.3, 0.2), &"asteroids": Color(0.9, 0.75, 0.45)}
+const COLORS := {&"wreck": Color(1.0, 0.3, 0.2), &"asteroids": Color(0.9, 0.75, 0.45),
+		&"station": Color(0.45, 1.0, 0.6)}
 
 var _icon := MeshInstance3D.new()
 var _flag := MeshInstance3D.new()  # where we're headed
@@ -46,6 +47,8 @@ func _site(s: Dictionary) -> void:
 	t.material = MapGlow.make(COLORS[s.kind])
 	ring.mesh = t
 	n.add_child(ring)
+	if s.kind == &"station":
+		n.add_child(_station(COLORS.station))
 	if s.kind == &"asteroids":
 		for k in 5:
 			var rock := MeshInstance3D.new()
@@ -81,7 +84,14 @@ func _process(delta: float) -> void:
 		var s: Dictionary = Travel.sites[i]
 		_pings[i].scale = Vector3.ONE * (pulse if s.kind == &"wreck" else 1.0)
 		_labels[i].text = s.name + ("  ore %d" % s.ore if s.kind == &"asteroids" else "")
-	if reached >= 0:
+	Shipyard.docked = not Travel.near_station().is_empty()
+	if reached >= 0 and Travel.sites[reached].kind == &"station":
+		for old in find_children("", "StationPanel", false, false):
+			old.queue_free()
+		var p := StationPanel.new()
+		p.site = Travel.sites[reached]
+		add_child(p)
+	elif reached >= 0:
 		Travel.here = reached
 		get_tree().change_scene_to_file(SCENE)
 
@@ -99,3 +109,31 @@ func _unhandled_input(event: InputEvent) -> void:
 	Travel.dest = Travel.sites[Travel.aim].pos if Travel.aim >= 0 else hit
 	get_viewport().set_input_as_handled()
 
+
+
+## Placeholder station: a hub, a spinning-wheel ring and a faint ring
+## marking the refit range.
+func _station(c: Color) -> Node3D:
+	var n := Node3D.new()
+	var hub := MeshInstance3D.new()
+	var cyl := CylinderMesh.new()
+	cyl.top_radius = 0.6
+	cyl.bottom_radius = 0.6
+	cyl.height = 4.0
+	hub.mesh = cyl
+	n.add_child(hub)
+	var wheel := MeshInstance3D.new()
+	var t := TorusMesh.new()
+	t.inner_radius = 2.2
+	t.outer_radius = 2.8
+	wheel.mesh = t
+	wheel.rotation.x = 0.4
+	n.add_child(wheel)
+	var range_ := MeshInstance3D.new()
+	var r := TorusMesh.new()
+	r.inner_radius = Travel.DOCK_RANGE - 0.3
+	r.outer_radius = Travel.DOCK_RANGE
+	r.material = MapGlow.make(Color(c, 0.25))
+	range_.mesh = r
+	n.add_child(range_)
+	return n
