@@ -26,6 +26,7 @@ var nav: ShipNav
 var board: JobBoard
 var crew: Array[CrewMember] = []
 var lost := 0  # crew who died out in space
+var sealed := false  # someone else's ship: crew aboard its main piece go unseen
 var _looks := {}  # piece -> CrewLook drawing the crew on it
 var _think := 0.0
 
@@ -294,6 +295,7 @@ func _draw(delta: float) -> void:
 			add_child(_looks[k])
 		var t := p.xf[p.pieces[k][0]] if k >= 0 else Transform2D.IDENTITY
 		_looks[k].transform = ShipPieces.to_3d(t)
+		_looks[k].visible = not (sealed and k == p.main)
 		_looks[k].draw(by[k], self, delta)
 
 

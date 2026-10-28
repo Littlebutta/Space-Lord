@@ -28,6 +28,8 @@ func _ready() -> void:
 	_fx.name = &"Fx"
 	_ship.add_child(_fx)
 	_fx.bind(_ship.hulk, _ship.sim.state)
+	_fx.helm = _ship.helm
+	_ship.add_child(ThrusterHum.new())
 
 
 func _design() -> ShipDesign:
@@ -40,7 +42,6 @@ func _design() -> ShipDesign:
 
 func _process(_delta: float) -> void:
 	var mid := _ship.world(_ship.pivot())
-	_fx.thrust_all = not _ship.helm.firing.is_empty()
 	if _follow:
 		$Camera.focus += Vector3(mid.x - _last.x, 0.0, mid.y - _last.y)
 	_last = mid

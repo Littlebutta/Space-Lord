@@ -106,8 +106,12 @@ func _fly() -> void:
 	b.free()
 	b = _flyer(true)
 	b.goal = b.world(b.pivot()) + Vector2(0.0, 6.0)  # straight behind
-	_fly_for(b, 3.0)
-	_check(b.vel.y > 0.2, "reverse thrusters back it up (%.2f)" % b.vel.y)
+	var back := 0.0
+	for k in 90:
+		_fly_for(b, 1.0 / 30.0)
+		back = maxf(back, b.vel.y)
+	_check(back > 1.0, "reverse thrusters back it up (%.2f m/s)" % back)
+	_check(b.goal == null, "and it calls a near miss arrived")
 	b.free()
 	_unmanned()
 

@@ -9,7 +9,7 @@ func _init() -> void:
 	var b := _ship(Vector2(0.0, -40.0), PI)  # nose to nose, 40 m apart
 	var ga := ShipGuns.new(a)
 	var shots := [0]
-	ga.shot.connect(func(_i, _f, _t, _h): shots[0] += 1)
+	ga.shot.connect(func(_i, _t, _h): shots[0] += 1)
 	var hp := _hp(b)
 	var low := hp
 	for k in 30 * 30:

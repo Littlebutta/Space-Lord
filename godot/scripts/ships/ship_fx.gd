@@ -12,6 +12,8 @@ const TRACER := Color(1.0, 0.8, 0.5)
 ## Every working thruster fires, e.g. while the ship is under way. When
 ## off, a thruster only fires while it is crewed and fuelled.
 var thrust_all := false
+## When set, each thruster's exhaust follows its ramped throttle instead.
+var helm: ShipHelm
 
 var hulk: HulkView
 var state: ShipState
@@ -56,12 +58,16 @@ func _process(delta: float) -> void:
 			continue
 		_last[i] = n.global_transform
 		if state.module(i).thrust > 0.0:
-			_exhaust(n, alive and (thrust_all or state.is_running(i)))
+			var on := 1.0 if thrust_all or state.is_running(i) else 0.0
+			_exhaust(n, (helm.throttle.get(i, 0.0) if helm else on) if alive else 0.0)
 		var p := state.pieces
 		_flicker(n, alive and (p.drifting(i) or not p.powered(i)), delta)
 
 
-func _exhaust(n: Node3D, on: bool) -> void:
+## Exhaust at `level` 0..1: the flame grows, brightens and thickens
+## with the throttle, so engines spool up and down rather than snap.
+func _exhaust(n: Node3D, level: float) -> void:
+	var on := level > 0.02
 	for z: Node3D in n.find_children("Nozzle*", "", true, false):
 		var fx := z.get_node_or_null(^"FxExhaust") as Node3D
 		if fx == null and on:
@@ -69,8 +75,12 @@ func _exhaust(n: Node3D, on: bool) -> void:
 			z.add_child(fx)
 		if fx:
 			fx.visible = on
+			fx.scale = Vector3(0.6 + 0.4 * level, 0.6 + 0.4 * level, 0.3 + 0.7 * level)
 			for p: GPUParticles3D in fx.find_children("*", "GPUParticles3D", false, false):
 				p.emitting = on
+				p.amount_ratio = maxf(level, 0.05)
+			for l: OmniLight3D in fx.find_children("*", "OmniLight3D", false, false):
+				l.light_energy = 2.5 * level
 
 
 ## Broken pieces: lamps stutter and drop out, sparks spit now and then.
