@@ -183,3 +183,38 @@ def _panes(e, a, b, c, d, cols, col, rows=1):
                 e.bar(pts[0], pts[3], 0.035, C["gun"])
             if r:
                 e.bar(pts[0], pts[1], 0.035, C["gun"])
+
+
+def shipdock(i, e, pts):
+    """Refit bay. Blocked: the back row z > 1 (fabricator with the two
+    crew consoles), the side columns |x| > 2 (crane base, tool racks).
+    Crew stand at (-1, 0.7) and (1, 0.7); the middle is a clear cradle."""
+    floor(i, pts, grates=[(-1, -1), (0, -1), (-1, 0), (0, 0)])
+    i.box((0, 0.9, 1.6), (5.9, 1.8, 0.7), C["gun"], 0.06, seg=2)  # fabricator
+    i.box((0, 1.82, 1.6), (5.6, 0.06, 0.5), C["hazard"], 0.01)
+    for x in (-2.0, 0.0, 2.0):
+        vent(i, (x, 1.86, 1.6), 0.8, 0.4)
+    for x in (-1, 1):
+        console(i, x, 1.2, (0, -1), 0.8, "screen" if x < 0 else "amber")
+    i.box((-2.5, 1.1, -0.5), (0.9, 2.2, 0.9), C["steel"], 0.06, seg=2)  # crane
+    i.cyl((-2.5, 2.25, -0.5), 0.35, 0.2, C["gun"], sides=16, bevel=0.03)
+    i.bar((-2.5, 2.4, -0.5), (-0.6, 2.4, -0.9), 0.09, C["accent"])  # boom
+    i.bar((-0.6, 2.4, -0.9), (-0.2, 1.95, -0.8), 0.06, C["steel"])
+    i.box((-0.2, 1.88, -0.8), (0.25, 0.12, 0.25), C["hazard"], 0.02)  # tool head
+    i.cyl((-0.2, 1.75, -0.8), 0.04, 0.15, C["amber"], sides=8, glow=True)
+    for z in (-1.5, -0.5, 0.5):  # tool and parts racks on the right
+        i.box((2.5, 0.05, z), (0.9, 0.1, 0.9), C["gun"], 0.02)
+        for y in (0.6, 1.3):
+            i.box((2.5, y, z), (0.9, 0.04, 0.85), C["steel"], 0.01)
+            i.box((2.45, y + 0.18, z), (0.6, 0.3, 0.6), C["crate"], 0.03)
+    for x in (2.05, 2.95):
+        i.box((x, 1.0, -0.5), (0.06, 2.0, 2.9), C["steel"], 0.01)
+    for a, b in (((-1.8, -1.8), (1.8, -1.8)), ((-1.8, 0.6), (1.8, 0.6)),
+                 ((-1.8, -1.8), (-1.8, 0.6)), ((1.8, -1.8), (1.8, 0.6))):
+        i.wall(a, b, FLOOR, FLOOR + 0.012, 0.1, C["hazard"], 0.0)  # cradle
+    for x in (-2.6, 2.6):  # exterior docking clamps and beacons
+        e.box((x, ROOF + 0.3, -0.4), (0.5, 0.6, 2.6), C["hull"], 0.08, seg=2)
+        e.box((x * 0.82, ROOF + 0.55, -0.4), (0.5, 0.15, 2.2), C["accent"], 0.03)
+        e.ball((x, ROOF + 0.7, -1.6), 0.08, C["amber"], 1, glow=True)
+    e.box((0, ROOF + 0.05, -0.4), (3.6, 0.1, 2.6), C["steel"], 0.04)
+    return [((0, 2.1, -0.4), C["lamp"]), ((0, 2.1, 1.0), C["lamp"])]
