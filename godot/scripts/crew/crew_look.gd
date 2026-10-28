@@ -9,11 +9,13 @@ const MODEL := "res://assets/models/human/crew.glb"  # fallback race
 const SHADER := preload("res://assets/materials/crew.gdshader")
 const WALK_SPEED := 1.3  # walk animation playback for CrewSim.SPEED
 const TURN := 10.0  # how fast they turn to face, per second
+const STEPS := 3.0  # footstep sounds per second, for the whole crew at most
 
 static var _mat: ShaderMaterial
 static var _ring_mesh: TorusMesh
 
 var _model: PackedScene  # this ship's race, from its bridge's theme
+var _step_cd := 0.0
 var _bodies: Array[Node3D] = []
 var _players: Array[AnimationPlayer] = []
 var _meshes: Array[MeshInstance3D] = []
@@ -53,6 +55,7 @@ func draw(crew: Array[CrewMember], sim: CrewSim, delta: float) -> void:
 		_crates[k].visible = c.cargo > 0.0 and not c.eva and not ore
 		if c.eva and is_inside_tree() and randf() < delta * 3.0:
 			CrewGear.puff(get_tree().current_scene, b)
+		_footstep(c, b, delta)
 
 
 ## The shared crew material; shirts are an instance uniform.
@@ -147,3 +150,13 @@ func _play(k: int, anim: StringName) -> void:
 static func race(t: ShipTheme) -> PackedScene:
 	var p := t.model_dir.path_join("crew.glb") if t and not t.model_dir.is_empty() else MODEL
 	return load(p if ResourceLoader.exists(p) else MODEL)
+
+
+## Now and then a walker's boots are heard; capped so a busy crew
+## patters quietly instead of drowning everything out.
+func _footstep(c: CrewMember, b: Node3D, delta: float) -> void:
+	_step_cd -= delta / maxf(_bodies.size(), 1.0)
+	if c.eva or c.arrived() or _step_cd > 0.0 or not is_inside_tree():
+		return
+	_step_cd = 1.0 / STEPS
+	Sfx.play(get_tree().current_scene, &"footstep", b.global_position, -10.0, 14.0)
