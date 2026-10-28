@@ -27,7 +27,7 @@ func refresh() -> void:
 			var low := state.room(i, res) > state.buffer(i, res) * (1.0 - HAUL_BELOW)
 			if low and state.storage.get_amount(res) > 0.0:
 				want["h%d.%s" % [i, res]] = [&"haul", i, res, 0]
-		if state.damaged(i):
+		if state.damaged(i) and Shipyard.can_repair(state.hp[i], m.hp, state.design):
 			want["r%d" % i] = [&"repair", i, "", 0]
 	_want_eva(want)
 	for k in jobs.keys():
