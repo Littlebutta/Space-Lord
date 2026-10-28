@@ -121,8 +121,14 @@ func _find_zones() -> void:
 
 ## True when crew could walk from the first module to every other one.
 static func reaches_all(d: ShipDesign) -> bool:
+	return walled_off(d).is_empty()
+
+
+## Modules whose work spot crew can't walk to from the first module.
+static func walled_off(d: ShipDesign) -> Array[int]:
+	var out: Array[int] = []
 	var nav := ShipNav.new(d)
 	for i in d.modules.size():
 		if not nav.connected(d.spot(0), d.spot(i)):
-			return false
-	return true
+			out.append(i)
+	return out
