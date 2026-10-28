@@ -27,6 +27,20 @@ func _initialize() -> void:
 	var after := ShipStats.of(d)
 	check(before.mass == after.mass and before.hp == after.hp, "themes are visual only")
 	check(ShipTheme.all().size() >= 4, "themes loaded")
+	Shipyard.docked = false
+	check(not Shipyard.can_refit(d), "no refit in space without a shipdock")
+	check(Shipyard.can_repair(90.0, 100.0, d), "minor repair in space")
+	check(not Shipyard.can_repair(30.0, 100.0, d), "major repair needs a yard")
+	d.modules.append(ModuleLibrary.by_id(&"shipdock"))
+	check(Shipyard.can_refit(d), "shipdock allows refit in space")
+	d.modules.pop_back()
+	Shipyard.docked = true
+	var w := ShipDesign.new()  # ammo rack's shelf (top half) walls off the hull below
+	w.add(hull, Vector2i.ZERO)
+	w.add(ModuleLibrary.by_id(&"ammo_rack"), Vector2i(0, 1))
+	w.add(hull, Vector2i(0, 2))
+	var walled := ShipStats.of(w).warnings.any(func(t): return t.begins_with("Crew can't reach"))
+	check(walled, "warns when equipment walls crew off a part")
 	for t in ShipTheme.all():
 		for m in ModuleLibrary.all():
 			for turn in 4:
