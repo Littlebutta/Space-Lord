@@ -33,7 +33,7 @@ func draw(crew: Array[CrewMember], sim: CrewSim, delta: float) -> void:
 		_crates.pop_back()
 	for k in crew.size():
 		var c := crew[k]
-		c.y = lerpf(c.y, sim.nav.height(c.pos), minf(delta * 10.0, 1.0))
+		c.y = c.alt if c.eva else lerpf(c.y, sim.nav.height(c.pos), minf(delta * 10.0, 1.0))
 		var b := _bodies[k]
 		var at := Vector3(c.pos.x, c.y, c.pos.y)
 		var face := _facing(c, sim, at)
@@ -46,7 +46,8 @@ func draw(crew: Array[CrewMember], sim: CrewSim, delta: float) -> void:
 		var col: Color = CrewJob.COLORS[c.job.type if c.job else &""]
 		_meshes[k].set_instance_shader_parameter(&"shirt", col)
 		_suits[k].visible = c.eva
-		_crates[k].visible = c.cargo > 0.0 and not c.eva  # ore chunks show themselves
+		var ore := c.job != null and c.job.type == &"mine"  # ore chunks show themselves
+		_crates[k].visible = c.cargo > 0.0 and not c.eva and not ore
 		if c.eva and is_inside_tree() and randf() < delta * 3.0:
 			CrewGear.puff(get_tree().current_scene, b)
 

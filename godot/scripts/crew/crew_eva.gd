@@ -6,6 +6,8 @@ extends RefCounted
 ## outside with nothing to do flies back to the nearest airlock.
 
 const FLY := 2.5  # metres per second on a jetpack
+const UP := 5.0  # metres above the deck crew fly at outside, clear of the hull
+const CLIMB := 2.5  # metres per second up out of an airlock, or down into one
 const WELD_TIME := 2.0  # seconds to tether a piece or prep a gap
 const AIR_SUIT := 30.0  # seconds in an emergency suit
 const AIR_RIG := 180.0  # a proper rig for planned spacewalks
@@ -53,7 +55,7 @@ static func work(sim: CrewSim, c: CrewMember, delta: float) -> void:
 			c.air = AIR_RIG
 			c.stage = 2
 		2:
-			if fly(c, p.world(t), delta):
+			if fly(c, p.world(t), delta, true):
 				c.stage = 3
 		3:
 			c.timer += delta
@@ -77,15 +79,26 @@ static func work(sim: CrewSim, c: CrewMember, delta: float) -> void:
 ## Outside with no job: head for the nearest airlock and go back in.
 static func go_home(sim: CrewSim, c: CrewMember, delta: float) -> void:
 	var a := sim.state.airlock(c.pos)
-	if a >= 0 and fly(c, sim.state.spot(a), delta):
+	if a >= 0 and fly(c, sim.state.spot(a), delta, true):
 		c.eva = false
 
 
-## Moves straight toward `to`; true on arrival.
-static func fly(c: CrewMember, to: Vector2, delta: float) -> bool:
+## Jetpacks toward `to`: straight up out of the airlock to UP first so
+## they clear the hull, then across. `land` drops them back down at the
+## end (into an airlock, onto a piece); `high` false keeps them low
+## (moving about inside a wreck). True on arrival.
+static func fly(c: CrewMember, to: Vector2, delta: float, land := false,
+		high := true) -> bool:
 	var d := c.pos.distance_to(to)
-	if d <= FLY * delta:
-		c.pos = to
-		return true
-	c.pos += (to - c.pos) / d * FLY * delta
-	return false
+	if high and d > 0.05 and c.alt < UP:
+		c.alt = minf(c.alt + CLIMB * delta, UP)
+		return false
+	if d > FLY * delta:
+		c.face = (to - c.pos) / d
+		c.pos += c.face * FLY * delta
+		return false
+	c.pos = to
+	if land and c.alt > 0.0:
+		c.alt = maxf(c.alt - CLIMB * delta, 0.0)
+		return c.alt <= 0.0
+	return true

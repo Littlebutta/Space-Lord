@@ -25,7 +25,7 @@ static func work(sim: CrewSim, c: CrewMember, delta: float) -> void:
 			c.air = CrewEva.AIR_RIG
 			c.stage = 2
 		2:
-			if CrewEva.fly(c, _here(sim, w, _entry(ws, t)), delta):
+			if CrewEva.fly(c, _here(sim, w, _entry(ws, t)), delta, true):
 				c.stage = 3
 		3:
 			c.timer += delta
@@ -33,7 +33,7 @@ static func work(sim: CrewSim, c: CrewMember, delta: float) -> void:
 				c.timer = 0.0
 				c.stage = 4
 		4:
-			if CrewEva.fly(c, _here(sim, w, ws.pieces.world(t)), delta):
+			if CrewEva.fly(c, _here(sim, w, ws.pieces.world(t)), delta, true, false):
 				c.stage = 5
 		5:
 			c.pos = _here(sim, w, ws.pieces.world(t))
@@ -70,7 +70,7 @@ static func _bring_in(sim: CrewSim, c: CrewMember, delta: float) -> void:
 	var a := s.airlock(c.pos)
 	if a < 0:
 		sim.finish(c)
-	elif CrewEva.fly(c, s.spot(a), delta):
+	elif CrewEva.fly(c, s.spot(a), delta, true):
 		c.eva = false
 		var hold := sim.nearest_store(RES, c.pos, a)
 		if hold < 0:
