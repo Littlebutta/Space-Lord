@@ -38,7 +38,7 @@ func rebuild() -> void:
 		var shell := MeshInstance3D.new()
 		shell.name = &"Shell"
 		shell.mesh = HullShell.build(d, ShipView.DECK * 0.5, mods)
-		shell.material_override = ModelSkin.shell_material(d.theme(mods[0]))
+		shell.material_override = ModelSkin.cut_shell(d.theme(mods[0]), HullShell.holes(d, mods))
 		node.add_child(shell)
 		add_child(node)
 		_nodes.append(node)

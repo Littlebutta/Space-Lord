@@ -15,3 +15,4 @@ bevel = 0.08
 corner = 0.2
 corner_steps = 1
 model_dir = "res://assets/models/human"
+glass_parts = Array[StringName]([&"bridge"])

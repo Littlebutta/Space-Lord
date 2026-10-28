@@ -142,23 +142,44 @@ def _bunk(i, x, z, along):
                   (0.07, 1.6, 0.07), C["steel"], 0.01)
 
 def _canopy(e):
-    """Smooth teardrop glass dome over the bridge (outside view): eleven
-    half-ellipse rings, fullest a third of the way back, with a metal
-    spine along the top and a frame round the base."""
-    rings, base = [], []
-    for k in range(11):
-        t = k / 10
-        z = -1.9 + 3.2 * t
-        s = max(math.sin(math.pi * (t ** 0.75)), 0.08)
-        w, h = 1.35 * s, 0.8 * s
-        rings.append((z, [(w * math.cos(a / 20 * math.pi), ROOF + h * math.sin(a / 20 * math.pi))
-                          for a in range(21)]))
-        base.append((w, z))
-    e.loft(rings, C["glass"])
-    for k in range(10):
-        (w0, z0), (w1, z1) = base[k], base[k + 1]
-        top = ROOF + 0.8 * max(math.sin(math.pi * ((k + 0.5) / 10) ** 0.75), 0.08)
-        e.box((0, top + 0.01, (z0 + z1) / 2), (0.08, 0.05, z1 - z0 + 0.03), C["gun"], 0.01)
-        for s in (-1, 1):
-            e.wall((s * (w0 + 0.03), z0), (s * (w1 + 0.03), z1), ROOF, ROOF + 0.08, 0.08,
-                   C["gun"], 0.01)
+    """Angular command cockpit over the whole bridge, seen in the outside
+    view: a faceted frame of square glass panes (the game leaves a hole
+    in the hull shell under it, so the crew show through), a metal back
+    and a coaming round the opening."""
+    lo, hi = ROOF + 0.05, ROOF + 0.6
+    base = [(-1.3, -1.95), (1.3, -1.95), (1.95, -1.3), (1.95, 1.95), (-1.95, 1.95), (-1.95, -1.3)]
+    top = [(-1.0, -0.9), (1.0, -0.9), (1.3, -0.6), (1.3, 1.4), (-1.3, 1.4), (-1.3, -0.6)]
+    B = [(x, lo, z) for x, z in base]
+    T = [(x, hi, z) for x, z in top]
+    for k in range(6):  # sloped facets round the sides; the back one is metal
+        j = (k + 1) % 6
+        col = C["steel"] if k == 3 else C["glass"]
+        _panes(e, B[k], B[j], T[j], T[k], 2 if k in (0, 2, 4) else 1, col)
+    _panes(e, T[0], T[1], T[2], T[5], 2, C["glass"])  # front strip of the roof
+    _panes(e, T[5], T[2], T[3], T[4], 2, C["glass"], rows=2)
+    for k in range(6):  # frame: base ring, top ring and the corner posts
+        e.bar(B[k], B[(k + 1) % 6], 0.05, C["gun"])
+        e.bar(T[k], T[(k + 1) % 6], 0.05, C["gun"])
+        e.bar(B[k], T[k], 0.05, C["gun"])
+    for s in (-1, 1):  # coaming round the opening
+        e.wall((-2.0, 1.98 * s), (2.0, 1.98 * s), ROOF - 0.5, lo, 0.08, C["hull"], 0.01)
+        e.wall((1.98 * s, -2.0), (1.98 * s, 2.0), ROOF - 0.5, lo, 0.08, C["hull"], 0.01)
+    e.cyl((0.9, hi + 0.25, 1.6), 0.03, 0.5, C["metal"], sides=6)
+    e.ball((0.9, hi + 0.52, 1.6), 0.06, C["red"], 1, glow=True)
+
+
+def _panes(e, a, b, c, d, cols, col, rows=1):
+    """Quad a-b-c-d (a-b bottom, d-c top) split into cols x rows panes
+    with frame bars between them."""
+    def lerp(p, q, t):
+        return tuple(p[k] + (q[k] - p[k]) * t for k in range(3))
+    for r in range(rows):
+        for k in range(cols):
+            u0, u1, v0, v1 = k / cols, (k + 1) / cols, r / rows, (r + 1) / rows
+            pts = [lerp(lerp(a, b, u), lerp(d, c, u), v) for u, v in
+                   ((u0, v0), (u1, v0), (u1, v1), (u0, v1))]
+            e.quad(pts, col)
+            if k:
+                e.bar(pts[0], pts[3], 0.035, C["gun"])
+            if r:
+                e.bar(pts[0], pts[1], 0.035, C["gun"])
