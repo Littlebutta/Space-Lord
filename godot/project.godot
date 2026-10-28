@@ -14,6 +14,7 @@ config/icon="res://icon.svg"
 [autoload]
 
 GameClock="*res://scripts/autoload/game_clock.gd"
+UiSkin="*res://scripts/autoload/ui_skin.gd"
 
 [display]
 
