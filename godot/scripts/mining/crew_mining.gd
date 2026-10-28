@@ -15,7 +15,11 @@ static func want(board: JobBoard, want: Dictionary) -> void:
 	if f == null:
 		return
 	var planned := {}
-	for j: CrewJob in board.jobs.values():
+	for j: CrewJob in board.jobs.values().duplicate():
+		if j.type == &"mine" and j.worker and j.worker.stage <= 1 \
+				and board.state.storage.free_space(j.res) <= 0.0:
+			board.finish(j)  # hold filled up before they got outside
+			continue
 		if j.type == &"mine" and j.worker:
 			planned[j.res] = planned.get(j.res, 0.0) + f.amount(j.target)
 	for id in f.loose():
@@ -74,7 +78,7 @@ static func _bring_in(sim: CrewSim, c: CrewMember, delta: float) -> void:
 	var a := sim.state.airlock(c.pos)
 	if a < 0:
 		sim.finish(c)
-	elif CrewEva.fly(c, sim.state.spot(a), delta):
+	elif CrewEva.fly(c, sim.state.spot(a), delta, true):
 		c.eva = false
 		var hold := sim.nearest_store(c.job.res, c.pos, a)
 		if hold < 0:

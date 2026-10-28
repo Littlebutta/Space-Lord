@@ -85,9 +85,12 @@ func _act(c: CrewMember, delta: float) -> void:
 		elif not c.arrived():
 			_walk(c, delta)  # a move order
 		return
-	if j.done and j.worker == c and j.type == &"operate":
+	if j.done and j.worker == c and j.type in [&"operate", &"mine"]:
 		drop(c)
 		c.order = false
+		return
+	if j.type == &"mine" and state.storage.free_space(j.res) <= 0.0:
+		finish(c)  # hold filled up on the way: stop now, not on arrival
 		return
 	if c.stage == 0:
 		_go(c, _first_stop(c))
