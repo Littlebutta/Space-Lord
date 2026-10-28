@@ -31,8 +31,6 @@ static func lane(m: ShipModule, r: Rect2i, turn: int, length := LANE) -> Rect2i:
 
 ## Why `m` can't go at `cell`, or "" if it can.
 static func why_not(d: ShipDesign, m: ShipModule, cell: Vector2i, turn: int) -> String:
-	if m.exhaust != Vector2i.ZERO and rotate(m.exhaust, turn) == FORWARD:
-		return "Thrusters can't fire forward"
 	var r := Rect2i(cell, ShipDesign.turned(m, turn))
 	var l := lane(m, r, turn)
 	for i in d.modules.size():

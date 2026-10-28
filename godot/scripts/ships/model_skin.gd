@@ -116,7 +116,7 @@ static func _glass_mat() -> StandardMaterial3D:
 	g.albedo_color = Color(0.55, 0.75, 0.85, 0.18)
 	g.metallic = 0.4
 	g.roughness = 0.05
-	g.specular = 0.8
+	g.metallic_specular = 0.8
 	return g
 
 

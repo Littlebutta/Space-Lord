@@ -11,10 +11,12 @@ const WALK_SPEED := 1.3  # walk animation playback for CrewSim.SPEED
 const TURN := 10.0  # how fast they turn to face, per second
 
 static var _mat: ShaderMaterial
+static var _ring_mesh: TorusMesh
 
 var _bodies: Array[Node3D] = []
 var _players: Array[AnimationPlayer] = []
 var _meshes: Array[MeshInstance3D] = []
+var _rings: Array[MeshInstance3D] = []  # selection markers
 
 
 func draw(crew: Array[CrewMember], sim: CrewSim, delta: float) -> void:
@@ -24,6 +26,7 @@ func draw(crew: Array[CrewMember], sim: CrewSim, delta: float) -> void:
 		_bodies.pop_back().queue_free()
 		_players.pop_back()
 		_meshes.pop_back()
+		_rings.pop_back()
 	for k in crew.size():
 		var c := crew[k]
 		c.y = lerpf(c.y, sim.nav.height(c.pos), minf(delta * 10.0, 1.0))
@@ -34,29 +37,53 @@ func draw(crew: Array[CrewMember], sim: CrewSim, delta: float) -> void:
 			var yaw := atan2(-face.x, -face.z)
 			b.rotation.y = lerp_angle(b.rotation.y, yaw, minf(delta * TURN, 1.0))
 		b.position = at
+		_rings[k].visible = c.selected
 		_play(k, _anim(c))
 		var col: Color = CrewJob.COLORS[c.job.type if c.job else &""]
 		_meshes[k].set_instance_shader_parameter(&"shirt",
 				col.lightened(0.4) if c.cargo > 0.0 else col)
 
 
-func _spawn() -> void:
+## The shared crew material; shirts are an instance uniform.
+static func material() -> ShaderMaterial:
 	if _mat == null:
 		_mat = ShaderMaterial.new()
 		_mat.shader = SHADER
 		_mat.set_shader_parameter(&"grime_tex", ModelSkin.noise(false))
 		_mat.set_shader_parameter(&"bump_tex", ModelSkin.noise(true))
 		_mat.set_shader_parameter(&"grime", 0.35)
+	return _mat
+
+
+func _spawn() -> void:
 	var b: Node3D = MODEL.instantiate()
 	var mi: MeshInstance3D = b.find_children("*", "MeshInstance3D", true, false)[0]
-	mi.material_override = _mat
+	mi.material_override = material()
 	var ap: AnimationPlayer = b.find_children("*", "AnimationPlayer", true, false)[0]
 	for n in ap.get_animation_list():
 		ap.get_animation(n).loop_mode = Animation.LOOP_LINEAR
+	b.add_child(_ring())
 	add_child(b)
 	_bodies.append(b)
 	_players.append(ap)
 	_meshes.append(mi)
+
+
+func _ring() -> MeshInstance3D:
+	if _ring_mesh == null:
+		_ring_mesh = TorusMesh.new()
+		_ring_mesh.inner_radius = 0.34
+		_ring_mesh.outer_radius = 0.4
+		var m := StandardMaterial3D.new()
+		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		m.albedo_color = Color(0.4, 0.85, 1.0)
+		_ring_mesh.material = m
+	var r := MeshInstance3D.new()
+	r.mesh = _ring_mesh
+	r.position.y = 0.03
+	r.scale.y = 0.3
+	_rings.append(r)
+	return r
 
 
 ## Direction to face: along the path when walking; at work, their

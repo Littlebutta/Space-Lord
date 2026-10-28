@@ -37,9 +37,7 @@ func _init() -> void:
 	var c: CrewMember = sim.crew[0]
 	c.pos = p.home(3)
 	s.damage(3, INF)
-	_check(c.eva, "crew on a wrecked module are blown outside")
-	_run(sim, 20.0)
-	_check(not c.eva, "and jetpack back to the airlock")
+	_check(not sim.crew.has(c), "crew on a wrecked module die")
 	print("wreck tests: %s" % ("FAILED %d" % _fails if _fails else "ok"))
 	sim.free()
 	quit(1 if _fails else 0)

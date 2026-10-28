@@ -5,6 +5,9 @@ extends Node3D
 ## draws them.
 
 signal crew_changed
+signal crew_lost(who: String)
+## Someone died: where (this node's space), which way they fly, shirt.
+signal died(at: Vector3, fling: Vector3, shirt: Color)
 
 const SPEED := 3.0  # metres per second
 const CARRY := 20.0  # units per haul trip
@@ -12,7 +15,7 @@ const BULK_PULL := 3.0  # haulers walk this much further to use a bulk store
 const LOAD_TIME := 0.6  # seconds to load or unload
 const REPAIR_RATE := 20.0  # hp per second
 const THINK := 0.5  # seconds between job board passes
-const RADIUS := 0.3
+const RADIUS := 0.32  # personal space; crew keep 2x this apart
 const NAMES := ["Ada", "Bo", "Cy", "Dee", "Eli", "Fay", "Gus", "Hal",
 		"Ivy", "Jo", "Kit", "Lux", "Moe", "Nia", "Oz", "Pip"]
 
@@ -22,6 +25,7 @@ var state: ShipState
 var nav: ShipNav
 var board: JobBoard
 var crew: Array[CrewMember] = []
+var lost := 0  # crew who died out in space
 var _looks := {}  # piece -> CrewLook drawing the crew on it
 var _think := 0.0
 
@@ -47,7 +51,7 @@ func add_crew() -> void:
 func remove_crew() -> void:
 	if crew.is_empty():
 		return
-	_drop(crew[-1])
+	drop(crew[-1])
 	crew.pop_back()
 	crew_changed.emit()
 
@@ -61,7 +65,7 @@ func _physics_process(delta: float) -> void:
 		board.refresh()
 		board.assign(crew)
 	state.operators.fill(0)
-	for c in crew:
+	for c in crew.duplicate():
 		_act(c, delta)
 	_separate()
 	state.tick(delta * hours_per_second)
@@ -70,13 +74,18 @@ func _physics_process(delta: float) -> void:
 
 
 func _act(c: CrewMember, delta: float) -> void:
+	if CrewEva.survive(self, c, delta):
+		return
 	var j := c.job
 	if j == null:
 		if c.eva:
 			CrewEva.go_home(self, c, delta)
+		elif not c.arrived():
+			_walk(c, delta)  # a move order
 		return
 	if j.done and j.worker == c and j.type == &"operate":
-		_drop(c)
+		drop(c)
+		c.order = false
 		return
 	if c.stage == 0:
 		_go(c, _first_stop(c))
@@ -123,14 +132,14 @@ func _work(c: CrewMember, delta: float) -> void:
 
 func _go(c: CrewMember, module: int) -> void:
 	if module < 0:
-		_drop(c)
+		drop(c)
 		return
 	var at := state.center(module) + _seat(c)
 	if not state.module(module).access.is_empty():
 		at = state.spot(module, c.job.slot)
 	c.path = nav.route(c.pos, at)
 	if c.path.is_empty() and not nav.connected(c.pos, at):
-		_drop(c)
+		drop(c)
 
 
 ## Spreads operators of one module over its floor.
@@ -154,11 +163,29 @@ func _walk(c: CrewMember, delta: float) -> void:
 
 func finish(c: CrewMember) -> void:
 	board.finish(c.job)
-	_drop(c)
+	drop(c)
+	c.order = false
+
+
+## Where to draw crew member c, in this node's space.
+func local3d(c: CrewMember) -> Vector3:
+	var at := Vector3(c.pos.x, c.y, c.pos.y)
+	var i := -1 if c.eva else state.design.index_at(Vector2i((c.pos / ShipView.CELL).floor()))
+	return ShipPieces.to_3d(state.pieces.xf[i]) * at if i >= 0 else at
+
+
+## Out of air or caught in a blast: they're gone, leaving a body.
+func kill(c: CrewMember, fling := Vector3.ZERO) -> void:
+	died.emit(local3d(c), fling, CrewJob.COLORS[c.job.type if c.job else &""])
+	drop(c)
+	crew.erase(c)
+	lost += 1
+	crew_lost.emit(c.name)
+	crew_changed.emit()
 
 
 ## Lets go of the current job, putting back anything carried.
-func _drop(c: CrewMember) -> void:
+func drop(c: CrewMember) -> void:
 	if c.cargo > 0.0:
 		state.storage.put(c.job.res if c.job else "", c.cargo)
 		c.cargo = 0.0
@@ -170,12 +197,13 @@ func _drop(c: CrewMember) -> void:
 	c.path.clear()
 
 
-## Nudges standing crew apart so they don't stack; walkers slip past
-## each other so corridors never jam. Bucketed so it stays O(n).
+## Keeps crew from overlapping. Idle crew make room, crew at work hold
+## their spot, and two walkers slide past each other sideways.
+## Bucketed so it stays O(n).
 func _separate() -> void:
 	var grid := {}
 	for c in crew:
-		if c.eva or not c.arrived():
+		if c.eva:
 			continue
 		var k := Vector2i((c.pos / (RADIUS * 2.0)).floor())
 		if grid.has(k):
@@ -193,33 +221,54 @@ func _separate() -> void:
 func _push(a: CrewMember, b: CrewMember) -> void:
 	var off := a.pos - b.pos
 	var d := off.length()
-	if a.get_instance_id() >= b.get_instance_id() or d >= RADIUS * 2.0 \
-			or d < 0.001:
+	if a.get_instance_id() >= b.get_instance_id() or d >= RADIUS * 2.0:
 		return
-	var p := off / d * (RADIUS * 2.0 - d) * 0.2
-	if nav.walkable(a.pos + p):
-		a.pos += p
-	if nav.walkable(b.pos - p):
-		b.pos -= p
+	if d < 0.001:
+		off = Vector2.RIGHT.rotated(randf() * TAU)
+		d = 1.0
+	var p := off / d * (RADIUS * 2.0 - d) * 0.5
+	var wa := _give(a, b)
+	var wb := _give(b, a)
+	if not (a.arrived() or b.arrived()):
+		p = p.orthogonal().limit_length(0.02)  # sidestep, never shove back
+	_nudge(a, p * wa / (wa + wb) * 2.0)
+	_nudge(b, -p * wb / (wa + wb) * 2.0)
+
+
+## Moves c by v, sliding along walls rather than into them.
+func _nudge(c: CrewMember, v: Vector2) -> void:
+	for t in [v, Vector2(v.x, 0.0), Vector2(0.0, v.y)]:
+		if nav.walkable(c.pos + t):
+			c.pos += t
+			return
+
+
+## How readily c steps aside for `other`: idle crew most, crew at work
+## hardly at all. Walkers keep going past anyone standing (who make
+## room) so nobody gets stuck behind a crowd; two walkers share it.
+static func _give(c: CrewMember, other: CrewMember) -> float:
+	if not c.arrived():
+		return 0.5 if not other.arrived() else 0.0
+	return 0.1 if c.job else 1.0
 
 
 ## The deck changed shape: re-plan walks, and anyone whose floor was
-## just shot away is blown outside (they jetpack back to an airlock).
+## just shot away dies in the blast.
 func _on_broken() -> void:
 	nav = ShipNav.new(state.intact())
 	board.nav = nav
-	for c in crew:
+	for c in crew.duplicate():
 		if c.eva:
 			continue
 		if not nav.walkable(c.pos):
 			var i := state.design.index_at(Vector2i((c.pos / ShipView.CELL).floor()))
-			c.pos = state.pieces.xf[i] * c.pos if i >= 0 else c.pos
-			_drop(c)
-			c.eva = true
+			var out: Vector2 = c.pos - state.center(i) if i >= 0 else Vector2.ZERO
+			var fling := Vector2.from_angle(randf() * TAU) + out.normalized() * 2.0
+			kill(c, Vector3(fling.x, randf_range(0.5, 1.5), fling.y))
 		elif not c.path.is_empty():
 			c.path = nav.route(c.pos, c.path[-1])
 			if c.path.is_empty():
-				_drop(c)
+				drop(c)
 
 
 ## One CrewLook per piece so crew ride along when a piece drifts off.

@@ -14,6 +14,7 @@ const TRACER := Color(1.0, 0.8, 0.5)
 var thrust_all := false
 
 var hulk: HulkView
+var helm: ShipHelm  # when set, thrusters burn as the helm fires them
 var state: ShipState
 var _alive := PackedByteArray()
 var _last := {}  # module -> last global transform, for debris
@@ -34,7 +35,7 @@ func fire(i: int) -> void:
 		return
 	for m: Node3D in n.find_children("Muzzle*", "", true, false):
 		FxKit.flash(m)
-		FxKit.tracer(self, m.global_transform, TRACER)
+		FxKit.tracer(_world(), m.global_transform, TRACER)
 	var head := n.find_child("Head*", true, false) as Node3D
 	if head:
 		var tw := head.create_tween()
@@ -49,14 +50,15 @@ func _process(delta: float) -> void:
 		var alive := state.hp[i] > 0.0
 		if _alive[i] and not alive and _last.has(i):
 			var r := state.design.rect(i)
-			FxKit.debris(self, _last[i], Vector2(r.size) * ShipView.CELL * 0.5)
+			FxKit.debris(_world(), _last[i], Vector2(r.size) * ShipView.CELL * 0.5)
 		_alive[i] = int(alive)
 		var n := hulk.part(i)
 		if n == null:
 			continue
 		_last[i] = n.global_transform
 		if state.module(i).thrust > 0.0:
-			_exhaust(n, alive and (thrust_all or state.is_running(i)))
+			var lit := helm.firing.has(i) if helm else state.is_running(i)
+			_exhaust(n, alive and (thrust_all or lit))
 		var p := state.pieces
 		_flicker(n, alive and (p.drifting(i) or not p.powered(i)), delta)
 
@@ -88,4 +90,10 @@ func _flicker(n: Node3D, broken: bool, delta: float) -> void:
 			l.light_energy = e * (0.0 if randf() < 0.35 else randf_range(0.15, 0.9))
 	if broken and randf() < delta * SPARK_RATE:
 		var off := Vector3(randf_range(-1, 1), randf_range(0.3, 2.0), randf_range(-1, 1))
-		FxKit.sparks(self, n.global_transform * off)
+		FxKit.sparks(_world(), n.global_transform * off)
+
+
+## Where loose effects go so they stay put in space as the ship moves.
+func _world() -> Node:
+	var s := get_tree().current_scene
+	return s if s and s != self else self

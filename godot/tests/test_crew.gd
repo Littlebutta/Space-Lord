@@ -19,6 +19,12 @@ func _init() -> void:
 	_check(staffed, "every station staffed")
 	for c in sim.crew:
 		_check(sim.nav.walkable(c.pos), "%s stands on the deck" % c.name)
+	var close := 0
+	for a in sim.crew:
+		for b in sim.crew:
+			if a != b and a.arrived() and b.arrived() and a.pos.distance_to(b.pos) < CrewSim.RADIUS:
+				close += 1
+	_check(close == 0, "nobody standing inside anyone else (%d)" % close)
 	var hurt: int = range(s.size()).filter(func(i): return s.module(i).crew > 0)[0]
 	s.damage(hurt, 50.0)
 	_run(sim, 15.0)
