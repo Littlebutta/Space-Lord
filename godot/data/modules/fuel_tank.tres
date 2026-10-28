@@ -13,3 +13,5 @@ mass = 3.0
 hp = 80.0
 storage = {"fuel": 200.0}
 salvage = {"alloy": 3.0}
+blocked = Array[Rect2]([Rect2(0, 0.5, 1, 1.5)])
+access = PackedVector2Array(0.5, 0.25)

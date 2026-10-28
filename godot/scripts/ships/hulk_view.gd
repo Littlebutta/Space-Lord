@@ -5,6 +5,7 @@ extends Node3D
 ## modules leave a hole; cut edges get their own rounded corners.
 
 var pieces: ShipPieces
+var outside := false: set = set_outside  # hull shells over the decks
 var _nodes: Array[Node3D] = []
 
 
@@ -30,9 +31,22 @@ func rebuild() -> void:
 		for i in mods:
 			node.add_child(ShipView.make_part(d.modules[i], d.rect(i), d.turns[i],
 					d.theme(i), filled))
+		var shell := MeshInstance3D.new()
+		shell.name = &"Shell"
+		shell.mesh = HullShell.build(d, ShipView.DECK * 0.5, mods)
+		shell.material_override = ModelSkin.shell_material(d.theme(mods[0]))
+		node.add_child(shell)
 		add_child(node)
 		_nodes.append(node)
+	set_outside(outside)
 	_process(0.0)
+
+
+func set_outside(v: bool) -> void:
+	outside = v
+	for n in _nodes:
+		ModelSkin.set_outside(n, v)
+		n.get_node(^"Shell").visible = v
 
 
 func _process(_delta: float) -> void:

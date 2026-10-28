@@ -16,6 +16,8 @@ static var _mats := {}  # Color -> shared material, keeps draw calls low
 
 var design: ShipDesign: set = set_design
 var show_exhaust := false  # builder hint: tint thruster lanes
+var outside := false: set = set_outside  # hull shell over the decks
+var _hull: MeshInstance3D  # the outside shell
 
 
 func set_design(d: ShipDesign) -> void:
@@ -36,10 +38,33 @@ func rebuild() -> void:
 	for i in design.modules.size():
 		var m := design.modules[i]
 		var r := design.rect(i)
-		add_child(make_part(m, r, design.turns[i], design.theme(i), filled))
+		var n := make_part(m, r, design.turns[i], design.theme(i), filled)
+		ModelSkin.set_outside(n, outside)
+		add_child(n)
 		var l: MeshInstance3D = lane_mesh(m, r, design.turns[i]) if show_exhaust else null
 		if l:
 			add_child(l)
+	if not design.modules.is_empty():
+		_hull = _shell()
+		add_child(_hull)
+
+
+func set_outside(v: bool) -> void:
+	outside = v
+	for c in get_children():
+		ModelSkin.set_outside(c, v)
+	if is_instance_valid(_hull):
+		_hull.visible = v
+
+
+## The continuous outside hull, shown in outside view.
+func _shell() -> MeshInstance3D:
+	var mi := MeshInstance3D.new()
+	mi.name = &"Shell"
+	mi.mesh = HullShell.build(design, DECK * 0.5)
+	mi.material_override = ModelSkin.shell_material(design.theme(0))
+	mi.visible = outside
+	return mi
 
 
 static func center(r: Rect2i) -> Vector3:
@@ -57,8 +82,11 @@ static func make_part(m: ShipModule, r: Rect2i, turn: int, t: ShipTheme,
 	mi.set_surface_override_material(0, toon(deck))
 	if mi.mesh.get_surface_count() > 1:
 		mi.set_surface_override_material(1, toon(t.paint(m.color)))
-	if m.model:
-		var model: Node3D = m.model.instantiate()
+	var scene := t.model(m)
+	if scene:
+		var model: Node3D = scene.instantiate()
+		ModelSkin.apply(model, t)
+		mi.set_surface_override_material(0, ModelSkin.deck_material())
 		model.rotation.y = -turn * PI / 2.0
 		model.position.y = DECK * 0.5
 		mi.add_child(model)
@@ -76,7 +104,7 @@ static func part_mesh(m: ShipModule, r: Rect2i, turn: int, t: ShipTheme,
 	_slab(mesh, _local(deck, r), -DECK * 0.5, DECK * 0.5, 0.0)
 	var h: float = HEIGHT.get(m.category, 0.9) * t.height
 	h *= 1.0 + t.jitter * (absi(hash(r.position)) % 100 / 100.0 - 0.5)
-	if m.category != "hull" and not m.model and h > DECK + 0.05:
+	if m.category != "hull" and not t.model(m) and h > DECK + 0.05:
 		var top := Prism.shrink(p, 0.2)
 		_slab(mesh, _local(t.shape(top), r), DECK * 0.5, h - DECK * 0.5, t.taper)
 	return mesh

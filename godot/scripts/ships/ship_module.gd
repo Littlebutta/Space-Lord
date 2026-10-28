@@ -30,4 +30,12 @@ extends Resource
 ## Bulk supply store (depot): haulers restock from it before other stores.
 @export var bulk := false
 @export var airlock := false  # crew can go outside (EVA) from here
+@export_group("Crew access")
+## Areas crew can't walk through (tanks, engines, guns), as rects in
+## cell units of the unturned footprint. Every theme's model must keep
+## its equipment inside them so nobody walks through anything.
+@export var blocked: Array[Rect2] = []
+## Spots crew stand at to work this part, in the same cell units. Empty
+## means anywhere near the middle.
+@export var access := PackedVector2Array()
 @export var model: PackedScene  # Blender .glb scene, optional

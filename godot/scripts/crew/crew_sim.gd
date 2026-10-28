@@ -1,8 +1,8 @@
 class_name CrewSim
 extends Node3D
 ## Runs one ship's crew: free movement with light avoidance, job pickup
-## by priority, and what their work does to the ShipState. A single
-## MultiMesh draws the whole crew so big ships and fleets stay cheap.
+## by priority, and what their work does to the ShipState. CrewLook
+## draws them.
 
 signal crew_changed
 
@@ -22,7 +22,7 @@ var state: ShipState
 var nav: ShipNav
 var board: JobBoard
 var crew: Array[CrewMember] = []
-var _mms := {}  # piece -> MultiMeshInstance3D drawing the crew on it
+var _looks := {}  # piece -> CrewLook drawing the crew on it
 var _think := 0.0
 
 
@@ -38,6 +38,8 @@ func setup(d: ShipDesign, count: int) -> void:
 func add_crew() -> void:
 	var c := CrewMember.new(NAMES[crew.size() % NAMES.size()])
 	c.pos = _home() + Vector2(randf() - 0.5, randf() - 0.5)
+	if not nav.walkable(c.pos):  # don't start inside equipment
+		c.pos = _home()
 	crew.append(c)
 	crew_changed.emit()
 
@@ -124,6 +126,8 @@ func _go(c: CrewMember, module: int) -> void:
 		_drop(c)
 		return
 	var at := state.center(module) + _seat(c)
+	if not state.module(module).access.is_empty():
+		at = state.spot(module, c.job.slot)
 	c.path = nav.route(c.pos, at)
 	if c.path.is_empty() and not nav.connected(c.pos, at):
 		_drop(c)
@@ -218,7 +222,7 @@ func _on_broken() -> void:
 				_drop(c)
 
 
-## One MultiMesh per piece so crew ride along when a piece drifts off.
+## One CrewLook per piece so crew ride along when a piece drifts off.
 ## Crew outside are drawn in the ship's frame.
 func _draw(delta: float) -> void:
 	var p := state.pieces
@@ -230,17 +234,17 @@ func _draw(delta: float) -> void:
 			var a: Array[CrewMember] = []
 			by[k] = a
 		by[k].append(c)
-	for k in _mms:
+	var none: Array[CrewMember] = []
+	for k in _looks:
 		if not by.has(k):
-			_mms[k].multimesh.instance_count = 0
+			_looks[k].draw(none, self, delta)
 	for k in by:
-		if not _mms.has(k):
-			_mms[k] = MultiMeshInstance3D.new()
-			_mms[k].multimesh = CrewLook.multimesh()
-			add_child(_mms[k])
+		if not _looks.has(k):
+			_looks[k] = CrewLook.new()
+			add_child(_looks[k])
 		var t := p.xf[p.pieces[k][0]] if k >= 0 else Transform2D.IDENTITY
-		_mms[k].transform = ShipPieces.to_3d(t)
-		CrewLook.draw(_mms[k].multimesh, by[k], nav, delta)
+		_looks[k].transform = ShipPieces.to_3d(t)
+		_looks[k].draw(by[k], self, delta)
 
 
 ## Closest intact store for `res`, bulk stores (supply depots) first.
@@ -249,7 +253,7 @@ func _nearest_store(res: String, from: Vector2, skip: int) -> int:
 	var best_d := INF
 	for i in state.size():
 		var m := state.module(i)
-		var at := state.center(i)
+		var at := state.spot(i)
 		if i == skip or not m.storage.has(res) or state.hp[i] <= 0.0 \
 				or not nav.connected(from, at):
 			continue
@@ -263,5 +267,5 @@ func _nearest_store(res: String, from: Vector2, skip: int) -> int:
 func _home() -> Vector2:
 	for i in state.size():
 		if state.module(i).berths > 0:
-			return state.center(i)
-	return state.center(0)
+			return state.spot(i)
+	return state.spot(0)

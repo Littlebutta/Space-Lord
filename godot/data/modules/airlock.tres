@@ -15,3 +15,5 @@ storage = {"parts": 20.0}
 salvage = {"alloy": 2.0, "parts": 1.0}
 rebuild = {"parts": 3.0}
 airlock = true
+blocked = Array[Rect2]([Rect2(0, 0, 0.5, 1)])
+access = PackedVector2Array(0.75, 0.5)

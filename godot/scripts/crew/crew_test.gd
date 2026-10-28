@@ -3,7 +3,7 @@ extends Node3D
 ## the crew run it. X damages a random module, B wrecks one outright so
 ## the ship can split; crew spacewalk out of an airlock to bring pieces back.
 
-const HELP := "Crew sandbox · X damage · B wreck a module · WASD/QE/wheel camera" \
+const HELP := "Crew sandbox · X damage · B wreck a module · V outside view · WASD/QE/wheel camera" \
 		+ " · Esc map\nBlue operating · yellow hauling · green repairing" \
 		+ " · pink spacewalk · grey idle"
 
@@ -82,4 +82,5 @@ func _unhandled_input(event: InputEvent) -> void:
 	match key.keycode:
 		KEY_X: _sim.state.damage(randi() % _sim.state.size(), 60.0)
 		KEY_B: _sim.state.damage(randi() % _sim.state.size(), INF)
+		KEY_V: $Hulk.outside = not $Hulk.outside
 		KEY_ESCAPE: get_tree().change_scene_to_file("res://scenes/main.tscn")

@@ -45,6 +45,12 @@ func center(i: int) -> Vector2:
 	return (Vector2(r.position) + Vector2(r.size) * 0.5) * ShipView.CELL
 
 
+## Where crew stand to work on module i: its access spot k (wrapping
+## round), or the middle when it has none. Ship-local metres (x, z).
+func spot(i: int, k := 0) -> Vector2:
+	return design.spot(i, k)
+
+
 func damage(i: int, amount: float) -> void:
 	if hp[i] <= 0.0:
 		return

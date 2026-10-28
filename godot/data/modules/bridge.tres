@@ -16,3 +16,5 @@ berths = 2
 storage = {"food": 20.0}
 upkeep = {"food": 0.2}
 salvage = {"alloy": 6.0, "electronics": 4.0}
+blocked = Array[Rect2]([Rect2(0, 0, 2, 0.5), Rect2(0, 0.5, 0.5, 1), Rect2(1.5, 0.5, 0.5, 1)])
+access = PackedVector2Array(0.75, 0.6, 1.25, 0.6)

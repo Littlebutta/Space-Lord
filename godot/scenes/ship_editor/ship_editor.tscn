@@ -9,9 +9,18 @@
 background_mode = 1
 background_color = Color(0.02, 0.025, 0.05, 1)
 ambient_light_source = 2
-ambient_light_color = Color(0.45, 0.5, 0.65, 1)
-ambient_light_energy = 0.3
-tonemap_mode = 2
+ambient_light_color = Color(0.32, 0.36, 0.46, 1)
+ambient_light_energy = 0.7
+tonemap_mode = 4
+tonemap_white = 6.0
+ssao_enabled = true
+ssao_radius = 1.5
+ssao_intensity = 2.5
+glow_enabled = true
+glow_bloom = 0.08
+adjustment_enabled = true
+adjustment_contrast = 1.1
+adjustment_saturation = 0.9
 
 [node name="ShipEditor" type="Node3D"]
 script = ExtResource("1_ed")
@@ -21,8 +30,11 @@ environment = SubResource("Env")
 
 [node name="Sun" type="DirectionalLight3D" parent="."]
 transform = Transform3D(0.866, -0.25, 0.433, 0, 0.866, 0.5, -0.5, -0.433, 0.75, 0, 20, 0)
-light_energy = 1.4
+light_color = Color(1, 0.93, 0.84, 1)
+light_energy = 2.2
 shadow_enabled = true
+shadow_blur = 1.5
+directional_shadow_max_distance = 120.0
 
 [node name="Camera" type="Camera3D" parent="."]
 far = 500.0

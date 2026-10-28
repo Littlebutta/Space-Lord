@@ -20,7 +20,8 @@ static func generate(core: ShipModule, pool: Array[ShipModule],
 		var r := d.rect(i)
 		var at := _neighbor(r.position, r.size, ShipDesign.turned(m, turn), rng)
 		var t: StringName = themes[rng.randi() % themes.size()].id if rng.randf() < mix else tid
-		d.add(m, at, turn, t)
+		if d.add(m, at, turn, t) and not ShipNav.reaches_all(d):
+			d.remove_at(at)  # would wall crew off from part of the ship
 	return d
 
 

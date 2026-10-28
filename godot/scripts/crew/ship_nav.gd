@@ -10,6 +10,7 @@ var astar := AStarGrid2D.new()
 var step := ShipView.CELL / RES
 var floor_y := {}  # nav cell -> height of the deck there
 var zone := {}  # nav cell -> id of the connected area it belongs to
+var solid := {}  # nav cell -> cell of the module whose equipment blocks it
 
 
 func _init(d: ShipDesign) -> void:
@@ -27,7 +28,27 @@ func _init(d: ShipDesign) -> void:
 			for y in range(r.position.y * RES, r.end.y * RES):
 				astar.set_point_solid(Vector2i(x, y), false)
 				floor_y[Vector2i(x, y)] = h
+	for i in d.modules.size():
+		_block(d, i)
 	_find_zones()
+
+
+## Takes module i's ShipModule.blocked areas off the walkable deck.
+func _block(d: ShipDesign, i: int) -> void:
+	var m := d.modules[i]
+	var at := Vector2(d.rect(i).position)
+	for b in m.blocked:
+		var ends := PackedVector2Array([b.position, b.end])
+		var p := Prism.turned(ends, Vector2(m.size), d.turns[i])
+		var r := Rect2(at + p[0], Vector2.ZERO).expand(at + p[1])
+		var lo := Vector2i((r.position * RES).round())
+		var hi := Vector2i((r.end * RES).round())
+		for x in range(lo.x, hi.x):
+			for y in range(lo.y, hi.y):
+				var c := Vector2i(x, y)
+				astar.set_point_solid(c, true)
+				floor_y.erase(c)
+				solid[c] = d.cells[i]
 
 
 func cell(p: Vector2) -> Vector2i:
@@ -96,3 +117,12 @@ func _find_zones() -> void:
 					zone[n] = id
 					todo.append(n)
 		id += 1
+
+
+## True when crew could walk from the first module to every other one.
+static func reaches_all(d: ShipDesign) -> bool:
+	var nav := ShipNav.new(d)
+	for i in d.modules.size():
+		if not nav.connected(d.spot(0), d.spot(i)):
+			return false
+	return true

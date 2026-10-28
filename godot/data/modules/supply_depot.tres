@@ -14,3 +14,4 @@ hp = 160.0
 storage = {"ammo": 150.0, "fuel": 300.0, "food": 120.0}
 salvage = {"alloy": 5.0}
 bulk = true
+blocked = Array[Rect2]([Rect2(0, 0, 0.5, 2), Rect2(1.5, 0, 0.5, 2)])
