@@ -77,6 +77,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			_ui.flash("Needs a shipyard or a Shipdock module")
 		elif event.button_index == MOUSE_BUTTON_LEFT and picked:
 			var why := ShipRules.why_not(design, picked, _origin(), turn)
+			why = why if why else Blueprint.why_locked(picked, theme_id)
 			if why:
 				_ui.flash(why)
 			else:
@@ -84,7 +85,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif event.button_index == MOUSE_BUTTON_RIGHT:
 			design.remove_at(_cell)
 		elif event.button_index == MOUSE_BUTTON_MIDDLE:
-			design.paint(_cell, theme_id)
+			_paint()
 		_update_ghost()
 	elif event is InputEventKey and event.pressed and not event.echo:
 		match event.keycode:
@@ -92,6 +93,16 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_V: _view.outside = not _view.outside
 			KEY_ESCAPE: get_tree().change_scene_to_file(MAP_SCENE)
 		_update_ghost()
+
+
+## Repaints the part under the mouse unless that style is locked.
+func _paint() -> void:
+	var i := design.index_at(_cell)
+	var why := Blueprint.why_locked(design.modules[i], theme_id) if i >= 0 else ""
+	if why:
+		_ui.flash(why)
+	else:
+		design.paint(_cell, theme_id)
 
 
 ## Grid cell under the mouse, on the y = 0 build plane.
@@ -117,7 +128,8 @@ func _update_ghost() -> void:
 	var mat := StandardMaterial3D.new()
 	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	var ok := design.fits(picked, r.position, turn)
+	var ok := design.fits(picked, r.position, turn) \
+			and Blueprint.why_locked(picked, theme_id).is_empty()
 	mat.albedo_color = Color(0.3, 1, 0.5, 0.45) if ok else Color(1, 0.3, 0.3, 0.45)
 	var t := ShipTheme.by_id(theme_id)
 	_ghost.mesh = ShipView.part_mesh(picked, r, turn, t, design.occupied())

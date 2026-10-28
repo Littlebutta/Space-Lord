@@ -6,7 +6,7 @@ extends RefCounted
 
 const MAJOR := 0.5  # below this share of hp a repair counts as major
 
-static var docked := true  # set by the map once stations exist
+static var docked := true  # near a station; the map keeps this current
 
 
 static func has_dock(d: ShipDesign) -> bool:
@@ -25,7 +25,7 @@ static func can_repair(hp: float, max_hp: float, d: ShipDesign) -> bool:
 ## One line for the builder: where we are and what's allowed.
 static func status(d: ShipDesign) -> String:
 	if docked:
-		return "At shipyard: full refit"
+		return "At station: full refit"
 	if has_dock(d):
 		return "In space: Shipdock aboard, full refit"
-	return "In space: minor repairs only. Additions need a shipyard or a Shipdock."
+	return "In space: minor repairs only. Additions need a station or a Shipdock."
