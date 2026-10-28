@@ -1,9 +1,19 @@
 extends Node
 ## Gives every screen the UiStyle look, and F1 toggles any "?" help.
+## Themes don't pass through CanvasLayers, so each top-level Control of
+## a layer gets the theme as it enters the tree.
+
+var theme := UiStyle.build()
 
 
 func _ready() -> void:
-	get_tree().root.theme = UiStyle.build()
+	get_tree().root.theme = theme
+	get_tree().node_added.connect(_skin)
+
+
+func _skin(n: Node) -> void:
+	if n is Control and not n.get_parent() is Control and n.theme == null:
+		n.theme = theme
 
 
 func _unhandled_key_input(event: InputEvent) -> void:
