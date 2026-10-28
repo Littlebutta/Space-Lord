@@ -50,6 +50,7 @@ PARTS = {
     "generator": ((2, 2), None, hs.generator),
     "capacitor": ((1, 1), None, hs.capacitor),
     "mining_laser": ((2, 2), None, hs.mining_laser),
+    "repair_bay": ((2, 1), None, hs.repair_bay),
     "wing": ((3, 2), [(0, 0), (0.8, 0), (3, 1.4), (3, 2), (0, 2)], hx.wing),
     "wing_stub": ((2, 1), [(0, 0), (1.2, 0.2), (2, 0.7), (2, 1), (0, 1)], hx.wing_stub),
     "fin": ((1, 2), None, hx.fin),

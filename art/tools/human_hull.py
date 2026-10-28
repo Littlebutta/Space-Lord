@@ -21,11 +21,48 @@ def _outer_edges(pts):
 
 def _bulkhead(i, pts, h=0.9):
     """Low hull wall with a kick plate and accent rail along the slanted
-    outer side. No ribs or pillars: crew would walk through them."""
+    outer side, each one continuous band (no overlapping boxes, so no
+    flicker on curves). No ribs or pillars: crew would walk through them."""
+    for chain in _chains(pts):
+        _band(i, chain, pts, 0.02, 0.16, 0.0, h, C["hull"])
+        _band(i, chain, pts, 0.0, 0.24, 0.0, 0.18, C["steel"])  # kick plate
+        _band(i, chain, pts, 0.0, 0.2, h - 0.1, h + 0.02, C["accent"])
+
+
+def _chains(pts):
+    """The slanted outer edges joined into runs of points."""
+    runs = []
     for a, b in _outer_edges(pts):
-        i.wall(a, b, 0.0, h, 0.16, C["hull"], 0.03)
-        i.wall(a, b, 0.0, 0.18, 0.24, C["steel"], 0.02)  # kick plate
-        i.wall(a, b, h - 0.1, h, 0.24, C["accent"], 0.02)
+        if runs and runs[-1][-1] == a:
+            runs[-1].append(b)
+        else:
+            runs.append([a, b])
+    return runs
+
+
+def _band(i, run, pts, d0, d1, y0, y1, col):
+    """A strip d0..d1 metres in from the polyline `run`, y0 to y1 high."""
+    cx = sum(x for x, _ in pts) / len(pts)
+    cz = sum(z for _, z in pts) / len(pts)
+    norms = []
+    for (ax, az), (bx, bz) in zip(run, run[1:]):
+        nx, nz = -(bz - az), bx - ax
+        n = (nx * nx + nz * nz) ** 0.5
+        nx, nz = nx / n, nz / n
+        if nx * (cx - ax) + nz * (cz - az) < 0:  # point it inward
+            nx, nz = -nx, -nz
+        norms.append((nx, nz))
+    inner = []
+    for k, (x, z) in enumerate(run):
+        a = norms[max(k - 1, 0)]
+        b = norms[min(k, len(norms) - 1)]
+        mx, mz = a[0] + b[0], a[1] + b[1]
+        m = max((mx * mx + mz * mz) ** 0.5, 1e-6)
+        s = 1.0 / max(m / 2, 0.5)  # mitre length factor
+        inner.append((mx / m * s, mz / m * s))
+    out = [(x + nx * d0, z + nz * d0) for (x, z), (nx, nz) in zip(run, inner)]
+    back = [(x + nx * d1, z + nz * d1) for (x, z), (nx, nz) in zip(run, inner)]
+    i.slab(out + back[::-1], y0, y1, col)
 
 
 def hull(i, e, pts):
