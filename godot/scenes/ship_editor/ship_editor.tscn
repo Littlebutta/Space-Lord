@@ -1,0 +1,44 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/ship_editor/ship_editor.gd" id="1_ed"]
+[ext_resource type="Script" path="res://scripts/camera/rts_camera.gd" id="2_cam"]
+[ext_resource type="Script" path="res://scripts/ships/ship_view.gd" id="3_view"]
+[ext_resource type="Script" path="res://scripts/ship_editor/editor_ui.gd" id="4_ui"]
+
+[sub_resource type="Environment" id="Env"]
+background_mode = 1
+background_color = Color(0.02, 0.025, 0.05, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.45, 0.5, 0.65, 1)
+ambient_light_energy = 0.6
+tonemap_mode = 2
+
+[node name="ShipEditor" type="Node3D"]
+script = ExtResource("1_ed")
+
+[node name="Env" type="WorldEnvironment" parent="."]
+environment = SubResource("Env")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866, -0.25, 0.433, 0, 0.866, 0.5, -0.5, -0.433, 0.75, 0, 20, 0)
+light_energy = 1.4
+shadow_enabled = true
+
+[node name="Camera" type="Camera3D" parent="."]
+far = 500.0
+script = ExtResource("2_cam")
+distance = 45.0
+zoom_range = Vector2(10, 120)
+pitch_deg = -70.0
+
+[node name="Grid" type="MeshInstance3D" parent="."]
+cast_shadow = 0
+
+[node name="ShipView" type="Node3D" parent="."]
+script = ExtResource("3_view")
+
+[node name="Ghost" type="MeshInstance3D" parent="."]
+cast_shadow = 0
+
+[node name="UI" type="CanvasLayer" parent="."]
+script = ExtResource("4_ui")

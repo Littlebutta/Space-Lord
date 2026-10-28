@@ -17,7 +17,8 @@ godot/                Godot project (open this folder in Godot)
   scenes/             main.tscn, map/, combat/, ship_editor/
   scripts/autoload/   GameClock: pausable, fast-forward game time
   scripts/map/        StarSystem: procedural planets, belts, orbits
-  scripts/ships/      ShipModule, ShipDesign: grid-based ship parts
+  scripts/ships/      ShipModule, ShipDesign, ShipStats, ShipView
+  scripts/ship_editor/ grid ship builder (press B on the map)
   scripts/economy/    Storage: every resource needs cargo capacity
   scripts/procgen/    ShipGenerator: random ships to fight/salvage
   scripts/camera/     RTS-style camera for map and battles

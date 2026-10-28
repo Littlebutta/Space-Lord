@@ -6,8 +6,10 @@
 script = ExtResource("1")
 id = &"cargo_hold"
 display_name = "Cargo Hold"
+category = "storage"
 size = Vector2i(2, 2)
+color = Color(0.55, 0.45, 0.35, 1)
 mass = 4.0
 hp = 120.0
-storage = {"ore": 100.0, "ammo": 50.0, "food": 50.0}
+storage = {"ore": 100.0, "parts": 40.0, "food": 50.0}
 salvage = {"alloy": 4.0}
