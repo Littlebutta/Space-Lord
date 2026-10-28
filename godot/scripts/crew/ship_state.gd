@@ -5,12 +5,15 @@ extends RefCounted
 ## flight and combat read is_running() to know what actually works.
 
 const BUFFER_HOURS := 3.0  # hours of upkeep a module can keep on hand
+const REBUILT := 0.25  # share of hp a module is rebuilt with
+const WELD := {"parts": 2.0}  # extra cost to weld a drifting piece back
 
 var design: ShipDesign
 var storage: Storage
 var hp := PackedFloat32Array()
 var stock: Array[Dictionary] = []  # per module: resource -> units on hand
 var operators := PackedInt32Array()  # crew at each station right now
+var pieces: ShipPieces  # how the ship has broken apart
 
 
 func _init(d: ShipDesign, fill := 0.5) -> void:
@@ -25,6 +28,7 @@ func _init(d: ShipDesign, fill := 0.5) -> void:
 			s[res] = m.upkeep[res] * BUFFER_HOURS * fill
 		stock.append(s)
 	operators.resize(d.modules.size())
+	pieces = ShipPieces.new(d)
 
 
 func size() -> int:
@@ -42,19 +46,92 @@ func center(i: int) -> Vector2:
 
 
 func damage(i: int, amount: float) -> void:
+	if hp[i] <= 0.0:
+		return
 	hp[i] = maxf(hp[i] - amount, 0.0)
+	if hp[i] <= 0.0:
+		stock[i].clear()
+		pieces.alive[i] = 0
+		pieces.update()
 
 
 func repair(i: int, amount: float) -> void:
-	hp[i] = minf(hp[i] + amount, module(i).hp)
+	if hp[i] > 0.0:
+		hp[i] = minf(hp[i] + amount, module(i).hp)
 
 
+## Hurt but still standing; wrecked modules need rebuilding instead.
 func damaged(i: int) -> bool:
-	return hp[i] < module(i).hp
+	return hp[i] > 0.0 and hp[i] < module(i).hp
+
+
+## Resources to rebuild module i from wreckage (data, else its mass in parts).
+static func rebuild_cost(m: ShipModule) -> Dictionary:
+	return m.rebuild if not m.rebuild.is_empty() else {"parts": ceilf(m.mass)}
+
+
+## What it takes to bring module i back into the ship, or {} if it can't.
+func reattach_cost(i: int) -> Dictionary:
+	var gap = pieces.gap(i)
+	if gap == null:
+		return {}
+	var cost := WELD.duplicate() if pieces.piece_of[i] >= 0 else {}
+	for g in gap:
+		var c := rebuild_cost(module(g))
+		for res in c:
+			cost[res] = cost.get(res, 0.0) + c[res]
+	return cost
+
+
+func can_pay(cost: Dictionary) -> bool:
+	if cost.is_empty():
+		return false
+	for res in cost:
+		if storage.get_amount(res) < cost[res]:
+			return false
+	return true
+
+
+## Pays and rebuilds the gap so module i's piece (towed home already)
+## joins the ship again. False if storage can't cover it.
+func reattach(i: int) -> bool:
+	var cost := reattach_cost(i)
+	if not can_pay(cost):
+		return false
+	for res in cost:
+		storage.take(res, cost[res])
+	for g in pieces.gap(i):
+		hp[g] = module(g).hp * REBUILT
+		pieces.alive[g] = 1
+	pieces.update()
+	return true
+
+
+## Nearest intact airlock on the ship itself to `from`, or -1.
+func airlock(from: Vector2) -> int:
+	var best := -1
+	var best_d := INF
+	for i in size():
+		var d := from.distance_squared_to(center(i))
+		if module(i).airlock and hp[i] > 0.0 and not pieces.drifting(i) and d < best_d:
+			best = i
+			best_d = d
+	return best
 
 
 func buffer(i: int, res: String) -> float:
 	return module(i).upkeep.get(res, 0.0) * BUFFER_HOURS
+
+
+## The design minus wrecked modules: what crew can still walk on.
+func intact() -> ShipDesign:
+	var d := ShipDesign.new()
+	for i in size():
+		if hp[i] > 0.0:
+			d.modules.append(module(i))
+			d.cells.append(design.cells[i])
+			d.turns.append(design.turns[i])
+	return d
 
 
 ## Units of `res` module i can still take on hand.
@@ -81,9 +158,9 @@ func supplied(i: int) -> bool:
 	return true
 
 
-## Intact, staffed and supplied: the module does its job.
+## Intact, powered, staffed and supplied: the module does its job.
 func is_running(i: int) -> bool:
-	return hp[i] > 0.0 and manned(i) and supplied(i)
+	return hp[i] > 0.0 and pieces.powered(i) and manned(i) and supplied(i)
 
 
 ## Burns the on-hand supplies of running modules.

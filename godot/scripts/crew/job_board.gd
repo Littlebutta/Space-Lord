@@ -20,7 +20,7 @@ func refresh() -> void:
 	var want := {}
 	for i in state.size():
 		var m := state.module(i)
-		if state.hp[i] > 0.0 and state.supplied(i):
+		if state.hp[i] > 0.0 and state.pieces.powered(i) and state.supplied(i):
 			for s in m.crew:
 				want["o%d.%d" % [i, s]] = [&"operate", i, "", s]
 		for res in m.upkeep:
@@ -29,6 +29,7 @@ func refresh() -> void:
 				want["h%d.%s" % [i, res]] = [&"haul", i, res, 0]
 		if state.damaged(i):
 			want["r%d" % i] = [&"repair", i, "", 0]
+	_want_eva(want)
 	for k in jobs.keys():
 		var j: CrewJob = jobs[k]
 		if not want.has(k) and (j.worker == null or j.type == &"operate"):
@@ -37,6 +38,25 @@ func refresh() -> void:
 	for k in want:
 		if not jobs.has(k):
 			jobs[k] = _make(k, want[k])
+
+
+## Spacewalks: one per drifting piece, and one per wrecked module in
+## the hull's edge, while an airlock is up and storage covers the cost.
+func _want_eva(want: Dictionary) -> void:
+	var p := state.pieces
+	for k in p.pieces.size():
+		if k != p.main:
+			_eva(want, p.pieces[k][0])
+	for i in state.size():
+		var gap = p.gap(i) if state.hp[i] <= 0.0 else null
+		if gap and gap.size() == 1:
+			_eva(want, i)
+
+
+func _eva(want: Dictionary, t: int) -> void:
+	var a := state.airlock(state.pieces.world(t))
+	if a >= 0 and state.can_pay(state.reattach_cost(t)):
+		want["e%d.%d" % [t, a]] = [&"eva", a, "", 0, t]
 
 
 ## Job finished: off the board (it comes back if still needed).
@@ -49,7 +69,7 @@ func finish(j: CrewJob) -> void:
 ## for a job they rank strictly higher; one-off jobs run to the end.
 func assign(crew: Array[CrewMember]) -> void:
 	for c in crew:
-		if c.job and c.job.type != &"operate":
+		if c.eva or c.job and c.job.type != &"operate":
 			continue
 		var cur := c.pref(c.job.type) if c.job else 99
 		var best: CrewJob = null
@@ -82,9 +102,12 @@ func _make(key: String, w: Array) -> CrewJob:
 	j.module = w[1]
 	j.res = w[2]
 	j.slot = w[3]
+	j.target = w[4] if w.size() > 4 else -1
 	var n := state.module(j.module).display_name
 	match j.type:
 		&"operate": j.label = "Operating %s" % n
 		&"haul": j.label = "Hauling %s to %s" % [j.res, n]
 		&"repair": j.label = "Repairing %s" % n
+		&"eva": j.label = "Spacewalk: bring back %s" \
+				% state.module(j.target).display_name
 	return j

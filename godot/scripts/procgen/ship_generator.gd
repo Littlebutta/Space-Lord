@@ -24,6 +24,15 @@ static func generate(core: ShipModule, pool: Array[ShipModule],
 	return d
 
 
+## Bolts `m` on somewhere if the design has none (e.g. an airlock).
+static func ensure(d: ShipDesign, m: ShipModule, rng: RandomNumberGenerator) -> void:
+	for tries in 200:
+		if d.modules.has(m):
+			return
+		var r := d.rect(rng.randi() % d.modules.size())
+		d.add(m, _neighbor(r.position, r.size, m.size, rng))
+
+
 ## A cell where a module of size `s` touches the side of an existing one.
 static func _neighbor(at: Vector2i, own: Vector2i, s: Vector2i,
 		rng: RandomNumberGenerator) -> Vector2i:
