@@ -27,6 +27,8 @@ extends Resource
 ## Resources to rebuild it from wreckage in the field; empty means its
 ## mass in parts. See ShipState.rebuild_cost.
 @export var rebuild := {}
+## Bulk supply store (depot): haulers restock from it before other stores.
+@export var bulk := false
 @export var airlock := false  # crew can go outside (EVA) from here
 @export_group("Crew access")
 ## Areas crew can't walk through (tanks, engines, guns), as rects in

@@ -147,3 +147,30 @@ def airlock(i, e, pts):
     e.cyl((0.4, ROOF + 0.13, 0), 0.5, 0.04, C["hazard"], sides=24)
     e.ball((0.7, ROOF + 0.1, -0.7), 0.06, C["amber"], 1, glow=True)
     return [((0.4, 2.1, 0), C["amber"])]
+
+
+def supply_depot(i, e, pts):
+    """Blocked: the side columns |x| > 1; haulers load in the middle aisle.
+    Left: racked ammo and ration crates. Right: bulk fuel tanks."""
+    floor(i, pts, grates=[(-1, -1), (0, 0)])
+    for z in (-1.5, -0.5, 0.5, 1.5):  # left racks, two shelves each
+        i.box((-1.5, 0.05, z), (0.9, 0.1, 0.9), C["gun"], 0.02)
+        i.box((-1.5, 1.0, z), (0.9, 0.05, 0.9), C["steel"], 0.01)
+        _crate(i, -1.5, 0.48, z, C["crate"] if z < 0 else C["crate2"])
+        _crate(i, -1.5, 1.45, z, C["crate2"] if z < 0 else C["crate"])
+    for x in (-1.95, -1.05):
+        for z in (-1.95, 0.0, 1.95):
+            i.box((x, 1.0, z * 0.98), (0.06, 2.0, 0.06), C["steel"], 0.01)
+    for z in (-1.0, 1.0):  # right: two upright fuel tanks
+        i.cyl((1.5, 1.0, z), 0.44, 1.8, C["hazard"], sides=16, bevel=0.03)
+        for y in (0.4, 1.0, 1.6):
+            i.cyl((1.5, y, z), 0.46, 0.06, C["gun"], sides=16)
+        i.cyl((1.5, 1.95, z), 0.2, 0.12, C["gun"], sides=10, bevel=0.02)
+    pipe(i, (1.1, 0.3, -1.0), (1.1, 0.3, 1.0), 0.06, "brass")
+    i.box((1.08, 0.7, 0.0), (0.12, 0.5, 0.35), C["red"], 0.02)  # pump
+    for z in (-0.4, 0.4):
+        i.box((0, FLOOR + 0.004, z), (1.6, 0.01, 0.06), C["hazard"])
+    e.box((0, ROOF + 0.05, 0), (2.8, 0.1, 2.8), C["steel"], 0.04)
+    for x in (-0.7, 0.7):
+        e.box((x, ROOF + 0.12, 0), (1.2, 0.04, 2.6), C["gun"], 0.02)
+    return [((0, 2.2, 0), C["lamp"])]

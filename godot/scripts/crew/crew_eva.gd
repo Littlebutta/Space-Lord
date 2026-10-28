@@ -45,7 +45,7 @@ static func work(sim: CrewSim, c: CrewMember, delta: float) -> void:
 ## Outside with no job: head for the nearest airlock and go back in.
 static func go_home(sim: CrewSim, c: CrewMember, delta: float) -> void:
 	var a := sim.state.airlock(c.pos)
-	if a >= 0 and fly(c, sim.state.center(a), delta):
+	if a >= 0 and fly(c, sim.state.spot(a), delta):
 		c.eva = false
 
 
