@@ -1,17 +1,17 @@
 class_name Wallet
 extends RefCounted
 ## The player's money and what they carry between scenes: credits, the
-## ore and food in the hold, how many crew are aboard and which part
+## ore and food in the hold, which crew are aboard and which part
 ## blueprints they own. Static like Travel, so it lasts the whole run.
 
 const PRICES := {"iron": 2, "copper": 4, "silicon": 5, "gold": 20, "food": 2}
 const SELL_SHARE := 0.8  # stations buy ore at this share of PRICES
-const HIRE := 150  # credits per new crew member
 const SAVE := "user://ships/player.tres"
 
 static var credits := 1000
 static var cargo := {}  # resource -> units carried between scenes
-static var crew := -1  # crew aboard, or -1 to fill every berth
+static var crew: Array = []  # species id per crew member aboard
+static var crewed := false  # false: a new ship's own species fills every berth
 static var owned: Array[StringName] = []  # Blueprint.key() values
 static var _base := {}  # ore the local scene started with
 
@@ -35,10 +35,17 @@ static func owns(bp: Blueprint) -> bool:
 	return owned.has(bp.key())
 
 
-## Crew to start a scene with: saved count, else every berth.
-static func crew_for(d: ShipDesign) -> int:
+## Species of each crew member to start a scene with: the saved
+## roster, else every berth filled by the ship's own species.
+static func crew_for(d: ShipDesign) -> Array:
+	if crewed:
+		return crew.slice(0, maxi(int(d.total(&"berths")), 1))
 	var full := maxi(int(d.total(&"berths")), int(d.total(&"crew")) + 2)
-	return full if crew < 0 else mini(crew, full)
+	var own := CrewSpecies.of_theme(d.theme(0)).id if d.modules else &"human"
+	var out := []
+	for k in full:
+		out.append(own)
+	return out
 
 
 ## The player's saved ship, or null.
@@ -60,21 +67,23 @@ static func board(s: Storage) -> void:
 
 
 ## Leaving a scene: ore gained there goes into the carried hold.
-static func unload(s: Storage, crew_left: int) -> void:
+static func unload(s: Storage, aboard: Array) -> void:
 	for k in Materials.ALL:
 		var n: float = s.get_amount(k) - _base.get(k, 0.0)
 		if n > 0.0:
 			cargo[k] = cargo.get(k, 0.0) + n
 	_base.clear()
-	crew = crew_left
+	crew = aboard
+	crewed = true
 
 
-## Hires one crew member for ship `d` if a berth and the credits allow.
-static func hire(d: ShipDesign) -> bool:
+## Hires one of species `sp` for ship `d` if a berth and credits allow.
+static func hire(d: ShipDesign, sp: CrewSpecies) -> bool:
 	var have := crew_for(d)
-	if have >= int(d.total(&"berths")) or not pay(HIRE):
+	if have.size() >= int(d.total(&"berths")) or not pay(sp.hire_cost):
 		return false
-	crew = have + 1
+	crew = have + [sp.id]
+	crewed = true
 	return true
 
 

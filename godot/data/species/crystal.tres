@@ -6,6 +6,7 @@
 script = ExtResource("1")
 id = &"crystal"
 display_name = "Crystal"
+hire_cost = 250
 blurb = "Can't carry, but pull ore in through an airlock by mind."
 carry = false
 reach = 40.0

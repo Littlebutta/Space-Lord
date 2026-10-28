@@ -28,8 +28,16 @@ func _init() -> void:
 	Wallet.board(s)
 	_check(s.get_amount("iron") == 25.0 and Wallet.cargo.food == 5.0, "boarded cargo")
 	s.put("iron", 30.0)
-	Wallet.unload(s, 3)
-	_check(Wallet.cargo.iron == 35.0 and Wallet.crew == 3, "carried ore and mined ore unloaded")
+	Wallet.unload(s, [&"human", &"bio"])
+	_check(Wallet.cargo.iron == 35.0 and Wallet.crew.size() == 2, "carried ore and mined ore unloaded")
+	var d := ShipDesign.new()
+	d.add(ModuleLibrary.by_id(&"bridge"), Vector2i.ZERO)
+	d.add(ModuleLibrary.by_id(&"crew_quarters"), Vector2i(0, 2))
+	Wallet.crew = [&"human"]
+	var sp := CrewSpecies.by_id(&"crystal")
+	var cr := Wallet.credits
+	_check(Wallet.hire(d, sp) and Wallet.crew_for(d).back() == &"crystal", "hired a crystal")
+	_check(Wallet.credits == cr - sp.hire_cost, "paid the species hire cost")
 	print("station tests: %s" % ("FAILED %d" % _fails if _fails else "ok"))
 	quit(1 if _fails else 0)
 

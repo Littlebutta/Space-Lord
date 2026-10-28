@@ -30,8 +30,10 @@ func _fill() -> void:
 	_line("Credits %d" % Wallet.credits)
 	_body.add_child(UiKit.header("Services"))
 	if d:
-		_buy("Crew aboard %d / %d berths" % [Wallet.crew_for(d), d.total(&"berths")],
-				"Hire (%d cr)" % Wallet.HIRE, Wallet.hire.bind(d))
+		_line("Crew aboard %d / %d berths" % [Wallet.crew_for(d).size(), d.total(&"berths")])
+		for sp in CrewSpecies.all():
+			_buy("Hire %s" % sp.display_name, "%d cr" % sp.hire_cost,
+					Wallet.hire.bind(d, sp)).tooltip_text = sp.blurb
 		_buy("Food in hold %.0f" % Wallet.cargo.get("food", 0.0),
 				"Buy 20 (%d cr)" % (20 * Wallet.PRICES.food), Wallet.buy_food.bind(d, 20.0))
 	else:

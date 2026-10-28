@@ -6,6 +6,7 @@
 script = ExtResource("1")
 id = &"bio"
 display_name = "Bio blob"
+hire_cost = 200
 blurb = "Fast on deck, but can never go outside."
 speed = 1.5
 eva = false

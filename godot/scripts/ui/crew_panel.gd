@@ -2,8 +2,8 @@ class_name CrewPanel
 extends CanvasLayer
 ## Work-priority grid (RimWorld style): a row per crew member, a column
 ## per job type. Click a cell to cycle 1 (first) .. 4 (last) .. off;
-## click a column header to set the whole column. Hire buttons offer
-## every species; jobs a species can't do show a cross.
+## click a column header to set the whole column. Jobs a species can't
+## do show a cross. Hiring happens at stations (StationPanel).
 
 var sim: CrewSim
 var _grid := GridContainer.new()
@@ -16,13 +16,6 @@ func bind(s: CrewSim) -> void:
 	var box := VBoxContainer.new()
 	p.add_child(UiKit.fold("Crew priorities", box, false))
 	UiKit.pin(self, p, Control.PRESET_TOP_LEFT)
-	var row := HBoxContainer.new()
-	for sp in CrewSpecies.all():
-		var b := _button("+ " + sp.display_name, sim.add_crew.bind(sp))
-		b.tooltip_text = sp.blurb
-		row.add_child(b)
-	row.add_child(_button("- Crew", sim.remove_crew))
-	box.add_child(row)
 	box.add_child(_grid)
 	sim.crew_changed.connect(_build)
 	_build()

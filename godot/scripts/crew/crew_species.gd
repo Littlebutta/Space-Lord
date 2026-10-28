@@ -9,6 +9,7 @@ const DIR := "res://data/species/"
 @export var id: StringName
 @export var display_name := ""
 @export var blurb := ""  # one line shown when hiring
+@export var hire_cost := 150  # credits to hire one at a station
 @export var speed := 1.0  # walking speed, times CrewSim.SPEED
 @export var eva := true  # may step outside the hull
 @export var carry := true  # can carry loads by hand
