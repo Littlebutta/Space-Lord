@@ -37,6 +37,7 @@ static func shell_material(t: ShipTheme) -> ShaderMaterial:
 		var m := material(t).duplicate() as ShaderMaterial
 		m.set_shader_parameter(&"tint", Color(0.5, 0.52, 0.56))
 		m.set_shader_parameter(&"seams", 0.5)
+		m.set_shader_parameter(&"panel_var", 0.14)
 		_mats[key] = m
 	return _mats[key]
 

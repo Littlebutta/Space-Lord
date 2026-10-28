@@ -40,6 +40,7 @@ func setup(d: ShipDesign, crew: int) -> void:
 	add_child(fx)
 	fx.bind(hulk, sim.state)
 	fx.helm = helm
+	fx.sim = sim
 	transform = ShipPieces.to_3d(at)
 
 

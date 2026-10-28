@@ -146,3 +146,42 @@ static func holes(d: ShipDesign, mods: Array = []) -> Array:
 			var r := d.rect(i)
 			out.append(Rect2(Vector2(r.position) * ShipView.CELL, Vector2(r.size) * ShipView.CELL))
 	return out
+
+
+## Running lights on the hull's outer corners: red to port, green to
+## starboard, white fore and aft, blinking (see beacon.gdshader).
+static func beacons(d: ShipDesign, y0: float, mods: Array = []) -> Node3D:
+	var root := Node3D.new()
+	root.name = &"Beacons"
+	var y := y0 + HEIGHT - BEVEL + 0.06
+	for p in outlines(d, mods):
+		var box := Rect2(p[0], Vector2.ZERO)
+		for v in p:
+			box = box.expand(v)
+		var step := maxi(p.size() / 10, 1)  # about ten lights per hull
+		for k in range(0, p.size(), step):
+			var v := p[k]
+			var col := Color(1, 0.92, 0.8)
+			if v.x < box.get_center().x - box.size.x * 0.25:
+				col = Color(1, 0.15, 0.1)
+			elif v.x > box.get_center().x + box.size.x * 0.25:
+				col = Color(0.15, 1, 0.3)
+			root.add_child(_beacon(Vector3(v.x, y, v.y), col))
+	return root
+
+
+static func _beacon(at: Vector3, col: Color) -> MeshInstance3D:
+	var mi := MeshInstance3D.new()
+	var s := SphereMesh.new()
+	s.radius = 0.08
+	s.height = 0.16
+	s.radial_segments = 8
+	s.rings = 4
+	var m := ShaderMaterial.new()
+	m.shader = preload("res://assets/materials/beacon.gdshader")
+	m.set_shader_parameter(&"colour", col)
+	s.material = m
+	mi.mesh = s
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	mi.position = at
+	return mi
