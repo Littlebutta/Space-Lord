@@ -78,11 +78,11 @@ func clear() -> void:
 	emit_changed()
 
 
-## Sums a numeric module property, e.g. total("mass"), with themes.
+## Sums a numeric module property, e.g. total("mass").
 func total(stat: StringName) -> float:
 	var sum := 0.0
-	for i in modules.size():
-		sum += float(modules[i].get(stat)) * theme(i).mult(stat)
+	for m in modules:
+		sum += float(m.get(stat))
 	return sum
 
 
