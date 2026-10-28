@@ -110,7 +110,8 @@ func show_stats(s: ShipStats, ship_name: String) -> void:
 	t += "Mass %.0f t   Hull %.0f hp\n" % [s.mass, s.hp]
 	t += "Crew %d / %d berths\n" % [s.crew, s.berths]
 	t += "Thrust %.0f   Accel %.2f\n" % [s.thrust, s.accel()]
-	t += "Firepower %.0f dps" % s.firepower
+	t += "Firepower %.0f dps\n" % s.firepower
+	t += "Build cost: %s" % Materials.line(s.cost)
 	for res in s.storage:
 		var hrs := s.endurance(res)
 		var last := "" if hrs == INF else "  (%.0f h)" % hrs

@@ -10,6 +10,7 @@ category = "command"
 size = Vector2i(2, 2)
 color = Color(0.35, 0.6, 0.85, 1)
 mass = 8.0
+materials = {"iron": 16.0, "copper": 4.8, "silicon": 6.4, "gold": 2.0}
 hp = 300.0
 crew = 2
 berths = 2

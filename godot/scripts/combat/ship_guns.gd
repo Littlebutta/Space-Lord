@@ -67,8 +67,14 @@ func why(i: int) -> String:
 ## Guns without a Head (fixed mounts) are always "lined up".
 func _turn(i: int, to: Vector3, delta: float) -> bool:
 	var n: Node3D = me.hulk.part(i) if me.hulk else null
+	return not me.sim.state.module(i).swivel or aim_head(n, to, delta)
+
+
+## Turns the Head* node of part `n` toward world point `to`. True once
+## lined up, or when there's no head to turn.
+static func aim_head(n: Node3D, to: Vector3, delta: float) -> bool:
 	var head: Node3D = n.find_child("Head*", true, false) as Node3D if n else null
-	if head == null or not head.is_inside_tree() or not me.sim.state.module(i).swivel:
+	if head == null or not head.is_inside_tree():
 		return true
 	var local: Vector3 = head.get_parent().global_transform.affine_inverse() * to
 	var want := atan2(-local.x, -local.z)  # models face -z

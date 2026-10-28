@@ -10,5 +10,6 @@ category = "hull"
 size = Vector2i(1, 1)
 color = Color(0.55, 0.57, 0.6, 1)
 mass = 1.0
+materials = {"iron": 2.0}
 hp = 120.0
 salvage = {"alloy": 1.0}
