@@ -53,10 +53,12 @@ func fire(i: int) -> void:
 			GunFx.cannon(_world(), m)
 	Sfx.play(_world(), &"laser_fire" if laser else &"cannon_fire", n.global_position)
 	var head := n.find_child("Head*", true, false) as Node3D
-	if head:
+	if head:  # kicks back along its barrel, whichever way it points
+		var rest: Vector3 = head.get_meta(&"rest", head.position)
+		head.set_meta(&"rest", rest)
 		var tw := head.create_tween()
-		tw.tween_property(head, "position:z", 0.25, 0.05)
-		tw.tween_property(head, "position:z", 0.0, 0.35)
+		tw.tween_property(head, "position", rest + head.basis.z.normalized() * 0.25, 0.05)
+		tw.tween_property(head, "position", rest, 0.35)
 
 
 func _process(delta: float) -> void:

@@ -1,7 +1,7 @@
 class_name MoveMarker
 extends Node3D
 ## RTS feedback for flying a ship: a soft ring round the ship while right
-## click will move it (nobody in the crew picked), a blip that flashes
+## click will move it (the ship is selected), a blip that flashes
 ## where you order it to, and a small marker at the goal until it's there.
 
 const COLOR := Color(0.35, 0.9, 1.0, 0.5)
@@ -46,7 +46,7 @@ func _process(_delta: float) -> void:
 	if body == null or body.sim == null:
 		return
 	var c := body.world(body.pivot())
-	_ring.visible = orders == null or orders.selected().is_empty()
+	_ring.visible = orders == null or orders.ship_selected
 	_ring.global_position = Vector3(c.x, 0.15, c.y)
 	_ring.scale = Vector3.ONE * _size()
 	var pulse := 0.85 + 0.15 * sin(Time.get_ticks_msec() * 0.004)
