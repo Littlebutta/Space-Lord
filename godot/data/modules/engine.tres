@@ -13,5 +13,7 @@ mass = 4.0
 hp = 120.0
 crew = 1
 thrust = 40.0
+exhaust = Vector2i(0, 1)
+needs_near = {"fuel_tank": 4}
 upkeep = {"fuel": 1.0}
 salvage = {"alloy": 3.0, "electronics": 1.0}

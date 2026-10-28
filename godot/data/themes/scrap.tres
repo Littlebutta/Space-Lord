@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ShipTheme" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ships/ship_theme.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"scrap"
+display_name = "Scrap"
+order = 3
+blurb = "Pirate junk bolted together. Heavy, patchy, cheap crew."
+tint = Color(0.72, 0.48, 0.3, 1)
+tint_mix = 0.45
+stat_mult = {"hp": 0.95, "mass": 1.2, "crew": 0.75}
+jitter = 0.5
