@@ -37,6 +37,8 @@ func setup(d: ShipDesign, count: int) -> void:
 func add_crew() -> void:
 	var c := CrewMember.new(NAMES[crew.size() % NAMES.size()])
 	c.pos = _home() + Vector2(randf() - 0.5, randf() - 0.5)
+	if not nav.walkable(c.pos):  # don't start inside equipment
+		c.pos = _home()
 	crew.append(c)
 	crew_changed.emit()
 

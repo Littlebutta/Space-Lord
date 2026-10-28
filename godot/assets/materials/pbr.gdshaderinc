@@ -9,9 +9,9 @@ uniform sampler2D grime_tex : hint_default_white, filter_linear_mipmap, repeat_e
 uniform sampler2D bump_tex : hint_normal, filter_linear_mipmap, repeat_enable;
 uniform vec4 tint : source_color = vec4(1.0);  // whole-material multiplier
 uniform vec4 accent : source_color = vec4(0.25, 0.45, 0.8, 1.0);  // faction
-uniform float grime : hint_range(0.0, 1.0) = 0.7;
-uniform float wear : hint_range(0.0, 1.0) = 0.55;
-uniform float bump : hint_range(0.0, 2.0) = 0.35;
+uniform float grime : hint_range(0.0, 1.0) = 0.2;
+uniform float wear : hint_range(0.0, 1.0) = 0.15;
+uniform float bump : hint_range(0.0, 2.0) = 0.12;
 uniform float seams = 0.0;  // plate seams every metre, 0 = off
 
 varying vec3 obj_pos;
@@ -53,7 +53,7 @@ void pbr(int id, vec3 base, vec2 uv, out vec3 alb, out float metal,
 	float blot = tri(grime_tex, p, w).r;
 	float fine = tri(grime_tex, p * 6.1 + 0.37, w).r;
 	bool painted = id == 0 || id == 7;
-	float chip = painted ? uv.y * smoothstep(0.55, 0.75, fine + wear * 0.3) : 0.0;
+	float chip = painted ? uv.y * smoothstep(0.78, 0.82, fine + wear * 0.3) : 0.0;
 	base = mix(base, vec3(0.42, 0.42, 0.44), chip);
 	float low = clamp(0.5 - obj_pos.y, 0.0, 1.0) * 0.35;
 	float dirt = (smoothstep(0.4, 0.9, blot) * 0.7 + low) * grime * pr.w;
@@ -65,7 +65,7 @@ void pbr(int id, vec3 base, vec2 uv, out vec3 alb, out float metal,
 	}
 	alb = mix(base, base * vec3(0.45, 0.41, 0.36), max(dirt, seam * 0.8)) * tint.rgb;
 	metal = mix(pr.y, 1.0, chip);
-	rough = clamp(pr.x + dirt * 0.35 + (fine - 0.5) * 0.3 - chip * 0.25, 0.04, 1.0);
+	rough = clamp(pr.x + dirt * 0.3 + (fine - 0.5) * 0.25 * grime - chip * 0.2, 0.04, 1.0);
 	n = normalize(obj_nrm + tri_bump(p * 3.0, w) * bump * pr.z);
 	ao = 1.0 - seam * 0.6;
 }

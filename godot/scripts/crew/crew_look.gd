@@ -59,8 +59,8 @@ func _spawn() -> void:
 	_meshes.append(mi)
 
 
-## Direction to face: along the path when walking; at work, the
-## equipment next to them (a blocked deck cell), else the bow when
+## Direction to face: along the path when walking; at work, their
+## module's equipment next to them (its blocked deck), else the bow when
 ## operating, else the job module.
 func _facing(c: CrewMember, sim: CrewSim, at: Vector3) -> Vector3:
 	if not c.arrived():
@@ -68,8 +68,9 @@ func _facing(c: CrewMember, sim: CrewSim, at: Vector3) -> Vector3:
 		return Vector3(to.x, at.y, to.y) - at
 	if c.job and c.job.module >= 0 and c.job.module < sim.state.size():
 		var n := sim.nav.cell(c.pos)
+		var own: Vector2i = sim.state.design.cells[c.job.module]
 		for dir in [Vector2i.UP, Vector2i.LEFT, Vector2i.RIGHT, Vector2i.DOWN]:
-			if sim.nav.solid.has(n + dir):
+			if sim.nav.solid.get(n + dir) == own:
 				return Vector3(dir.x, 0.0, dir.y)
 		if c.job.type == &"operate":
 			var turn := sim.state.design.turns[c.job.module]

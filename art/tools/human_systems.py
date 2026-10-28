@@ -2,7 +2,7 @@
 builder signature as human_hull. Crew stand at the module's access
 spots, so equipment stays inside its blocked cells."""
 import math
-from human_style import C, FLOOR, ROOF, floor, pipe, vent, screen
+from human_style import C, FLOOR, ROOF, floor, pipe, vent, screen, console
 
 
 def _arc(i, r, a0, a1, n, y0, y1, t, col):
@@ -16,14 +16,12 @@ def _arc(i, r, a0, a1, n, y0, y1, t, col):
 
 def bridge(i, e, pts):
     """Blocked: front row z < -1 and the side columns |x| > 1 for z < 1.
-    Crew stand at (-0.5, -0.5) and (0.5, -0.5)."""
+    Pilots stand at (-0.5, -0.8) and (0.5, -0.8) at their consoles."""
     floor(i, pts, grates=[(-1, 0), (0, 0)])
-    _arc(i, 1.62, 200, 340, 6, 0.0, 0.85, 0.55, C["steel"])  # console desk
-    _arc(i, 1.4, 202, 338, 6, 0.85, 0.9, 0.18, C["accent"])
-    for k in range(5):
-        a = math.radians(212 + k * 29)
-        x, z = math.cos(a) * 1.6, math.sin(a) * 1.6
-        screen(i, (x, 1.0, z), 0.42, 0.28, col="screen" if k != 2 else "amber")
+    _arc(i, 1.8, 200, 340, 6, 0.0, 0.75, 0.3, C["steel"])  # instrument ring
+    _arc(i, 1.8, 202, 338, 6, 0.75, 0.8, 0.34, C["accent"])
+    for x in (-0.5, 0.5):
+        console(i, x, -1.25, (0, 1), 0.7, "screen" if x < 0 else "amber")
     i.box((0, 1.3, -1.93), (3.6, 1.6, 0.1), C["glass"], 0.02)  # viewport
     for x in (-1.8, -0.6, 0.6, 1.8):
         i.box((x, 1.3, -1.9), (0.14, 1.7, 0.18), C["gun"], 0.02)
@@ -43,20 +41,20 @@ def bridge(i, e, pts):
 
 def cannon(i, e, pts):
     """Blocked: x > 0 along the whole length; crew work the breech from
-    the aisle at x = -0.5 (z = 0.5 and 1.5)."""
+    the aisle at x = -0.3 (z = 0.5 and 1.5) at consoles on its side."""
     floor(i, pts, grates=[(-1, -2), (-1, 0), (-1, 2)])
-    i.box((0.5, 0.75, 1.85), (0.9, 1.5, 2.1), C["gun"], 0.06, seg=2)  # breech
-    i.box((0.5, 1.52, 1.85), (0.7, 0.06, 1.7), C["hazard"], 0.01)
-    screen(i, (0.03, 1.1, 1.3), 0.5, 0.35, "x", "amber")
-    screen(i, (0.03, 1.1, 2.1), 0.4, 0.3, "x", "screen")
-    i.cyl((0.5, 1.0, -1.2), 0.24, 4.0, C["steel"], "z", 14, bevel=0.02)
-    for z in (-2.9, -2.0, -0.7, 0.4):
+    i.box((0.55, 0.75, 1.55), (0.8, 1.5, 2.7), C["gun"], 0.06, seg=2)  # breech
+    i.box((0.55, 1.52, 1.55), (0.6, 0.06, 2.3), C["hazard"], 0.01)
+    for z in (0.5, 1.5):
+        console(i, 0.2, z, (-1, 0), 0.6, "amber" if z < 1 else "screen")
+    i.cyl((0.5, 1.0, -1.35), 0.24, 3.1, C["steel"], "z", 14, bevel=0.02)
+    for z in (-2.9, -2.0, -0.9, 0.1):
         i.cyl((0.5, 1.0, z), 0.32, 0.16, C["gun"], "z", 14, bevel=0.02)
     i.cyl((0.5, 1.0, -2.95), 0.36, 0.35, C["dark"], "z", 14, bevel=0.02)  # muzzle
     for z in (-2.0, -0.7):
         i.box((0.5, 0.45, z), (0.5, 0.9, 0.25), C["steel"], 0.03)
-    pipe(i, (0.82, 1.3, -0.4), (0.82, 1.3, 0.8), 0.06, "metal")  # recoil rams
-    pipe(i, (0.18, 1.3, -0.4), (0.18, 1.3, 0.8), 0.06, "metal")
+    pipe(i, (0.82, 1.3, -0.8), (0.82, 1.3, 0.2), 0.06, "metal")  # recoil rams
+    pipe(i, (0.18, 1.3, -0.8), (0.18, 1.3, 0.2), 0.06, "metal")
     e.box((0, ROOF + 0.3, 1.6), (1.5, 0.6, 2.4), C["hull"], 0.12, seg=2)
     e.cyl((0, ROOF + 0.35, -1.2), 0.28, 4.0, C["steel"], "z", 16, bevel=0.03)
     e.cyl((0, ROOF + 0.35, -3.1), 0.36, 0.4, C["dark"], "z", 16, bevel=0.03)
@@ -65,11 +63,14 @@ def cannon(i, e, pts):
 
 
 def turret(i, e, pts):
-    """Blocked: front row z < -1 and the back corners; crew at (+-0.5, -0.5)."""
+    """Blocked: front row z < -1 and the back corners; gunners stand at
+    (+-0.5, -0.8) at their consoles."""
     floor(i, pts, grates=[(-1, -1), (0, -1)])
-    i.box((0, 0.5, -1.55), (3.9, 1.0, 0.8), C["steel"], 0.05)
-    for x in (-1.1, 0.0, 1.1):
-        screen(i, (x, 1.25, -1.6), 0.8, 0.5, col="screen" if x else "amber")
+    for x in (-0.5, 0.5):
+        console(i, x, -1.25, (0, 1), 0.7, "screen" if x < 0 else "amber")
+    screen(i, (0, 1.4, -1.85), 2.6, 1.0, col="screen")  # targeting wall
+    for x in (-1.5, 1.5):
+        i.box((x, 0.6, -1.5), (0.9, 1.2, 0.9), C["steel"], 0.05)
     for x in (-1.5, 1.5):  # capacitor banks
         i.cyl((x, 0.8, 1.5), 0.38, 1.6, C["gun"], sides=14, bevel=0.03)
         for y in (0.4, 0.8, 1.2):
@@ -94,14 +95,13 @@ def turret_head(h):
 
 
 def engine(i, e, pts):
-    """Blocked: back half z > 0; one crew at the panel, z = -0.5."""
+    """Blocked: back half z > 0; one crew at the console, z = -0.2."""
     floor(i, pts, grates=[(-1, -2), (0, -1)])
     i.box((0, 1.0, 1.0), (1.9, 2.0, 1.9), C["gun"], 0.08, seg=2)
     i.cyl((0, 1.0, 1.0), 0.6, 2.1, C["steel"], sides=16, bevel=0.03)
     for y in (0.5, 1.0, 1.5):
         i.cyl((0, y, 1.0), 0.64, 0.08, C["amber"], sides=16, glow=True)
-    screen(i, (0, 1.2, 0.02), 0.8, 0.5, col="amber")
-    i.box((0, 0.5, 0.05), (1.0, 0.9, 0.1), C["steel"], 0.02)
+    console(i, 0, 0.2, (0, -1), 0.7, "amber")
     for x in (-0.8, 0.8):
         pipe(i, (x, 0.2, 0.1), (x, 1.8, 0.1), 0.07)
     i.cyl((0, 1.0, 2.15), 0.55, 0.4, C["dark"], "z", 16, r2=0.8, bevel=0.02)

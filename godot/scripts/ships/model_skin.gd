@@ -50,6 +50,9 @@ static func material(t: ShipTheme = null) -> ShaderMaterial:
 		m.set_shader_parameter(&"bump_tex", noise(true))
 		if t:
 			m.set_shader_parameter(&"accent", t.accent)
+			m.set_shader_parameter(&"grime", t.grime)
+			m.set_shader_parameter(&"wear", t.wear)
+			m.set_shader_parameter(&"bump", t.bump)
 		_mats[key] = m
 	return _mats[key]
 
@@ -103,11 +106,12 @@ static func noise(normal: bool) -> NoiseTexture2D:
 	fn.seed = 11 if normal else 3
 	fn.fractal_octaves = 5
 	fn.frequency = 0.03 if normal else 0.012
-	if normal:
-		fn.noise_type = FastNoiseLite.TYPE_CELLULAR
+	if normal:  # soft dents and waviness, not hammered metal
+		fn.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
+		fn.fractal_octaves = 3
 	var tex := NoiseTexture2D.new()
-	tex.width = 256
-	tex.height = 256
+	tex.width = 512
+	tex.height = 512
 	tex.seamless = true
 	tex.noise = fn
 	tex.as_normal_map = normal

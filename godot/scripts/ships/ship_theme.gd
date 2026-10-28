@@ -13,6 +13,9 @@ const DIR := "res://data/themes/"
 @export var tint := Color.WHITE
 @export var tint_mix := 0.3  # how much tint replaces the part colour
 @export var accent := Color(0.25, 0.45, 0.8)  # faction stripes on models
+@export var grime := 0.2  # dirt and stains on models, 0..1
+@export var wear := 0.15  # chipped paint on edges, 0..1
+@export var bump := 0.12  # fine surface bumpiness
 @export_group("Hull edge")
 @export var corner := 0.0  # outer hull corners cut this far, in cells
 @export var corner_steps := 1  # 1 = straight chamfer, more = rounder

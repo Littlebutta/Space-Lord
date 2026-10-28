@@ -52,21 +52,43 @@ static func outlines(d: ShipDesign, mods: Array = []) -> Array[PackedVector2Arra
 
 static func _shell(st: SurfaceTool, p: PackedVector2Array, y0: float) -> void:
 	var top := y0 + HEIGHT
-	var q := _inset(p, BEVEL)
-	var bevel := not Geometry2D.triangulate_polygon(q).is_empty()
-	if not bevel:
-		q = p
-	var wall := top - BEVEL if bevel else top
+	var wall := top - BEVEL
 	for i in p.size():
 		var j := (i + 1) % p.size()
-		var out := _outward(p, i, j)
-		_quad(st, _v(p[i], y0), _v(p[j], y0), _v(p[j], wall), _v(p[i], wall), out, PAINT)
-		if bevel:
-			var n := (out + Vector3.UP).normalized()
-			_quad(st, _v(p[i], wall), _v(p[j], wall), _v(q[j], top), _v(q[i], top), n, STRIPE)
-	var tri := Geometry2D.triangulate_polygon(q)
+		_quad(st, _v(p[i], y0), _v(p[j], y0), _v(p[j], wall), _v(p[i], wall),
+				_outward(p, i, j), PAINT)
+	_fill(st, p, wall)  # only shows where a chamfer can't reach a corner
+	for q in Geometry2D.offset_polygon(p, -BEVEL, Geometry2D.JOIN_MITER):
+		if not Geometry2D.is_polygon_clockwise(q):
+			_fill(st, q, top)
+			_chamfer(st, q, top, wall)
+
+
+## Slanted accent strip from each edge of the top `q` down and out to
+## the wall top, with a corner facet at every convex corner.
+static func _chamfer(st: SurfaceTool, q: PackedVector2Array, top: float, wall: float) -> void:
+	var area := 0.0
+	for i in q.size():
+		area += q[i].cross(q[(i + 1) % q.size()])
+	for i in q.size():
+		var j := (i + 1) % q.size()
+		var k := (j + 1) % q.size()
+		var o := _outward(q, i, j)
+		var d := Vector2(o.x, o.z) * BEVEL
+		var n := (o + Vector3.UP).normalized()
+		_quad(st, _v(q[i], top), _v(q[j], top), _v(q[j] + d, wall), _v(q[i] + d, wall), n, STRIPE)
+		var o2 := _outward(q, j, k)
+		if (q[j] - q[i]).cross(q[k] - q[j]) * area > 0.0:  # convex corner
+			var d2 := Vector2(o2.x, o2.z) * BEVEL
+			var m := (o + o2 + Vector3.UP).normalized()
+			_tri(st, _v(q[j], top), _v(q[j] + d, wall), _v(q[j] + d2, wall), m, STRIPE)
+
+
+## Flat upward face over polygon `p` at height y.
+static func _fill(st: SurfaceTool, p: PackedVector2Array, y: float) -> void:
+	var tri := Geometry2D.triangulate_polygon(p)
 	for k in range(0, tri.size(), 3):
-		_tri(st, _v(q[tri[k]], top), _v(q[tri[k + 1]], top), _v(q[tri[k + 2]], top),
+		_tri(st, _v(p[tri[k]], y), _v(p[tri[k + 1]], y), _v(p[tri[k + 2]], y),
 				Vector3.UP, PAINT)
 
 
@@ -87,19 +109,6 @@ static func _tri(st: SurfaceTool, a: Vector3, b: Vector3, c: Vector3,
 	st.set_uv(uv)
 	for v in [a, b, c]:
 		st.add_vertex(v)
-
-
-## Each corner of `p` moved `d` inward along its mitre (capped at 2d
-## so sharp noses don't spike), keeping one point per corner.
-static func _inset(p: PackedVector2Array, d: float) -> PackedVector2Array:
-	var q := PackedVector2Array()
-	for i in p.size():
-		var a := _outward(p, i - 1 if i > 0 else p.size() - 1, i)
-		var b := _outward(p, i, (i + 1) % p.size())
-		var m := Vector2(a.x + b.x, a.z + b.z)
-		var s := d / maxf(m.length() * 0.5, 0.5) / maxf(m.length(), 0.001)
-		q.append(p[i] - m * s)
-	return q
 
 
 ## Horizontal normal of edge i-j pointing out of polygon p.

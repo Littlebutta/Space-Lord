@@ -10,7 +10,7 @@ var astar := AStarGrid2D.new()
 var step := ShipView.CELL / RES
 var floor_y := {}  # nav cell -> height of the deck there
 var zone := {}  # nav cell -> id of the connected area it belongs to
-var solid := {}  # nav cell -> true where equipment blocks the deck
+var solid := {}  # nav cell -> cell of the module whose equipment blocks it
 
 
 func _init(d: ShipDesign) -> void:
@@ -48,7 +48,7 @@ func _block(d: ShipDesign, i: int) -> void:
 				var c := Vector2i(x, y)
 				astar.set_point_solid(c, true)
 				floor_y.erase(c)
-				solid[c] = true
+				solid[c] = d.cells[i]
 
 
 func cell(p: Vector2) -> Vector2i:

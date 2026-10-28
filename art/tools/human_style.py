@@ -11,14 +11,14 @@ FLOOR = 0.03  # top of the floor plating
 ROOF = 2.4  # top of the hull shell, where exterior greebles sit (HullShell.HEIGHT)
 
 C = {
-    "hull": "#7d838c", "steel": "#5d636c", "gun": "#3a3e45",
+    "hull": "#a3a9b1", "steel": "#7c838d", "gun": "#4d525a",
     "dark": ("#2a2c30", "rubber"), "metal": ("#8a8d92", "metal"),
     "brass": ("#9a7448", "metal"), "hazard": "#c9971f", "red": "#9c3328",
     "white": "#cfc9bb", "accent": ("#ffffff", "accent"),
     "glass": ("#28414d", "glass"), "screen": "#3fd6c8", "amber": "#ffab3d",
     "lamp": "#ffe1b0", "crate": ("#5f6648", "crate"), "crate2": ("#7a5a3a", "crate"),
     "cloth": ("#59606a", "fabric"), "sheet": ("#9a9a92", "fabric"),
-    "plate": ("#4a4f56", "metal"), "grate": ("#33363b", "metal"),
+    "plate": ("#6a7078", "metal"), "grate": ("#43474d", "metal"),
 }
 
 
@@ -94,3 +94,20 @@ def _shrink(pts, d):
         n = max((dx * dx + dz * dz) ** 0.5, 1e-6)
         out.append((x + dx / n * d, z + dz / n * d))
     return out
+
+
+def console(p, x, z, to, w=0.6, col="screen"):
+    """Standing control desk at (x, z) for a crew member standing on its
+    `to` side ((dx, dz) unit step): pedestal, lit keyboard shelf at hand
+    height and a screen at eye level. Keep it inside a blocked cell."""
+    dx, dz = to
+    size = lambda a, h, d: (a, h, d) if dz else (d, h, a)  # noqa: E731
+    p.box((x, 0.45, z), size(w, 0.9, 0.32), C["steel"], 0.03)
+    p.box((x + dx * 0.1, 0.93, z + dz * 0.1), size(w + 0.04, 0.05, 0.36), C["gun"], 0.015)
+    for k in range(4):  # key rows and buttons
+        o = -w / 2 + 0.1 + k * (w - 0.2) / 3
+        kx, kz = (x + o, z + dz * 0.16) if dz else (x + dx * 0.16, z + o)
+        p.box((kx, 0.965, kz), size(0.1, 0.02, 0.06), C[col if k % 2 else "amber"], glow=True)
+    sx, sz = x - dx * 0.08, z - dz * 0.08
+    p.box((sx, 1.3, sz), size(w - 0.04, 0.42, 0.05), C["gun"], 0.015)
+    p.box((sx + dx * 0.03, 1.3, sz + dz * 0.03), size(w - 0.12, 0.34, 0.01), C[col], glow=True)

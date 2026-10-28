@@ -6,8 +6,8 @@ floor and Z is up, then mirrored into Blender so the .glb lands in
 Godot exactly as written.
 
 Each face carries a colour ("Col" attribute) and a "Data" UV: u picks
-the material preset in pbr.gdshaderinc, v = 1 on bevel faces so paint
-chips there. A colour is a hex string (painted metal) or (hex, preset).
+the material preset in pbr.gdshaderinc, v marks bevel faces so paint
+chips there (v = 1 in Godot; written as 0 because glTF flips v). A colour is a hex string (painted metal) or (hex, preset).
 glow=True faces use the "Glow" material instead.
 """
 import math
@@ -61,7 +61,7 @@ class Part:
             f.smooth = smooth
             for lp in f.loops:
                 lp[self.col] = c
-                lp[self.uv].uv = (u, 1.0 if f in edges else 0.0)
+                lp[self.uv].uv = (u, 0.0 if f in edges else 1.0)  # glTF flips v
         return verts
 
     def _bevel(self, verts, edges, off, seg, axis=None):
