@@ -45,6 +45,8 @@ PARTS = {
     "airlock": ((1, 1), None, hh.airlock),
     "supply_depot": ((2, 2), None, hh.supply_depot),
     "shipdock": ((3, 2), None, hs.shipdock),
+    "generator": ((2, 2), None, hs.generator),
+    "capacitor": ((1, 1), None, hs.capacitor),
 }
 
 

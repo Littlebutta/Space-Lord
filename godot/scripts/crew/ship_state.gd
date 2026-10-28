@@ -4,6 +4,9 @@ extends RefCounted
 ## module keeps on hand, and who is at its station. Crew change this;
 ## flight and combat read is_running() to know what actually works.
 
+## Weapon module i fired a shot (effects and battle hook onto this).
+signal fired(i: int)
+
 const BUFFER_HOURS := 3.0  # hours of upkeep a module can keep on hand
 const REBUILT := 0.25  # share of hp a module is rebuilt with
 const WELD := {"parts": 2.0}  # extra cost to weld a drifting piece back
@@ -16,6 +19,7 @@ var stock: Array[Dictionary] = []  # per module: resource -> units on hand
 var operators := PackedInt32Array()  # crew at each station right now
 var auto := PackedFloat32Array()  # seconds of unmanned firing left
 var pieces: ShipPieces  # how the ship has broken apart
+var power: ShipPower  # generators and capacitors
 
 
 func _init(d: ShipDesign, fill := 0.5) -> void:
@@ -32,6 +36,7 @@ func _init(d: ShipDesign, fill := 0.5) -> void:
 		stock.append(s)
 	operators.resize(d.modules.size())
 	pieces = ShipPieces.new(d)
+	power = ShipPower.new(self, fill)
 
 
 func size() -> int:
@@ -186,6 +191,20 @@ func fire(i: int, delta: float) -> void:
 ## Engine i sat idle (or crewed): it winds back up to auto firing.
 func rest(i: int, delta: float) -> void:
 	auto[i] = minf(auto[i] + delta * AUTO_REST, module(i).auto_time)
+
+
+## Weapon i can shoot now: running, and lasers need power for a shot.
+func can_shoot(i: int) -> bool:
+	var m := module(i)
+	return m.firepower > 0.0 and is_running(i) and power.charge >= m.shot_power
+
+
+## Fires weapon i once if it can, paying any power; emits `fired`.
+func shoot(i: int) -> bool:
+	if not can_shoot(i) or not power.draw(module(i).shot_power):
+		return false
+	fired.emit(i)
+	return true
 
 
 ## Burns the on-hand supplies of running modules.

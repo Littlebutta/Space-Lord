@@ -83,6 +83,6 @@ func _fire() -> void:
 	var s := _ship.sim.state
 	var k := 0
 	for i in s.size():
-		if s.module(i).firepower > 0.0 and s.is_running(i):
-			get_tree().create_timer(0.12 * k).timeout.connect(_ship.fx.fire.bind(i))
+		if s.module(i).firepower > 0.0 and s.can_shoot(i):
+			get_tree().create_timer(0.12 * k).timeout.connect(s.shoot.bind(i))
 			k += 1

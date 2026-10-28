@@ -27,6 +27,7 @@ var _last := {}  # module -> last global transform, for debris
 func bind(h: HulkView, s: ShipState) -> void:
 	hulk = h
 	state = s
+	s.fired.connect(fire)
 	_alive.resize(s.size())
 	for i in s.size():
 		_alive[i] = int(s.hp[i] > 0.0)
