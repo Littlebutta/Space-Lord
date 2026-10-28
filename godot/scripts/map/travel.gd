@@ -24,14 +24,14 @@ static func make_sites(seed_: int) -> void:
 	rng.seed = seed_
 	sites.append({kind = &"wreck", pos = Vector3(-60, 0, 45), name = "Wreck",
 			ore = 0.0, seed = rng.randi()})
-	_station(rng)
-	while sites.size() < 6:
+	while sites.size() < 5:
 		var a := rng.randf() * TAU
 		var p := Vector3(cos(a), 0.0, sin(a)) * rng.randf_range(40.0, 120.0)
 		if site_at(p, 30.0) >= 0:
 			continue  # keep pings apart
 		sites.append({kind = &"asteroids", pos = p, name = "Asteroids",
 				ore = rng.randf_range(150.0, 400.0), seed = rng.randi()})
+	_station(rng)
 
 
 ## Moves along by game time; returns the site just reached, or -1.
@@ -70,8 +70,13 @@ static func site() -> Dictionary:
 static func _station(rng: RandomNumberGenerator) -> void:
 	var fs := ShipTheme.all().filter(func(t): return t.id != &"human")
 	var f: ShipTheme = fs[rng.randi() % fs.size()] if fs else ShipTheme.all()[0]
-	var a := rng.randf() * TAU
-	sites.append({kind = &"station", pos = Vector3(cos(a), 0, sin(a)) * 75.0,
+	var p := Vector3.ZERO
+	for tries in 20:  # keep clear of the other pings
+		var a := rng.randf() * TAU
+		p = Vector3(cos(a), 0, sin(a)) * 75.0
+		if site_at(p, 30.0) < 0:
+			break
+	sites.append({kind = &"station", pos = p,
 			name = "%s Station" % f.display_name, ore = 0.0, seed = rng.randi(),
 			faction = f.id})
 
