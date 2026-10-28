@@ -25,6 +25,7 @@ var at := Transform2D.IDENTITY  # ship-local (x, z) -> world (x, z)
 var vel := Vector2.ZERO  # world metres per second
 var spin := 0.0  # radians per second
 var goal: Variant = null  # world point to fly to, or null
+var holding := false  # after halt(): kill even slow drift, stay put
 
 
 func setup(d: ShipDesign, crew: int) -> void:
@@ -67,6 +68,12 @@ func world(local: Vector2) -> Vector2:
 	return at * local
 
 
+## Stops moving and turning as well as the engines can, then holds here.
+func halt() -> void:
+	goal = null
+	holding = true
+
+
 ## Plans a velocity toward the goal, then points the nose where the
 ## thrusters can deliver the change: at the goal, or (lacking thrusters
 ## that way) along the burn needed, e.g. flipping round to brake.
@@ -81,7 +88,7 @@ func _fly(delta: float) -> void:
 			want = to.normalized() * minf(TOP, sqrt(2.0 * BRAKE * to.length()))
 			face = to if to.length() > HOP else face
 	var dv := want - vel
-	if dv.length() < SLACK:
+	if dv.length() < (0.05 if holding and goal == null else SLACK):
 		dv = Vector2.ZERO
 	elif not helm.can_push(at.basis_xform_inv(dv)):
 		face = dv
