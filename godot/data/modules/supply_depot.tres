@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ShipModule" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ships/ship_module.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"supply_depot"
+display_name = "Supply Depot"
+category = "storage"
+size = Vector2i(2, 2)
+color = Color(0.4, 0.5, 0.38, 1)
+mass = 5.0
+hp = 160.0
+storage = {"ammo": 150.0, "fuel": 300.0, "food": 120.0}
+salvage = {"alloy": 5.0}
+bulk = true

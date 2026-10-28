@@ -8,6 +8,7 @@ signal crew_changed
 
 const SPEED := 3.0  # metres per second
 const CARRY := 20.0  # units per haul trip
+const BULK_PULL := 3.0  # haulers walk this much further to use a bulk store
 const LOAD_TIME := 0.6  # seconds to load or unload
 const REPAIR_RATE := 20.0  # hp per second
 const THINK := 0.5  # seconds between job board passes
@@ -242,17 +243,20 @@ func _draw(delta: float) -> void:
 		CrewLook.draw(_mms[k].multimesh, by[k], nav, delta)
 
 
+## Closest intact store for `res`, bulk stores (supply depots) first.
 func _nearest_store(res: String, from: Vector2, skip: int) -> int:
 	var best := skip if state.module(skip).storage.has(res) else -1
 	var best_d := INF
 	for i in state.size():
+		var m := state.module(i)
 		var at := state.center(i)
-		if i == skip or not state.module(i).storage.has(res) \
+		if i == skip or not m.storage.has(res) or state.hp[i] <= 0.0 \
 				or not nav.connected(from, at):
 			continue
-		if from.distance_squared_to(at) < best_d:
+		var d := from.distance_to(at) / (BULK_PULL if m.bulk else 1.0)
+		if d < best_d:
 			best = i
-			best_d = from.distance_squared_to(at)
+			best_d = d
 	return best
 
 
