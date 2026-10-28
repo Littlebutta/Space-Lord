@@ -1,6 +1,6 @@
 class_name MiningBeam
 extends Node3D
-## The mining laser's beam: a pulsing orange beam with a white-hot core,
+## The mining laser's beam: a steady orange beam with a white-hot core,
 ## a glow and spray of sparks and dust where it bites the rock, and a
 ## light at each end. MiningField calls span() every tick.
 
@@ -41,7 +41,7 @@ func span(from: Vector3, to: Vector3, on: bool) -> void:
 		return
 	var up := (to - from).normalized()
 	var side := up.cross(Vector3.UP if absf(up.y) < 0.9 else Vector3.RIGHT).normalized()
-	var w := 1.0 + sin(_t * 23.0) * 0.18 + sin(_t * 7.0) * 0.1  # crackling width
+	var w := 1.0 + sin(_t * 9.0) * 0.03  # a steady beam, faint shimmer
 	var bs := Basis(side, up, side.cross(up))
 	var mid := (from + to) * 0.5
 	_beam.transform = Transform3D(bs.scaled(Vector3(w, from.distance_to(to), w)), mid)

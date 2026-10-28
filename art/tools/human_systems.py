@@ -274,10 +274,16 @@ def mining_laser(i, e, pts):
     for x in (-1.5, 1.5):  # power conditioners in the back corners
         i.box((x, 0.6, 1.5), (0.8, 1.2, 0.8), C["steel"], 0.05)
         screen(i, (x, 0.9, 1.08), 0.4, 0.25, col="power")
-    e.box((0, ROOF + 0.3, 0.2), (2.2, 0.6, 2.4), C["hull"], 0.12, seg=2)
-    e.cyl((0, ROOF + 0.45, -1.4), 0.55, 1.6, C["steel"], "z", 16, r2=0.35, bevel=0.03)
-    for z in (-0.9, -1.6):
-        e.cyl((0, ROOF + 0.45, z), 0.6, 0.12, C["gun"], "z", 16, bevel=0.02)
-    e.cyl((0, ROOF + 0.45, -2.25), 0.32, 0.12, C["amber"], "z", 16, glow=True)
-    e.box((0, ROOF + 0.62, 0.2), (1.6, 0.05, 1.8), C["accent"], 0.02)
+    e.cyl((0, ROOF + 0.12, 0), 1.3, 0.24, C["steel"], sides=24, bevel=0.04)  # ring the head turns on
     return [((0, 2.1, -0.4), C["amber"])]
+
+
+def mining_head(h):
+    """The mining laser's turning head (aimed at the rock by the game)."""
+    h.cyl((0, ROOF + 0.45, 0), 1.0, 0.5, C["hull"], sides=20, bevel=0.06)
+    h.box((0, ROOF + 0.55, 0.3), (1.6, 0.5, 1.4), C["hull"], 0.1, seg=2)
+    h.cyl((0, ROOF + 0.55, -1.2), 0.5, 1.6, C["steel"], "z", 16, r2=0.32, bevel=0.03)
+    for z in (-0.7, -1.4):
+        h.cyl((0, ROOF + 0.55, z), 0.56, 0.12, C["gun"], "z", 16, bevel=0.02)
+    h.cyl((0, ROOF + 0.55, -2.05), 0.3, 0.12, C["amber"], "z", 16, glow=True)
+    h.box((0, ROOF + 0.82, 0.3), (1.2, 0.05, 1.0), C["accent"], 0.02)

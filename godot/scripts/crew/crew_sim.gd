@@ -85,7 +85,7 @@ func _act(c: CrewMember, delta: float) -> void:
 		elif not c.arrived():
 			_walk(c, delta)  # a move order
 		return
-	if j.done and j.worker == c and j.type == &"operate":
+	if j.done and j.worker == c and j.type in [&"operate", &"mine"]:
 		drop(c)
 		c.order = false
 		return
