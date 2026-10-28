@@ -59,6 +59,15 @@ func _eva(want: Dictionary, t: int) -> void:
 		want["e%d.%d" % [t, a]] = [&"eva", a, "", 0, t]
 
 
+## An unclaimed job on module i, station work first; null if none.
+func open_job(i: int) -> CrewJob:
+	var best: CrewJob = null
+	for j: CrewJob in jobs.values():
+		if j.module == i and j.worker == null and (best == null or j.type == &"operate"):
+			best = j
+	return best
+
+
 ## Job finished: off the board (it comes back if still needed).
 func finish(j: CrewJob) -> void:
 	j.done = true
@@ -69,7 +78,7 @@ func finish(j: CrewJob) -> void:
 ## for a job they rank strictly higher; one-off jobs run to the end.
 func assign(crew: Array[CrewMember]) -> void:
 	for c in crew:
-		if c.eva or c.job and c.job.type != &"operate":
+		if c.eva or c.strand >= 0.0 or c.order or c.job and c.job.type != &"operate":
 			continue
 		var cur := c.pref(c.job.type) if c.job else 99
 		var best: CrewJob = null

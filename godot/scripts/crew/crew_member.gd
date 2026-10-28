@@ -15,6 +15,10 @@ var timer := 0.0
 var cargo := 0.0  # haul: units in hand
 var source := -1  # haul: storage module loaded from
 var eva := false  # outside the hull; pos is in the ship's frame
+var air := 0.0  # seconds of air left in their suit while outside
+var order := false  # following a player order; the job board leaves them be
+var selected := false
+var strand := -1.0  # aboard a cut-off piece: seconds until they bail out
 var priority := {}
 
 
@@ -34,7 +38,8 @@ static func next_pref(p: int) -> int:
 
 
 func status() -> String:
-	return job.label if job else "Idle"
+	var s := job.label if job else ("Stranded" if strand >= 0.0 else "Idle")
+	return s + (" · air %ds" % ceili(air) if eva else "")
 
 
 ## At the end of their route (or never given one).
