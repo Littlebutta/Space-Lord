@@ -112,13 +112,14 @@ func _work(c: CrewMember, delta: float) -> void:
 		&"operate":
 			state.operators[j.module] += 1
 		&"repair":
-			state.repair(j.module, REPAIR_RATE * delta)
-			if not state.damaged(j.module):
+			if not state.crew_repair(j.module, REPAIR_RATE, delta):
 				finish(c)
 		&"eva":
 			CrewEva.work(self, c, delta)
 		&"mine":
 			CrewMining.work(self, c, delta)
+		&"salvage":
+			CrewSalvage.work(self, c, delta)
 		&"haul":
 			c.timer += delta
 			if c.timer < LOAD_TIME:

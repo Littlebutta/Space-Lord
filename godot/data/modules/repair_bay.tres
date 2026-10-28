@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ShipModule" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ships/ship_module.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"repair_bay"
+display_name = "Repair Bay"
+category = "utility"
+size = Vector2i(2, 1)
+color = Color(0.4, 0.75, 0.45, 1)
+mass = 5.0
+hp = 160.0
+storage = {"parts": 40.0}
+salvage = {"alloy": 3.0, "electronics": 2.0}
+workshop = true
+blocked = Array[Rect2]([Rect2(0, 0, 2, 0.4)])
+access = PackedVector2Array(0.5, 0.7, 1.5, 0.7)

@@ -47,12 +47,13 @@ static func spawn(scene: Node3D, ship: ShipBody) -> String:
 			return "Asteroid field · left click a rock to see what it holds and target it"
 		&"wreck":
 			_wreck(scene, s.seed)
-			return "Derelict wreck"
+			return "Derelict wreck · select crew, right click it to salvage"
 	return ""
 
 
 static func _wreck(scene: Node3D, seed_: int) -> void:
 	var b := ShipBody.new()
+	b.add_to_group(&"wrecks")  # crew can board and strip it (CrewSalvage)
 	scene.add_child(b)
 	b.setup(ShipGenerator.sandbox(seed_), 0)
 	b.at = Transform2D(2.4, Vector2(10.0, -45.0))

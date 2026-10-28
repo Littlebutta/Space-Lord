@@ -46,6 +46,9 @@ extends Resource
 @export var airlock := false  # crew can go outside (EVA) from here
 ## Onboard shipyard: lets the ship refit and do major repairs in space.
 @export var shipdock := false
+## Repair bay: crew fix modules from inside twice as fast, using parts,
+## and can do major repairs without a shipyard.
+@export var workshop := false
 ## Bolted on outside the hull (wings, fins, antennas): no deck under it,
 ## not walkable (set `blocked` to the whole footprint), no hull shell.
 @export var exterior := false

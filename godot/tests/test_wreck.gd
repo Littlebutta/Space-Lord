@@ -38,9 +38,31 @@ func _init() -> void:
 	c.pos = p.home(3)
 	s.damage(3, INF)
 	_check(not sim.crew.has(c), "crew on a wrecked module die")
-	print("wreck tests: %s" % ("FAILED %d" % _fails if _fails else "ok"))
 	sim.free()
+	_repair_bay()
+	print("wreck tests: %s" % ("FAILED %d" % _fails if _fails else "ok"))
 	quit(1 if _fails else 0)
+
+
+## Out in space a repair bay lets crew fix major damage, using parts.
+func _repair_bay() -> void:
+	Shipyard.docked = false
+	var d := ShipDesign.new()
+	d.add(ModuleLibrary.by_id(&"bridge"), Vector2i.ZERO)
+	d.add(ModuleLibrary.by_id(&"hull"), Vector2i(2, 0))
+	var s := ShipState.new(d)
+	s.damage(1, s.hp[1] * 0.8)
+	_check(not s.repairable(1), "no repair bay: major damage waits for a shipyard")
+	d.add(ModuleLibrary.by_id(&"repair_bay"), Vector2i(0, 2))
+	s = ShipState.new(d)
+	s.damage(1, s.hp[1] * 0.8)
+	var parts := s.storage.get_amount("parts")
+	_check(s.repairable(1), "repair bay: major damage can be fixed")
+	while s.crew_repair(1, CrewSim.REPAIR_RATE, 0.1):
+		pass
+	_check(not s.damaged(1), "repair bay fixed it")
+	_check(s.storage.get_amount("parts") < parts, "repair bay used parts")
+	Shipyard.docked = true
 
 
 func _run(sim: CrewSim, seconds: float) -> void:
