@@ -1,0 +1,80 @@
+[gd_scene load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/combat/battle.gd" id="1_test"]
+[ext_resource type="Script" path="res://scripts/camera/rts_camera.gd" id="2_cam"]
+[ext_resource type="Script" path="res://scripts/ships/ship_body.gd" id="3_body"]
+[ext_resource type="Script" path="res://scripts/ui/module_tags.gd" id="4_tags"]
+[ext_resource type="Script" path="res://scripts/crew/crew_orders.gd" id="6_orders"]
+[ext_resource type="Script" path="res://scripts/combat/tracers.gd" id="7_tracers"]
+[ext_resource type="Script" path="res://scripts/ui/crew_panel.gd" id="5_panel"]
+
+[sub_resource type="Environment" id="Env"]
+background_mode = 1
+background_color = Color(0.02, 0.025, 0.05, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.32, 0.36, 0.46, 1)
+ambient_light_energy = 0.7
+tonemap_mode = 4
+tonemap_white = 6.0
+ssao_enabled = true
+ssao_radius = 1.5
+ssao_intensity = 2.5
+glow_enabled = true
+glow_bloom = 0.08
+adjustment_enabled = true
+adjustment_contrast = 1.1
+adjustment_saturation = 0.9
+
+[node name="Battle" type="Node3D"]
+script = ExtResource("1_test")
+
+[node name="Env" type="WorldEnvironment" parent="."]
+environment = SubResource("Env")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866, -0.25, 0.433, 0, 0.866, 0.5, -0.5, -0.433, 0.75, 0, 20, 0)
+light_color = Color(1, 0.93, 0.84, 1)
+light_energy = 2.2
+shadow_enabled = true
+shadow_blur = 1.5
+directional_shadow_max_distance = 200.0
+
+[node name="Camera" type="Camera3D" parent="."]
+far = 500.0
+script = ExtResource("2_cam")
+distance = 110.0
+zoom_range = Vector2(8, 200)
+pitch_deg = -65.0
+
+[node name="Me" type="Node3D" parent="."]
+script = ExtResource("3_body")
+
+[node name="Foe" type="Node3D" parent="."]
+script = ExtResource("3_body")
+
+[node name="Tracers" type="Node3D" parent="."]
+script = ExtResource("7_tracers")
+
+[node name="Panel" type="CanvasLayer" parent="."]
+script = ExtResource("5_panel")
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="Tags" type="Control" parent="UI"]
+mouse_filter = 2
+script = ExtResource("4_tags")
+
+[node name="Orders" type="Control" parent="UI"]
+mouse_filter = 2
+script = ExtResource("6_orders")
+
+[node name="Info" type="Label" parent="UI"]
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = -240.0
+offset_right = 700.0
+offset_bottom = -12.0
+grow_vertical = 0
+vertical_alignment = 2
