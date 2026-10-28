@@ -34,20 +34,10 @@ func bind(s: ShipBody, at_site: Dictionary) -> void:
 
 
 func _rock(rng: RandomNumberGenerator, r: float, p: Vector2) -> MeshInstance3D:
-	var m := SphereMesh.new()
-	m.radius = r
-	m.height = r * 2.0
-	m.radial_segments = 9
-	m.rings = 5
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color(0.36, 0.33, 0.3)
-	mat.roughness = 1.0
-	m.material = mat
 	var mi := MeshInstance3D.new()
-	mi.mesh = m
+	mi.mesh = AsteroidArt.mesh(rng, r)
 	mi.position = Vector3(p.x, 0.0, p.y)
 	mi.rotation = Vector3(rng.randf(), rng.randf(), rng.randf()) * TAU
-	mi.scale = Vector3(rng.randf_range(0.8, 1.2), rng.randf_range(0.6, 0.9), 1.0)
 	add_child(mi)
 	return mi
 
@@ -79,7 +69,7 @@ func _physics_process(delta: float) -> void:
 		var c: Dictionary = chunks[id]
 		var n: Node3D = c.node
 		if c.carrier:
-			n.position = _world(ship.sim.local3d(c.carrier)) + Vector3.UP * 0.5
+			n.position = _world(ship.sim.local3d(c.carrier)) + Vector3.UP * 1.1  # in their arms
 			continue
 		n.position += c.vel * delta
 		c.vel *= 1.0 - DAMP * delta
@@ -117,30 +107,21 @@ func _world(p: Vector3) -> Vector3:
 
 
 ## Top of module i, in the crew sim's frame.
+## Where module i's beam starts: its model's muzzle, else its middle.
 func _mount(i: int) -> Vector3:
+	var n := ship.hulk.part(i)
+	var mz := n.find_child("Muzzle*", true, false) as Node3D if n else null
+	if mz and mz.is_inside_tree():
+		return ship.to_local(mz.global_position)  # the crew sim's frame
 	var c := ship.sim.state.center(i)
 	return ShipPieces.to_3d(ship.sim.state.pieces.xf[i]) * Vector3(c.x, 1.2, c.y)
 
 
 func _beam(i: int, from: Vector3, to: Vector3, on: bool) -> void:
 	if not _beams.has(i):
-		var m := CylinderMesh.new()
-		m.top_radius = 0.06
-		m.bottom_radius = 0.06
-		m.height = 1.0
-		m.material = MapGlow.make(Color(1.0, 0.55, 0.15))
-		var mi := MeshInstance3D.new()
-		mi.mesh = m
-		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		add_child(mi)
-		_beams[i] = mi
-	var b: MeshInstance3D = _beams[i]
-	b.visible = on and from.distance_to(to) > 0.1
-	if b.visible:
-		var up := (to - from).normalized()
-		var side := up.cross(Vector3.UP if absf(up.y) < 0.9 else Vector3.RIGHT).normalized()
-		var bs := Basis(side, up, side.cross(up)).scaled(Vector3(1, from.distance_to(to), 1))
-		b.transform = Transform3D(bs, (from + to) * 0.5)
+		_beams[i] = MiningBeam.new()
+		add_child(_beams[i])
+	_beams[i].span(from, to, on)
 
 
 func _spawn(at: Vector3, vel: Vector3, amount: float) -> void:

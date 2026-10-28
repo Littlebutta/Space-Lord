@@ -75,3 +75,22 @@ def body(p):
         p.box((0.1 * x, 0.5, -0.06), (0.1, 0.1, 0.04), C["gear"], 0.015)  # knee
         p.box((0.1 * x, 0.08, -0.035), (0.11, 0.16, 0.25), C["gear"], 0.03)
         p.box((0.1 * x, 0.012, -0.035), (0.12, 0.025, 0.27), C["metal"], 0.006)
+
+
+def suit(p):
+    """Spacesuit worn on spacewalks (its own mesh, shown only outside):
+    a glass helmet, a neck ring and a jetpack with four nozzles."""
+    def on(name):
+        p.bone(IDX[name])
+    on("head")
+    p.ball((0, 1.6, -0.005), 0.17, ("#9fd4ee", "glass"), 2, (1.0, 1.08, 1.0))
+    p.cyl((0, 1.46, 0), 0.13, 0.06, C["metal"], sides=14, bevel=0.01)
+    p.box((0, 1.7, -0.14), (0.1, 0.03, 0.04), ("#ffb347", "paint"), glow=True)
+    on("spine")
+    p.box((0, 1.24, 0.17), (0.3, 0.38, 0.16), ("#d8d4c8", "paint"), 0.04)
+    p.box((0, 1.24, 0.255), (0.22, 0.28, 0.02), C["shirt"], 0.01)
+    for x in (-0.11, 0.11):
+        for y in (1.07, 1.41):
+            p.cyl((x, y, 0.2), 0.03, 0.05, C["gear"], sides=8)
+    for x in (-0.12, 0.12):  # chest lights
+        p.box((x, 1.33, -0.13), (0.03, 0.03, 0.02), ("#59c8ff", "paint"), glow=True)

@@ -12,7 +12,7 @@ import kit  # noqa: E402
 import human_hull as hh  # noqa: E402
 import human_systems as hs  # noqa: E402
 import human_exterior as hx  # noqa: E402
-from human_style import poly, ROOF  # noqa: E402
+from human_style import poly, ROOF, FILLS  # noqa: E402
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 OUT = os.path.join(ROOT, "godot", "assets", "models", "human")
@@ -66,6 +66,9 @@ def build(mid, mats):
     lamps = fn(inner, outer, poly(outline, size))
     inner.build(mats, root)
     outer.build(mats, root)
+    for k in sorted(FILLS):  # stock that shows as storage fills
+        FILLS[k].build(mats, root)
+    FILLS.clear()
     head = None
     if mid == "turret":
         head = kit.Part("Head")
