@@ -19,10 +19,13 @@ godot/                Godot project (open this folder in Godot)
   scripts/map/        StarSystem: procedural planets, belts, orbits
   scripts/ships/      ShipModule, ShipDesign, ShipStats, ShipView
   scripts/ship_editor/ grid ship builder (press B on the map)
+  scripts/crew/       free-moving crew, job board, work priorities
+                      (press C on the map for the crew sandbox)
   scripts/economy/    Storage: every resource needs cargo capacity
   scripts/procgen/    ShipGenerator: random ships to fight/salvage
   scripts/camera/     RTS-style camera for map and battles
   data/modules/       module stats as .tres (no code per part)
+  tests/              headless checks run by CI
   assets/             exported .glb models, textures, audio, fonts
 art/                  Blender .blend source files (Git LFS)
 launcher/             auto-updating launcher (below)
