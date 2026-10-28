@@ -10,13 +10,20 @@ static func footprint(m: ShipModule, turn: int) -> PackedVector2Array:
 	var p := m.outline.duplicate()
 	if p.size() < 3:
 		p = PackedVector2Array([Vector2.ZERO, Vector2(s.x, 0), s, Vector2(0, s.y)])
-	return turned(p, s, turn)
+	p = turned(p, s, turn)
+	if turn >= 4:  # mirrored: keep the outline's winding
+		p.reverse()
+	return p
 
 
 ## Points in cell units of an unturned `s` footprint after `turn`
-## quarter turns, the same rotation as ShipRules.rotate.
+## quarter turns, the same rotation as ShipRules.rotate. Turns 4-7 are
+## mirrored (x flipped) first; see ShipDesign.mirror.
 static func turned(p: PackedVector2Array, s: Vector2, turn: int) -> PackedVector2Array:
 	p = p.duplicate()
+	if turn >= 4:
+		for k in p.size():
+			p[k].x = s.x - p[k].x
 	for t in turn % 4:
 		for k in p.size():
 			p[k] = Vector2(s.y - p[k].y, p[k].x)

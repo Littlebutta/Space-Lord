@@ -27,8 +27,21 @@ func _init() -> void:
 	for k in 30 * 5:
 		ga.tick(far, 1.0 / 30.0)
 	_check(shots[0] == 0, "nothing fires out of range")
+	_clash()
 	print("battle tests: %s" % ("FAILED %d" % _fails if _fails else "ok"))
 	quit(1 if _fails else 0)
+
+
+## Two ships rammed together bounce apart and both take damage.
+func _clash() -> void:
+	var a := _ship(Vector2.ZERO, 0.0)
+	var b := _ship(Vector2(0.0, -3.0), 0.0)  # overlapping by a cell
+	a.vel = Vector2(0.0, -5.0)
+	var ha := _hp(a)
+	var hb := _hp(b)
+	ShipClash.resolve(a, b)
+	_check(a.vel.y > -5.0 and b.vel.y < 0.0, "rammed ships bounce apart")
+	_check(_hp(a) < ha and _hp(b) < hb, "and both take damage")
 
 
 ## Bridge, a corridor under it, a laser turret and a charged capacitor.

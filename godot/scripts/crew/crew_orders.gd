@@ -5,13 +5,15 @@ extends Control
 ## work the module clicked if it has an open job. Right click something
 ## outside (ore, a broken-off piece, a wreck) sends them out to it, see
 ## CrewOutside. R puts the selected
-## crew back on their usual duties. Right click with nobody selected is
-## left to the scene (e.g. to fly the ship).
+## crew back on their usual duties. Left click the ship itself to select
+## it (click empty space to drop it); right click while it is selected is
+## left to the scene, to fly it.
 
 const PICK := 18.0  # pixels from a crew member that still picks them
 const DRAG := 6.0  # pixels moved before a click becomes a box
 
 var body: ShipBody
+var ship_selected := true  # right click flies the ship
 var _from := Vector2.ZERO
 var _down := false
 var _box := Rect2()
@@ -76,6 +78,12 @@ func _pick(r: Rect2, add: bool) -> void:
 			best_d = s.distance_to(r.position)
 	if best:
 		best.selected = not best.selected if add else true
+	if not selected().is_empty():
+		ship_selected = false
+	elif not box and not add:
+		var at = _deck(r.position)
+		ship_selected = at != null and body.sim.state.design.index_at(
+				Vector2i((at / ShipView.CELL).floor())) >= 0
 
 
 ## Ship-local deck point under the mouse, or null.
