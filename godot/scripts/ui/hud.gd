@@ -3,9 +3,9 @@ extends CanvasLayer
 ## buttons bottom-left, and the controls behind "?" (F1).
 
 const HELP := "Space pause · 1/2 speed · WASD pan · middle mouse drag rotate\n" \
-		+ "Wheel zoom · B builder at shipyard · N builder in space · C crew · V battle\n" \
+		+ "Wheel zoom · B ship builder · C crew · V battle\n" \
 		+ "Right click fly your ship there, or to a wreck or asteroid ping"
-const SCREENS := {"Builder": KEY_B, "Refit in space": KEY_N, "Crew": KEY_C, "Battle": KEY_V}
+const SCREENS := {"Ship Builder": KEY_B, "Crew": KEY_C, "Battle": KEY_V}
 
 var _clock := Label.new()
 var _speed: Array[Button] = []
@@ -50,8 +50,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _open(k: Key) -> void:
 	match k:
-		KEY_B, KEY_N:  # no stations yet, so the key picks where you are
-			Shipyard.docked = k == KEY_B
+		KEY_B:  # Shipyard.docked says what's allowed: moving parts always is
 			get_tree().change_scene_to_file("res://scenes/ship_editor/ship_editor.tscn")
 		KEY_C: get_tree().change_scene_to_file("res://scenes/crew/crew_test.tscn")
 		KEY_V: get_tree().change_scene_to_file("res://scenes/combat/battle.tscn")
