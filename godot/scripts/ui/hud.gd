@@ -3,8 +3,8 @@ extends CanvasLayer
 ## buttons bottom-left, and the controls behind "?" (F1).
 
 const HELP := "Space pause · 1/2 speed · WASD pan · middle mouse drag rotate\n" \
-		+ "Wheel zoom · B builder at shipyard · N builder in space · C crew"
-const SCREENS := {"Builder": KEY_B, "Refit in space": KEY_N, "Crew": KEY_C}
+		+ "Wheel zoom · B builder at shipyard · N builder in space · C crew · V battle"
+const SCREENS := {"Builder": KEY_B, "Refit in space": KEY_N, "Crew": KEY_C, "Battle": KEY_V}
 
 var _clock := Label.new()
 var _speed: Array[Button] = []
@@ -53,3 +53,4 @@ func _open(k: Key) -> void:
 			Shipyard.docked = k == KEY_B
 			get_tree().change_scene_to_file("res://scenes/ship_editor/ship_editor.tscn")
 		KEY_C: get_tree().change_scene_to_file("res://scenes/crew/crew_test.tscn")
+		KEY_V: get_tree().change_scene_to_file("res://scenes/combat/battle.tscn")

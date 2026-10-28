@@ -31,17 +31,12 @@ func _design() -> ShipDesign:
 		var d := load("user://ships/player.tres") as ShipDesign
 		if d and not d.modules.is_empty():
 			return d
-	var pool: Array[ShipModule] = ModuleLibrary.all().filter(
-			func(m): return m.category != "command")
-	var rng := RandomNumberGenerator.new()
-	var g := ShipGenerator.generate(ModuleLibrary.by_id(&"bridge"), pool, rng, 16)
-	for id in [&"airlock", &"engine", &"fuel_tank"]:
-		ShipGenerator.ensure(g, ModuleLibrary.by_id(id), rng)
-	return g
+	return ShipGenerator.sandbox(randi())
 
 
 func _process(_delta: float) -> void:
 	var mid := _ship.world(_ship.pivot())
+	_fx.thrust_all = not _ship.helm.firing.is_empty()
 	if _follow:
 		$Camera.focus += Vector3(mid.x - _last.x, 0.0, mid.y - _last.y)
 	_last = mid
