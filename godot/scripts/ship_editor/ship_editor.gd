@@ -112,7 +112,8 @@ func _update_ghost() -> void:
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	var ok := design.fits(picked, r.position, turn)
 	mat.albedo_color = Color(0.3, 1, 0.5, 0.45) if ok else Color(1, 0.3, 0.3, 0.45)
-	_ghost.mesh = ShipView.part_mesh(picked, r, turn, ShipTheme.by_id(theme_id))
+	var t := ShipTheme.by_id(theme_id)
+	_ghost.mesh = ShipView.part_mesh(picked, r, turn, t, design.occupied())
 	_ghost.material_override = mat
 	_ghost.position = ShipView.center(r) + Vector3.UP * 0.05
 	for c in _ghost.get_children():

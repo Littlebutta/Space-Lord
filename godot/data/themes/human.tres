@@ -11,3 +11,5 @@ blurb = "Steel panels with clean seams."
 tint = Color(0.86, 0.88, 0.92, 1)
 tint_mix = 0.2
 bevel = 0.08
+corner = 0.2
+corner_steps = 1

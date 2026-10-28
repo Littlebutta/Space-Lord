@@ -13,3 +13,5 @@ tint_mix = 0.6
 bevel = 0.22
 taper = 0.3
 height = 1.35
+corner = 0.4
+corner_steps = 1

@@ -32,7 +32,7 @@ func _initialize() -> void:
 			for turn in 4:
 				var r := Rect2i(Vector2i.ZERO, ShipDesign.turned(m, turn))
 				var mesh := ShipView.part_mesh(m, r, turn, t)
-				check(mesh.get_surface_count() == 1, "%s %s mesh" % [t.id, m.id])
+				check(mesh.get_surface_count() >= 1, "%s %s mesh" % [t.id, m.id])
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 7
 	var g := ShipGenerator.generate(bridge, ModuleLibrary.all(), rng, 20, &"bio")

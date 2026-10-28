@@ -12,3 +12,5 @@ tint = Color(0.5, 0.78, 0.42, 1)
 tint_mix = 0.55
 smooth = 2
 height = 1.15
+corner = 0.45
+corner_steps = 4

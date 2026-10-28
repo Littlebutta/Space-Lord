@@ -48,6 +48,17 @@ func paint(cell: Vector2i, tid: StringName) -> void:
 		emit_changed()
 
 
+## Every covered cell -> index of the module on it.
+func occupied() -> Dictionary:
+	var out := {}
+	for i in modules.size():
+		var r := rect(i)
+		for x in range(r.position.x, r.end.x):
+			for y in range(r.position.y, r.end.y):
+				out[Vector2i(x, y)] = i
+	return out
+
+
 ## Index of the module covering `cell`, or -1.
 func index_at(cell: Vector2i) -> int:
 	for i in modules.size():
