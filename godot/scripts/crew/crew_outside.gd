@@ -48,6 +48,10 @@ static func order(sim: CrewSim, c: CrewMember, what: Dictionary) -> bool:
 	var a := s.airlock(c.pos)
 	if c.eva or c.strand >= 0.0 or a < 0 or not sim.nav.connected(c.pos, s.spot(a)):
 		return false
+	if not c.species.can(what.kind):
+		return false  # e.g. bio blobs never go out, crystals can't carry
+	if what.kind == &"mine" and not CrewMining.in_reach(sim.board, c, what.id, a):
+		return false
 	sim.drop(c)
 	var key := _key(sim, c, what)
 	var j: CrewJob = sim.board.jobs.get(key)

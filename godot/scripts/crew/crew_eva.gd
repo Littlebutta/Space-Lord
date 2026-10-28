@@ -33,8 +33,8 @@ static func survive(sim: CrewSim, c: CrewMember, delta: float) -> bool:
 		sim.drop(c)
 		c.order = false
 		c.strand = randf_range(BAIL.x, BAIL.y)
-	c.strand -= delta
-	if c.strand <= 0.0:
+	c.strand = maxf(c.strand - delta, 0.0)
+	if c.strand <= 0.0 and c.species.eva:  # the rest wait to be towed home
 		c.pos = p.xf[i] * c.pos
 		c.eva = true
 		c.air = AIR_SUIT

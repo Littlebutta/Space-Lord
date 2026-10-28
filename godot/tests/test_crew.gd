@@ -42,6 +42,7 @@ func _init() -> void:
 	var fed := hungry.all(func(i): return s.is_running(i) or s.hp[i] < s.module(i).hp)
 	_check(fed, "haulers restocked every module")
 	_check_depot()
+	_check_species()
 	print("crew tests: %s" % ("FAILED %d" % _fails if _fails else "ok"))
 	sim.free()
 	quit(1 if _fails else 0)
@@ -81,3 +82,14 @@ func _check(ok: bool, what: String) -> void:
 	if not ok:
 		_fails += 1
 		push_error("FAIL: " + what)
+
+
+## Species gaps: bio blobs never go out, crystals never carry by hand.
+func _check_species() -> void:
+	var bio := CrewMember.new("B", CrewSpecies.by_id(&"bio"))
+	var cry := CrewMember.new("C", CrewSpecies.by_id(&"crystal"))
+	_check(bio.pref(&"eva") == 0 and bio.pref(&"mine") == 0, "bio blobs stay inside")
+	_check(bio.species.speed > 1.0, "bio blobs walk faster")
+	_check(cry.pref(&"haul") == 0 and cry.pref(&"mine") > 0, "crystals mine but don't haul")
+	_check(cry.species.pulls(), "crystals pull ore in by mind")
+	_check(CrewSpecies.all().size() >= 3, "every species can be hired")

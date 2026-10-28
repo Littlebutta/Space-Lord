@@ -57,6 +57,7 @@ func _initialize() -> void:
 	_check(_runs(ship) == 0, "a full hold stops everyone")
 	_check(ship.sim.crew.all(func(c): return c.cargo <= 0.0 or c.job and c.job.type == &"haul"),
 			"carriers let go")  # haulers restocking modules may still hold supplies
+	_check_crystals(ship, f)
 	var me := ship.world(ship.pivot())
 	f.rocks[1].node.position = Vector3(me.x, 0, me.y - 30.0)
 	var before := st.hp.duplicate()
@@ -68,6 +69,25 @@ func _initialize() -> void:
 	_check(ship.world(ship.pivot()).distance_to(me) < 30.0, "and the rock stops it")
 	print("mining tests: %s" % ("FAILED %d" % _fails if _fails else "ok"))
 	quit(1 if _fails else 0)
+
+
+## An all-crystal crew pulls ore in by mind and never steps outside.
+func _check_crystals(ship: ShipBody, f: MiningField) -> void:
+	var sim := ship.sim
+	for c in sim.crew:
+		sim.drop(c)
+		c.species = CrewSpecies.by_id(&"crystal")
+		c.eva = false
+		c.alt = 0.0
+		c.pos = sim._home()
+	for m in Materials.ALL:
+		sim.state.storage.amount[m] = 0.0
+	var out := false
+	for k in 60 * 30:
+		_step(ship, f)
+		out = out or sim.crew.any(func(c): return c.eva)
+	_check(_held(sim.state) > 0.0, "crystals pull ore into the hold")
+	_check(not out, "crystals never step outside to mine")
 
 
 func _step(ship: ShipBody, f: MiningField) -> void:

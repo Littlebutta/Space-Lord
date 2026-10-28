@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="CrewSpecies" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/crew/crew_species.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"bio"
+display_name = "Bio blob"
+blurb = "Fast on deck, but can never go outside."
+speed = 1.5
+eva = false
+themes = Array[StringName]([&"bio"])
