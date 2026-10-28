@@ -10,7 +10,7 @@ signal changed
 
 const DRIFT := 0.35  # metres per second a loose piece moves away
 const SPIN := 0.03  # radians per second it tumbles
-const MAX_DRIFT := 40.0  # stops this far out so crew can still reach it
+const DAMP := 0.01  # drift dies off, so a piece coasts ~35 m and stops
 const TOW := 1.5  # metres per second crew tow a piece home
 
 var design: ShipDesign
@@ -134,13 +134,16 @@ func tick(delta: float) -> void:
 	for p in pieces.size():
 		var mods := pieces[p]
 		var f := mods[0]
-		if p == main or vel[f] == Vector2.ZERO or xf[f].origin.length() > MAX_DRIFT:
+		if p == main or vel[f] == Vector2.ZERO:
 			continue
 		var w := center(mods)
 		var a := spin[f] * delta
 		var step := Transform2D(a, w - w.rotated(a) + vel[f] * delta)
+		var k := exp(-DAMP * delta)
 		for i in mods:
 			xf[i] = step * xf[i]
+			vel[i] *= k
+			spin[i] *= k
 
 
 ## Tows module i's piece toward its built spot; true once it's there.

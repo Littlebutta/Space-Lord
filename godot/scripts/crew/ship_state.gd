@@ -7,12 +7,14 @@ extends RefCounted
 const BUFFER_HOURS := 3.0  # hours of upkeep a module can keep on hand
 const REBUILT := 0.25  # share of hp a module is rebuilt with
 const WELD := {"parts": 2.0}  # extra cost to weld a drifting piece back
+const AUTO_REST := 0.25  # unmanned firing time won back per second idle
 
 var design: ShipDesign
 var storage: Storage
 var hp := PackedFloat32Array()
 var stock: Array[Dictionary] = []  # per module: resource -> units on hand
 var operators := PackedInt32Array()  # crew at each station right now
+var auto := PackedFloat32Array()  # seconds of unmanned firing left
 var pieces: ShipPieces  # how the ship has broken apart
 
 
@@ -23,6 +25,7 @@ func _init(d: ShipDesign, fill := 0.5) -> void:
 		storage.put(res, storage.capacity[res] * fill)
 	for m in d.modules:
 		hp.append(m.hp)
+		auto.append(m.auto_time)
 		var s := {}
 		for res in m.upkeep:
 			s[res] = m.upkeep[res] * BUFFER_HOURS * fill
@@ -167,6 +170,22 @@ func supplied(i: int) -> bool:
 ## Intact, powered, staffed and supplied: the module does its job.
 func is_running(i: int) -> bool:
 	return hp[i] > 0.0 and pieces.powered(i) and manned(i) and supplied(i)
+
+
+## Engine i can fire now: running, or able to run a while unmanned.
+func can_fire(i: int) -> bool:
+	return is_running(i) or hp[i] > 0.0 and pieces.powered(i) and supplied(i) and auto[i] > 0.0
+
+
+## Engine i fired for `delta` seconds; unmanned it uses up auto time.
+func fire(i: int, delta: float) -> void:
+	if not manned(i):
+		auto[i] = maxf(auto[i] - delta, 0.0)
+
+
+## Engine i sat idle (or crewed): it winds back up to auto firing.
+func rest(i: int, delta: float) -> void:
+	auto[i] = minf(auto[i] + delta * AUTO_REST, module(i).auto_time)
 
 
 ## Burns the on-hand supplies of running modules.
