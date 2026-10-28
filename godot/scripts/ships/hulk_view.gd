@@ -7,6 +7,7 @@ extends Node3D
 var pieces: ShipPieces
 var outside := false: set = set_outside  # hull shells over the decks
 var _nodes: Array[Node3D] = []
+var _parts := {}  # module index -> its part node
 
 
 func bind(p: ShipPieces) -> void:
@@ -19,6 +20,7 @@ func rebuild() -> void:
 	for n in _nodes:
 		n.queue_free()
 	_nodes.clear()
+	_parts.clear()
 	var d := pieces.design
 	for mods in pieces.pieces:
 		var filled := {}
@@ -29,17 +31,25 @@ func rebuild() -> void:
 					filled[Vector2i(x, y)] = i
 		var node := Node3D.new()
 		for i in mods:
-			node.add_child(ShipView.make_part(d.modules[i], d.rect(i), d.turns[i],
-					d.theme(i), filled))
+			var part := ShipView.make_part(d.modules[i], d.rect(i), d.turns[i],
+					d.theme(i), filled)
+			node.add_child(part)
+			_parts[i] = part
 		var shell := MeshInstance3D.new()
 		shell.name = &"Shell"
 		shell.mesh = HullShell.build(d, ShipView.DECK * 0.5, mods)
-		shell.material_override = ModelSkin.shell_material(d.theme(mods[0]))
+		shell.material_override = ModelSkin.cut_shell(d.theme(mods[0]), HullShell.holes(d, mods))
 		node.add_child(shell)
 		add_child(node)
 		_nodes.append(node)
 	set_outside(outside)
 	_process(0.0)
+
+
+## Module i's part node, or null when it's been destroyed.
+func part(i: int) -> Node3D:
+	var n = _parts.get(i)  # untyped: may hold a freed node
+	return n if is_instance_valid(n) and not n.is_queued_for_deletion() else null
 
 
 func set_outside(v: bool) -> void:

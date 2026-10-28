@@ -11,12 +11,20 @@ import bpy  # noqa: E402
 import kit  # noqa: E402
 import human_hull as hh  # noqa: E402
 import human_systems as hs  # noqa: E402
-from human_style import poly  # noqa: E402
+from human_style import poly, ROOF  # noqa: E402
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 OUT = os.path.join(ROOT, "godot", "assets", "models", "human")
 CURVE = [(0, 2), (0, 0), (0.61, 0.09), (1.17, 0.34), (1.62, 0.76), (1.91, 1.33), (2, 2)]
 SLOPE = [(0, 0), (0, 1), (1, 1)]
+
+# FX markers (empties) the game hangs effects on: muzzles fire forward
+# (-z), nozzles blow backward (+z). Turret muzzles ride on its Head.
+MARKERS = {
+    "cannon": [("Muzzle0", (0, ROOF + 0.35, -3.35))],
+    "turret": [("Muzzle0", (-0.45, ROOF + 0.85, -2.7)), ("Muzzle1", (0.45, ROOF + 0.85, -2.7))],
+    "engine": [("Nozzle0", (0, ROOF - 0.9, 2.7))],
+}
 
 # module id: (size in cells, outline or None, builder)
 PARTS = {
@@ -46,10 +54,13 @@ def build(mid, mats):
     lamps = fn(inner, outer, poly(outline, size))
     inner.build(mats, root)
     outer.build(mats, root)
+    head = None
     if mid == "turret":
         head = kit.Part("Head")
         hs.turret_head(head)
-        head.build(mats, root)
+        head = head.build(mats, root)
+    for name, pos in MARKERS.get(mid, []):
+        kit.empty(name, pos, head or root)
     for k, (pos, col) in enumerate(lamps):
         kit.lamp("Lamp%d" % k, pos, col, root)
     return root

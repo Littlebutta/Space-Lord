@@ -23,17 +23,14 @@ def bridge(i, e, pts):
     for x in (-0.5, 0.5):
         console(i, x, -1.25, (0, 1), 0.7, "screen" if x < 0 else "amber")
     i.box((0, 1.3, -1.93), (3.6, 1.6, 0.1), C["glass"], 0.02)  # viewport
-    for x in (-1.8, -0.6, 0.6, 1.8):
+    for x in (-1.8, 1.8):  # viewport frame ends, inside the blocked row
         i.box((x, 1.3, -1.9), (0.14, 1.7, 0.18), C["gun"], 0.02)
     for s in (-1, 1):  # side stations
         i.box((1.55 * s, 0.45, 0.0), (0.7, 0.9, 1.9), C["steel"], 0.04)
         screen(i, (1.45 * s, 1.1, -0.3), 0.6, 0.4, "x", "screen")
         screen(i, (1.45 * s, 1.1, 0.4), 0.5, 0.35, "x", "amber")
         i.box((1.75 * s, 1.5, 0.0), (0.2, 0.06, 1.9), C["accent"], 0.01)
-    e.loft([(z, [(w * math.cos(k / 12 * math.pi), ROOF + h * math.sin(k / 12 * math.pi))
-                 for k in range(13)]) for z, w, h in
-            ((-1.9, 0.5, 0.2), (-1.4, 1.1, 0.55), (-0.4, 1.3, 0.7), (0.6, 1.1, 0.5),
-             (1.2, 0.6, 0.15))], C["glass"])
+    _canopy(e)
     e.cyl((1.2, ROOF + 0.45, 1.3), 0.03, 0.9, C["metal"], sides=6)
     e.ball((1.2, ROOF + 0.9, 1.3), 0.07, C["red"], 1, glow=True)
     return [((0, 2.1, 0.3), C["lamp"])]
@@ -143,3 +140,46 @@ def _bunk(i, x, z, along):
         for dz in (-1, 1):
             i.box((x + dx * (s[0] / 2 - 0.04), 0.8, z + dz * (s[2] / 2 - 0.04)),
                   (0.07, 1.6, 0.07), C["steel"], 0.01)
+
+def _canopy(e):
+    """Angular command cockpit over the whole bridge, seen in the outside
+    view: a faceted frame of square glass panes (the game leaves a hole
+    in the hull shell under it, so the crew show through), a metal back
+    and a coaming round the opening."""
+    lo, hi = ROOF + 0.05, ROOF + 0.6
+    base = [(-1.3, -1.95), (1.3, -1.95), (1.95, -1.3), (1.95, 1.95), (-1.95, 1.95), (-1.95, -1.3)]
+    top = [(-1.0, -0.9), (1.0, -0.9), (1.3, -0.6), (1.3, 1.4), (-1.3, 1.4), (-1.3, -0.6)]
+    B = [(x, lo, z) for x, z in base]
+    T = [(x, hi, z) for x, z in top]
+    for k in range(6):  # sloped facets round the sides; the back one is metal
+        j = (k + 1) % 6
+        col = C["steel"] if k == 3 else C["glass"]
+        _panes(e, B[k], B[j], T[j], T[k], 2 if k in (0, 2, 4) else 1, col)
+    _panes(e, T[0], T[1], T[2], T[5], 2, C["glass"])  # front strip of the roof
+    _panes(e, T[5], T[2], T[3], T[4], 2, C["glass"], rows=2)
+    for k in range(6):  # frame: base ring, top ring and the corner posts
+        e.bar(B[k], B[(k + 1) % 6], 0.05, C["gun"])
+        e.bar(T[k], T[(k + 1) % 6], 0.05, C["gun"])
+        e.bar(B[k], T[k], 0.05, C["gun"])
+    for s in (-1, 1):  # coaming round the opening
+        e.wall((-2.0, 1.98 * s), (2.0, 1.98 * s), ROOF - 0.5, lo, 0.08, C["hull"], 0.01)
+        e.wall((1.98 * s, -2.0), (1.98 * s, 2.0), ROOF - 0.5, lo, 0.08, C["hull"], 0.01)
+    e.cyl((0.9, hi + 0.25, 1.6), 0.03, 0.5, C["metal"], sides=6)
+    e.ball((0.9, hi + 0.52, 1.6), 0.06, C["red"], 1, glow=True)
+
+
+def _panes(e, a, b, c, d, cols, col, rows=1):
+    """Quad a-b-c-d (a-b bottom, d-c top) split into cols x rows panes
+    with frame bars between them."""
+    def lerp(p, q, t):
+        return tuple(p[k] + (q[k] - p[k]) * t for k in range(3))
+    for r in range(rows):
+        for k in range(cols):
+            u0, u1, v0, v1 = k / cols, (k + 1) / cols, r / rows, (r + 1) / rows
+            pts = [lerp(lerp(a, b, u), lerp(d, c, u), v) for u, v in
+                   ((u0, v0), (u1, v0), (u1, v1), (u0, v1))]
+            e.quad(pts, col)
+            if k:
+                e.bar(pts[0], pts[3], 0.035, C["gun"])
+            if r:
+                e.bar(pts[0], pts[1], 0.035, C["gun"])
