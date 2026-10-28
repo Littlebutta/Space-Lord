@@ -25,6 +25,7 @@ MARKERS = {
     "cannon": [("Muzzle0", (0, ROOF + 0.35, -3.35))],
     "turret": [("Muzzle0", (-0.45, ROOF + 0.85, -2.7)), ("Muzzle1", (0.45, ROOF + 0.85, -2.7))],
     "engine": [("Nozzle0", (0, ROOF - 0.9, 2.7))],
+    "mining_laser": [("Muzzle0", (0, ROOF + 0.45, -2.35))],
 }
 
 # module id: (size in cells, outline or None, builder)
@@ -48,6 +49,7 @@ PARTS = {
     "shipdock": ((3, 2), None, hs.shipdock),
     "generator": ((2, 2), None, hs.generator),
     "capacitor": ((1, 1), None, hs.capacitor),
+    "mining_laser": ((2, 2), None, hs.mining_laser),
     "wing": ((3, 2), [(0, 0), (0.8, 0), (3, 1.4), (3, 2), (0, 2)], hx.wing),
     "wing_stub": ((2, 1), [(0, 0), (1.2, 0.2), (2, 0.7), (2, 1), (0, 1)], hx.wing_stub),
     "fin": ((1, 2), None, hx.fin),
