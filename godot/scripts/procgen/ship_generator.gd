@@ -13,7 +13,10 @@ static func generate(core: ShipModule, pool: Array[ShipModule],
 		tries -= 1
 		var m := pool[rng.randi() % pool.size()]
 		var i := rng.randi() % d.modules.size()
-		d.add(m, _neighbor(d.cells[i], d.modules[i].size, m.size, rng))
+		var turn := rng.randi() % 4
+		var r := d.rect(i)
+		var at := _neighbor(r.position, r.size, ShipDesign.turned(m, turn), rng)
+		d.add(m, at, turn)
 	return d
 
 
