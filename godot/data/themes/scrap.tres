@@ -17,3 +17,5 @@ bump = 0.45
 jitter = 0.5
 corner = 0.15
 corner_steps = 1
+model_dir = "res://assets/models/scrap"
+glass_parts = Array[StringName]([&"bridge"])

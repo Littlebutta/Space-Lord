@@ -13,10 +13,9 @@ import sys
 sys.path.insert(0, os.path.dirname(__file__))
 import bpy  # noqa: E402
 import kit  # noqa: E402
-from crew_body import BONES, body, suit  # noqa: E402
+from crew_body import BONES, RACES, body, headpiece, race, suit  # noqa: E402
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-OUT = os.path.join(ROOT, "godot", "assets", "models", "human", "crew.glb")
 
 
 def rig():
@@ -123,11 +122,21 @@ def animate(ob):
 
 
 def main():
+    for name in RACES:
+        build(name)
+
+
+def build(rname):
+    """One race's crew model, into that faction's model folder."""
     kit.reset()
+    for a in list(bpy.data.actions):
+        bpy.data.actions.remove(a)
+    race(rname)
     mats = kit.materials()
     ob = rig()
     p = kit.Part("CrewBody")
     body(p)
+    headpiece(p, rname)
     me_ob = p.build(mats, ob)
     for name, *_ in BONES:
         me_ob.vertex_groups.new(name=name)
@@ -139,9 +148,10 @@ def main():
         suit_ob.vertex_groups.new(name=name)
     suit_ob.modifiers.new("Rig", "ARMATURE").object = ob
     animate(ob)
-    kit.export(ob, OUT, export_animations=True,
+    out = os.path.join(ROOT, "godot", "assets", "models", rname, "crew.glb")
+    kit.export(ob, out, export_animations=True,
                export_animation_mode="NLA_TRACKS", export_skins=True)
-    bpy.ops.wm.save_as_mainfile(filepath=os.path.join(ROOT, "art", "human_crew.blend"))
+    bpy.ops.wm.save_as_mainfile(filepath=os.path.join(ROOT, "art", "%s_crew.blend" % rname))
 
 
 main()

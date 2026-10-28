@@ -5,7 +5,7 @@ extends Node3D
 
 const HELP := "X damage · B wreck a module · F fire · V outside view · Alt or H module cards\n" \
 		+ "Left click/drag select crew · right click order them (R releases)\n" \
-		+ "Right click with none selected flies the ship · E stop · Space follow ship\n" \
+		+ "Click your ship, then right click to fly it · E stop · Space follow ship\n" \
 		+ "WASD pan · middle drag rotate · wheel zoom · Esc map\n" \
 		+ "Blue operating · yellow hauling · green repairing · pink spacewalk · grey idle"
 
@@ -90,7 +90,7 @@ func _input(event: InputEvent) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	var b := event as InputEventMouseButton
-	if b and b.pressed and b.button_index == MOUSE_BUTTON_RIGHT:
+	if b and b.pressed and b.button_index == MOUSE_BUTTON_RIGHT and $UI/Orders.ship_selected:
 		var cam: Camera3D = $Camera
 		var hit = Plane(Vector3.UP, 0.0).intersects_ray(
 				cam.project_ray_origin(b.position), cam.project_ray_normal(b.position))

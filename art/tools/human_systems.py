@@ -287,3 +287,25 @@ def mining_head(h):
         h.cyl((0, ROOF + 0.55, z), 0.56, 0.12, C["gun"], "z", 16, bevel=0.02)
     h.cyl((0, ROOF + 0.55, -2.05), 0.3, 0.12, C["amber"], "z", 16, glow=True)
     h.box((0, ROOF + 0.82, 0.3), (1.2, 0.05, 1.0), C["accent"], 0.02)
+
+
+def repair_bay(i, e, pts):
+    """Workshop. Blocked: the front strip z < -0.2 (workbenches); two
+    techs work at (-1, 0.1) and (1, 0.1), fixing parts for repairs."""
+    floor(i, pts, grates=[(-1, 0), (0, 0)])
+    for x in (-1, 1):  # workbench with a vice, a lit panel and tools
+        i.box((x, 0.45, -0.6), (1.7, 0.9, 0.7), C["steel"], 0.04)
+        i.box((x, 0.92, -0.6), (1.75, 0.05, 0.75), C["crate2"], 0.01)
+        console(i, x + 0.45, -0.45, (0, 1), 0.6, "screen" if x < 0 else "amber")
+        i.box((x - 0.45, 1.02, -0.55), (0.25, 0.15, 0.2), C["gun"], 0.02)  # vice
+        i.box((x - 0.1, 0.99, -0.45), (0.3, 0.06, 0.08), C["red"], 0.01)  # tool
+    i.box((0, 1.55, -0.95), (3.9, 1.1, 0.08), C["gun"], 0.02)  # tool wall
+    for k in range(9):
+        x = -1.8 + k * 0.45
+        i.box((x, 1.3 + (k % 3) * 0.25, -0.89), (0.06, 0.22, 0.04), C["metal"])
+    i.cyl((1.6, 1.85, -0.75), 0.04, 0.6, C["metal"], sides=6)  # welding arm
+    i.box((1.6, 1.55, -0.55), (0.12, 0.12, 0.3), C["hazard"], 0.02)
+    i.ball((1.6, 1.5, -0.38), 0.04, C["screen"], 1, glow=True)
+    e.box((0, ROOF + 0.06, -0.3), (3.4, 0.12, 1.2), C["steel"], 0.04)
+    e.box((0, ROOF + 0.14, -0.3), (0.5, 0.06, 0.5), C["hazard"], 0.02)
+    return [((0, 2.1, -0.2), C["lamp"])]

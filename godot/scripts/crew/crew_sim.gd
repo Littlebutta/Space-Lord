@@ -95,6 +95,9 @@ func _act(c: CrewMember, delta: float) -> void:
 	if c.stage == 0:
 		_go(c, _first_stop(c))
 		c.stage = 1
+	if j.type == &"mine" and state.storage.free_space(j.res) <= 0.0:
+		finish(c)  # the hold filled up while they walked: let go
+		return
 	if not c.arrived():
 		_walk(c, delta)
 	elif c.job:

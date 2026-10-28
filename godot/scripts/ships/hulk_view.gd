@@ -20,6 +20,11 @@ func bind(p: ShipPieces) -> void:
 
 
 func rebuild() -> void:
+	var aim := {}  # turret heads keep their aim through the rebuild
+	for i in _parts:
+		var h := _head(i)
+		if h:
+			aim[i] = h.rotation.y
 	for n in _nodes:
 		n.queue_free()
 	_nodes.clear()
@@ -46,6 +51,10 @@ func rebuild() -> void:
 		node.add_child(shell)
 		add_child(node)
 		_nodes.append(node)
+	for i in aim:
+		var h := _head(i)
+		if h:
+			h.rotation.y = aim[i]
 	set_outside(outside)
 	_process(0.0)
 
@@ -54,6 +63,12 @@ func rebuild() -> void:
 func part(i: int) -> Node3D:
 	var n = _parts.get(i)  # untyped: may hold a freed node
 	return n if is_instance_valid(n) and not n.is_queued_for_deletion() else null
+
+
+## Module i's turning turret head, if it has one.
+func _head(i: int) -> Node3D:
+	var n := part(i)
+	return n.find_child("Head*", true, false) as Node3D if n else null
 
 
 func set_sealed(v: bool) -> void:

@@ -102,6 +102,29 @@ def _hiss(rng):
     return _fade(_level(x, -22))
 
 
+def _footstep(rng):
+    """A boot on deck plating: soft thump with a faint metal ring."""
+    t = np.arange(int(RATE * 0.22)) / RATE
+    thump = _lowpass(rng.standard_normal(t.size), 0.9) * np.exp(-t * 40) * 4
+    ring = np.sin(2 * np.pi * 410 * t) * np.exp(-t * 30) * 0.15
+    return _fade(_level(thump + ring, -24), 0.002)
+
+
+def _click(rng):
+    """A short, soft UI tick."""
+    t = np.arange(int(RATE * 0.06)) / RATE
+    x = np.sin(2 * np.pi * 1800 * t) * np.exp(-t * 90) + rng.standard_normal(t.size) * np.exp(-t * 300) * 0.3
+    return _fade(_level(x, -22), 0.002)
+
+
+def _impact(rng):
+    """A shot hitting armour: a crack and a short metallic clang."""
+    t = np.arange(int(RATE * 0.9)) / RATE
+    crack = rng.standard_normal(t.size) * np.exp(-t * 35)
+    clang = sum(np.sin(2 * np.pi * f * t) * np.exp(-t * d) for f, d in ((220, 6), (347, 8), (612, 11)))
+    return _fade(_level(crack + clang * 0.4, -17), 0.002)
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     for name, (src, target, mono, keep) in CLIPS.items():
@@ -110,6 +133,9 @@ def main():
     _save("explosion", _explosion(rng))
     _save("engine_loop", _engine(rng))
     _save("airlock_hiss", _hiss(rng))
+    _save("footstep", _footstep(rng))
+    _save("ui_click", _click(rng))
+    _save("impact", _impact(rng))
 
 
 main()
