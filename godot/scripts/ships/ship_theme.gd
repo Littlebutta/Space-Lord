@@ -16,6 +16,9 @@ const DIR := "res://data/themes/"
 @export var grime := 0.2  # dirt and stains on models, 0..1
 @export var wear := 0.15  # chipped paint on edges, 0..1
 @export var bump := 0.12  # fine surface bumpiness
+## Parts whose outside view is glass: the hull shell leaves a hole over
+## them and their inside stays visible, so crew show through.
+@export var glass_parts: Array[StringName] = []
 @export_group("Hull edge")
 @export var corner := 0.0  # outer hull corners cut this far, in cells
 @export var corner_steps := 1  # 1 = straight chamfer, more = rounder

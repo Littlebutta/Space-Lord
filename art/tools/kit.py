@@ -8,7 +8,8 @@ Godot exactly as written.
 Each face carries a colour ("Col" attribute) and a "Data" UV: u picks
 the material preset in pbr.gdshaderinc, v marks bevel faces so paint
 chips there (v = 1 in Godot; written as 0 because glTF flips v). A colour is a hex string (painted metal) or (hex, preset).
-glow=True faces use the "Glow" material instead.
+glow=True faces use the "Glow" material and "glass" faces the see-through
+"Glass" material instead.
 """
 import math
 import bmesh
@@ -57,7 +58,7 @@ class Part:
             for v in verts:
                 v[self.dl][self.gi] = 1.0
         for f in {f for v in verts for f in v.link_faces}:
-            f.material_index = 1 if glow else 0
+            f.material_index = 1 if glow else 2 if mat == "glass" else 0
             f.smooth = smooth
             for lp in f.loops:
                 lp[self.col] = c
@@ -158,6 +159,21 @@ class Part:
             f.smooth = False
         return v
 
+    def quad(self, pts, col, glow=False):
+        """One flat face through four Godot points (glass panes, panels)."""
+        v = [self.bm.verts.new(_g(p)) for p in pts]
+        self.bm.faces.new(v)
+        self.bm.normal_update()
+        return self._finish(v, col, glow, False)
+
+    def bar(self, a, b, r, col):
+        """Square frame bar of half-width r between Godot points a and b."""
+        a, b = _g(a), _g(b)
+        v = bmesh.ops.create_cube(self.bm, size=1.0)["verts"]
+        bmesh.ops.scale(self.bm, vec=Vector((r * 2, r * 2, (b - a).length + r * 2)), verts=v)
+        rot = Vector((0, 0, 1)).rotation_difference(b - a).to_matrix().to_4x4()
+        return self._finish(v, col, False, False, Matrix.Translation((a + b) / 2) @ rot)
+
     def wall(self, a, b, y0, y1, t, col, bevel=0.02):
         """Straight wall of thickness t from floor point a to b (x, z)."""
         a, b = Vector(a), Vector(b)
@@ -188,9 +204,9 @@ class Part:
 
 
 def materials():
-    """The two shared materials: vertex-coloured surface and glowing."""
+    """The shared materials: vertex-coloured surface, glowing, glass."""
     out = []
-    for name, glow in (("Surface", False), ("Glow", True)):
+    for name, glow in (("Surface", False), ("Glow", True), ("Glass", False)):
         m = bpy.data.materials.get(name) or bpy.data.materials.new(name)
         nt = m.node_tree
         bsdf = nt.nodes.get("Principled BSDF")

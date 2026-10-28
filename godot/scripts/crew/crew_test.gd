@@ -3,13 +3,14 @@ extends Node3D
 ## the crew run it. X damages a random module, B wrecks one outright so
 ## the ship can split; crew spacewalk out of an airlock to bring pieces back.
 
-const HELP := "X damage · B wreck a module · V outside view · Alt or H module cards\n" \
+const HELP := "X damage · B wreck a module · F fire · V outside view · Alt or H module cards\n" \
 		+ "Left click/drag select crew · right click order them (R releases)\n" \
 		+ "Right click with none selected flies the ship · Space follow ship\n" \
 		+ "WASD pan · middle drag rotate · wheel zoom · Esc map\n" \
 		+ "Blue operating · yellow hauling · green repairing · pink spacewalk · grey idle"
 
 @onready var _ship: ShipBody = $Ship
+var _fx := ShipFx.new()
 @onready var _info: Label = $UI/Info
 var _last := Vector2.ZERO  # ship middle last frame, for the camera to follow
 var _follow := false  # Space: camera rides along with the ship
@@ -24,6 +25,9 @@ func _ready() -> void:
 	_last = _ship.world(_ship.pivot())
 	_hud()
 	$Camera.focus = Vector3(_last.x, 0.0, _last.y)
+	_fx.name = &"Fx"
+	_ship.add_child(_fx)
+	_fx.bind(_ship.hulk, _ship.sim.state)
 
 
 func _design() -> ShipDesign:
@@ -103,4 +107,15 @@ func _unhandled_input(event: InputEvent) -> void:
 		KEY_B: _ship.sim.state.damage(randi() % _ship.sim.state.size(), INF)
 		KEY_V: _ship.hulk.outside = not _ship.hulk.outside
 		KEY_SPACE: _follow = not _follow
+		KEY_F: _fire()
 		KEY_ESCAPE: get_tree().change_scene_to_file("res://scenes/main.tscn")
+
+
+## Every working weapon fires once, a little staggered.
+func _fire() -> void:
+	var s := _ship.sim.state
+	var k := 0
+	for i in s.size():
+		if s.module(i).firepower > 0.0 and s.is_running(i):
+			get_tree().create_timer(0.12 * k).timeout.connect(_fx.fire.bind(i))
+			k += 1
