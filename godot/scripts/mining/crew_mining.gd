@@ -1,7 +1,9 @@
 class_name CrewMining
 extends RefCounted
 ## Ore runs. A crew member steps out an airlock, jetpacks to a floating
-## chunk of ore, brings it back in and stows it in a hold. Jobs are only
+## chunk of ore, brings it back in and stows it in a hold. Species that
+## pull by mind (CrewSpecies.reach) stay inside: the chunk drifts to the
+## airlock, comes through and floats along to the hold. Jobs are only
 ## posted for what fits: what others already plan to bring counts
 ## against the free space. A full hold stops those runs; carriers let go.
 
@@ -43,6 +45,13 @@ static func work(sim: CrewSim, c: CrewMember, delta: float) -> void:
 		sim.finish(c)  # hold full: stop, dropping anything carried
 		return
 	match c.stage:
+		1 when c.species.pulls():
+			if in_reach(sim.board, c, c.job.target, c.job.module):
+				c.stage = 6
+			else:
+				sim.finish(c)
+		6:
+			_pull(sim, c, delta)
 		1:
 			c.eva = true
 			c.air = CrewEva.AIR_RIG
@@ -71,6 +80,31 @@ static func work(sim: CrewSim, c: CrewMember, delta: float) -> void:
 				if c.cargo <= 0.0:
 					f.stow(c.job.target)
 				sim.finish(c)
+
+
+## True if c can fetch chunk id through airlock a: always for those who
+## go out, within reach of the airlock for those who pull by mind.
+static func in_reach(board: JobBoard, c: CrewMember, id: int, a: int) -> bool:
+	if not c.species.pulls():
+		return true
+	var at = board.field.local(id) if board.field else null
+	return at != null and a >= 0 and board.state.spot(a).distance_to(at) <= c.species.reach
+
+
+## Telekinesis: draw the chunk to the airlock, then float it to a hold.
+static func _pull(sim: CrewSim, c: CrewMember, delta: float) -> void:
+	var f: MiningField = sim.board.field
+	var t := c.job.target
+	if f.local(t) == null or f.chunks[t].carrier:
+		sim.finish(c)
+	elif f.drag(t, sim.state.spot(c.job.module), delta):
+		c.cargo = f.pick(t, c)
+		var hold := sim.nearest_store(c.job.res, c.pos, c.job.module)
+		if hold < 0 or c.cargo <= 0.0:
+			sim.finish(c)
+			return
+		c.path = sim.nav.route(c.pos, sim.state.spot(hold))
+		c.stage = 5
 
 
 ## Fly back to an airlock, go in and walk to the nearest ore hold.

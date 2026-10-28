@@ -6,6 +6,7 @@ extends RefCounted
 const DEFAULT := {&"operate": 2, &"haul": 3, &"repair": 2, &"eva": 3}
 
 var name := ""
+var species: CrewSpecies
 var pos := Vector2.ZERO  # ship-local metres (x, z)
 var y := 0.0  # deck height under them, eased for drawing
 var path := PackedVector2Array()
@@ -24,14 +25,16 @@ var strand := -1.0  # aboard a cut-off piece: seconds until they bail out
 var priority := {}
 
 
-func _init(n: String) -> void:
+func _init(n: String, sp: CrewSpecies = null) -> void:
 	name = n
+	species = sp if sp else CrewSpecies.by_id(&"human")
 	for t in CrewJob.TYPES:
 		priority[t] = DEFAULT.get(t, 3)
 
 
+## How much they want job type t; 0 if their species can't do it.
 func pref(t: StringName) -> int:
-	return priority.get(t, 0)
+	return priority.get(t, 0) if species.can(t) else 0
 
 
 ## Cycles a priority 1 -> 2 -> 3 -> 4 -> off -> 1.

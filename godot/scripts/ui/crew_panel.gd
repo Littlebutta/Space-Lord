@@ -2,7 +2,8 @@ class_name CrewPanel
 extends CanvasLayer
 ## Work-priority grid (RimWorld style): a row per crew member, a column
 ## per job type. Click a cell to cycle 1 (first) .. 4 (last) .. off;
-## click a column header to set the whole column.
+## click a column header to set the whole column. Hire buttons offer
+## every species; jobs a species can't do show a cross.
 
 var sim: CrewSim
 var _grid := GridContainer.new()
@@ -16,11 +17,11 @@ func bind(s: CrewSim) -> void:
 	p.add_child(UiKit.fold("Crew priorities", box, false))
 	UiKit.pin(self, p, Control.PRESET_TOP_LEFT)
 	var row := HBoxContainer.new()
-	for a in ["+ Crew", "- Crew"]:
-		var b := Button.new()
-		b.text = a
-		b.pressed.connect(sim.add_crew if a[0] == "+" else sim.remove_crew)
+	for sp in CrewSpecies.all():
+		var b := _button("+ " + sp.display_name, sim.add_crew.bind(sp))
+		b.tooltip_text = sp.blurb
 		row.add_child(b)
+	row.add_child(_button("- Crew", sim.remove_crew))
 	box.add_child(row)
 	box.add_child(_grid)
 	sim.crew_changed.connect(_build)
@@ -42,9 +43,15 @@ func _build() -> void:
 		_grid.add_child(_button(t.capitalize(), _cycle_column.bind(t)))
 	_grid.add_child(_label("Doing"))
 	for c in sim.crew:
-		_grid.add_child(_label(c.name))
+		var who := _label(c.name)
+		who.tooltip_text = c.species.display_name + ": " + c.species.blurb
+		who.mouse_filter = Control.MOUSE_FILTER_STOP
+		who.modulate = c.species.look().tint.lerp(Color.WHITE, 0.5)
+		_grid.add_child(who)
 		for t in CrewJob.TYPES:
 			var b := _button(_text(c.pref(t)), Callable())
+			b.disabled = not c.species.can(t)
+			b.text = "×" if b.disabled else b.text
 			b.pressed.connect(_cycle.bind(c, t, b))
 			_grid.add_child(b)
 		var l := _label("")

@@ -90,6 +90,8 @@ func assign(crew: Array[CrewMember]) -> void:
 			var p := c.pref(j.type)
 			if j.worker or p <= 0 or p > best_p or (c.job and p >= cur):
 				continue
+			if j.type == &"mine" and not CrewMining.in_reach(self, c, j.target, j.module):
+				continue
 			var at := state.spot(j.module)
 			if not nav.connected(c.pos, at):
 				continue
