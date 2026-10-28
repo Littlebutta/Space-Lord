@@ -1,0 +1,10 @@
+{
+  "repo": "Littlebutta/Space-Lord",
+  "asset": "SpaceLord-{os}.zip",
+  "dir": "game",
+  "exe": {
+    "windows": "SpaceLord.exe",
+    "linux": "SpaceLord.sh",
+    "darwin": "SpaceLord.app/Contents/MacOS/SpaceLord"
+  }
+}

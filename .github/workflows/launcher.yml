@@ -1,0 +1,24 @@
+name: launcher
+on:
+  push:
+    paths: ["launcher/**"]
+  pull_request:
+    paths: ["launcher/**"]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: launcher } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version: "1.24" }
+      - run: go vet ./... && go test ./...
+      - run: |
+          for os in windows linux darwin; do
+            ext=""; [ $os = windows ] && ext=.exe
+            GOOS=$os GOARCH=amd64 go build -ldflags="-s -w" \
+              -o dist/SpaceLordLauncher-$os$ext .
+          done
+      - uses: actions/upload-artifact@v4
+        with: { name: launcher, path: launcher/dist }
