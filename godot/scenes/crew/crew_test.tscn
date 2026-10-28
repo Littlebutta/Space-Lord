@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://scripts/crew/crew_test.gd" id="1_test"]
 [ext_resource type="Script" path="res://scripts/camera/rts_camera.gd" id="2_cam"]
-[ext_resource type="Script" path="res://scripts/ships/ship_view.gd" id="3_view"]
+[ext_resource type="Script" path="res://scripts/ships/hulk_view.gd" id="3_view"]
 [ext_resource type="Script" path="res://scripts/crew/crew_sim.gd" id="4_sim"]
 [ext_resource type="Script" path="res://scripts/ui/crew_panel.gd" id="5_panel"]
 
@@ -32,7 +32,7 @@ distance = 24.0
 zoom_range = Vector2(8, 120)
 pitch_deg = -65.0
 
-[node name="ShipView" type="Node3D" parent="."]
+[node name="Hulk" type="Node3D" parent="."]
 script = ExtResource("3_view")
 
 [node name="CrewSim" type="Node3D" parent="."]

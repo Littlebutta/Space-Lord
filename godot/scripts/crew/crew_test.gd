@@ -1,9 +1,11 @@
 extends Node3D
 ## Crew sandbox: loads the saved player ship (or a random one) and lets
-## the crew run it. X damages a random module, Esc returns to the map.
+## the crew run it. X damages a random module, B wrecks one outright so
+## the ship can split; crew spacewalk out of an airlock to bring pieces back.
 
-const HELP := "Crew sandbox · X damage a module · WASD/QE/wheel camera · Esc map\n" \
-		+ "Blue operating · yellow hauling · green repairing · grey idle"
+const HELP := "Crew sandbox · X damage · B wreck a module · WASD/QE/wheel camera" \
+		+ " · Esc map\nBlue operating · yellow hauling · green repairing" \
+		+ " · pink spacewalk · grey idle"
 
 @onready var _sim: CrewSim = $CrewSim
 @onready var _info: Label = $UI/Info
@@ -14,7 +16,7 @@ func _ready() -> void:
 	var d := _design()
 	_sim.setup(d, maxi(int(d.total(&"berths")), 4))
 	$Panel.bind(_sim)
-	$ShipView.design = d
+	$Hulk.bind(_sim.state.pieces)
 	var box := Rect2(d.rect(0))
 	for i in d.modules.size():
 		box = box.merge(Rect2(d.rect(i)))
@@ -26,7 +28,6 @@ func _ready() -> void:
 		t.font_size = 32
 		t.pixel_size = 0.008
 		t.outline_size = 8
-		t.position = ShipView.center(d.rect(i)) + Vector3.UP * 1.5
 		add_child(t)
 		_tags.append(t)
 
@@ -38,8 +39,10 @@ func _design() -> ShipDesign:
 			return d
 	var pool: Array[ShipModule] = ModuleLibrary.all().filter(
 			func(m): return m.category != "command")
-	return ShipGenerator.generate(ModuleLibrary.by_id(&"bridge"), pool,
-			RandomNumberGenerator.new(), 16)
+	var rng := RandomNumberGenerator.new()
+	var g := ShipGenerator.generate(ModuleLibrary.by_id(&"bridge"), pool, rng, 16)
+	ShipGenerator.ensure(g, ModuleLibrary.by_id(&"airlock"), rng)
+	return g
 
 
 func _process(_delta: float) -> void:
@@ -48,6 +51,8 @@ func _process(_delta: float) -> void:
 	for i in s.size():
 		running += int(s.is_running(i))
 		_tags[i].text = _tag(i)
+		var at := s.pieces.world(i)
+		_tags[i].position = Vector3(at.x, 1.5, at.y)
 	var t := "Modules running %d / %d\n" % [running, s.size()]
 	for res in s.storage.capacity:
 		t += "%s %.0f / %.0f\n" % [res.capitalize(), s.storage.get_amount(res),
@@ -58,7 +63,9 @@ func _process(_delta: float) -> void:
 func _tag(i: int) -> String:
 	var s := _sim.state
 	var m := s.module(i)
-	var t := ""
+	if s.hp[i] <= 0.0:
+		return "wrecked"
+	var t := "" if s.pieces.powered(i) else "no power "
 	if m.crew > 0:
 		t += "crew %d/%d " % [mini(s.operators[i], m.crew), m.crew]
 	for res in m.upkeep:
@@ -74,4 +81,5 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	match key.keycode:
 		KEY_X: _sim.state.damage(randi() % _sim.state.size(), 60.0)
+		KEY_B: _sim.state.damage(randi() % _sim.state.size(), INF)
 		KEY_ESCAPE: get_tree().change_scene_to_file("res://scenes/main.tscn")
