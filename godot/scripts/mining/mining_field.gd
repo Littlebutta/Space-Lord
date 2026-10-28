@@ -92,7 +92,9 @@ func _physics_process(delta: float) -> void:
 		var c: Dictionary = chunks[id]
 		var n: Node3D = c.node
 		if c.carrier:
-			n.position = _world(ship.sim.local3d(c.carrier)) + Vector3.UP * 1.1  # in their arms
+			var cr: CrewMember = c.carrier
+			var held := Vector3(cr.face.x * 0.45, 1.0, cr.face.y * 0.45)  # out in front
+			n.position = _world(ship.sim.local3d(cr) + held)
 			continue
 		n.position += c.vel * delta
 		c.vel *= 1.0 - DAMP * delta
@@ -109,7 +111,9 @@ func _laser(i: int, delta: float) -> void:
 	if on and not ShipGuns.aim_head(ship.hulk.part(i), rock.node.position, delta):
 		on = false
 	var from := _muzzle(i)
-	_beam(i, from, rock.node.position if on else from, on)
+	var bite: Vector3 = rock.node.position + (from - rock.node.position).normalized() \
+			* rock.r * 0.9 if on else from  # the rock's near face
+	_beam(i, from, bite, on)
 	if not on:
 		return
 	_cut[i] = _cut.get(i, 0.0) + st.module(i).mining * delta
@@ -162,12 +166,10 @@ func _beam(i: int, from: Vector3, to: Vector3, on: bool) -> void:
 
 
 func _spawn(at: Vector3, vel: Vector3, res: String, amount: float) -> void:
-	var m := BoxMesh.new()
-	m.size = Vector3.ONE * 0.5
-	m.material = MapGlow.make(Materials.COLORS[res], 0.6, false)
 	var mi := MeshInstance3D.new()
-	mi.mesh = m
-	mi.position = at
+	mi.mesh = OreLump.mesh(res)
+	mi.position = Vector3(at.x, CrewEva.UP, at.z)  # up where spacewalkers fly
+	mi.rotation = Vector3(randf(), randf(), randf()) * TAU
 	add_child(mi)
 	chunks[_next] = {node = mi, vel = vel + Vector3(randf() - 0.5, 0, randf() - 0.5) * 0.4,
 			res = res, amount = amount, carrier = null}
@@ -221,5 +223,5 @@ func release(id: int, at: Vector2, left: float) -> void:
 	var c: Dictionary = chunks[id]
 	c.carrier = null
 	c.amount = left
-	c.node.position = _world(Vector3(at.x, 0.5, at.y))
+	c.node.position = _world(Vector3(at.x, CrewEva.UP, at.y))
 	c.vel = Vector3(ship.vel.x, 0.0, ship.vel.y) * 0.5
