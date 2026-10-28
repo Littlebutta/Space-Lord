@@ -25,6 +25,19 @@ static func generate(core: ShipModule, pool: Array[ShipModule],
 	return d
 
 
+## A random flyable test ship: a bridge with an airlock, a thruster,
+## fuel and ammo always aboard.
+static func sandbox(seed_: int, parts := 16) -> ShipDesign:
+	var pool: Array[ShipModule] = ModuleLibrary.all().filter(
+			func(m): return m.category != "command")
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed_
+	var g := generate(ModuleLibrary.by_id(&"bridge"), pool, rng, parts)
+	for id in [&"airlock", &"engine", &"fuel_tank", &"ammo_rack"]:
+		ensure(g, ModuleLibrary.by_id(id), rng)
+	return g
+
+
 ## Bolts `m` on somewhere if the design has none (e.g. an airlock).
 static func ensure(d: ShipDesign, m: ShipModule, rng: RandomNumberGenerator) -> void:
 	for tries in 200:

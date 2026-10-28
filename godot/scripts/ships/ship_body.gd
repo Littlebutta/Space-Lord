@@ -12,6 +12,9 @@ const HOP := 15.0  # closer goals are reached without turning to face them
 const ARRIVE := 1.5  # metres from the goal counts as there
 const DRAG := 0.03  # a little drag so drifting ships do settle
 
+## Gun module i fired (for muzzle effects).
+signal fired(gun: int)
+
 var sim: CrewSim
 var hulk: HulkView
 var bumps: PieceBumps
