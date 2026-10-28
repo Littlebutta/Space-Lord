@@ -259,3 +259,25 @@ def capacitor(i, e, pts):
     for x in (-0.5, 0.0, 0.5):
         e.cyl((x, ROOF + 0.15, -0.4), 0.15, 0.12, C["steel"], sides=10, bevel=0.02)
     return []
+
+
+def mining_laser(i, e, pts):
+    """Blocked: the front row z < -1 and the back corners; the operator
+    stands at (0, -0.4) at the beam console."""
+    floor(i, pts, grates=[(-1, 0), (0, 0)])
+    console(i, 0, -1.25, (0, 1), 0.9, "amber")
+    for x in (-1.45, 1.45):  # focusing coils either side of the console
+        i.cyl((x, 0.8, -1.5), 0.4, 1.6, C["gun"], sides=16, bevel=0.03)
+        for y in (0.4, 0.8, 1.2):
+            i.cyl((x, y, -1.5), 0.43, 0.08, C["brass"], sides=16)
+        i.cyl((x, 1.65, -1.5), 0.25, 0.08, C["amber"], sides=16, glow=True)
+    for x in (-1.5, 1.5):  # power conditioners in the back corners
+        i.box((x, 0.6, 1.5), (0.8, 1.2, 0.8), C["steel"], 0.05)
+        screen(i, (x, 0.9, 1.08), 0.4, 0.25, col="power")
+    e.box((0, ROOF + 0.3, 0.2), (2.2, 0.6, 2.4), C["hull"], 0.12, seg=2)
+    e.cyl((0, ROOF + 0.45, -1.4), 0.55, 1.6, C["steel"], "z", 16, r2=0.35, bevel=0.03)
+    for z in (-0.9, -1.6):
+        e.cyl((0, ROOF + 0.45, z), 0.6, 0.12, C["gun"], "z", 16, bevel=0.02)
+    e.cyl((0, ROOF + 0.45, -2.25), 0.32, 0.12, C["amber"], "z", 16, glow=True)
+    e.box((0, ROOF + 0.62, 0.2), (1.6, 0.05, 1.8), C["accent"], 0.02)
+    return [((0, 2.1, -0.4), C["amber"])]
