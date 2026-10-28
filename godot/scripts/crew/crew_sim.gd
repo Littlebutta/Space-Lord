@@ -69,6 +69,7 @@ func _physics_process(delta: float) -> void:
 		_act(c, delta)
 	_separate()
 	state.tick(delta * hours_per_second)
+	state.power.tick(delta)
 	state.pieces.tick(delta)
 	_draw(delta)
 
