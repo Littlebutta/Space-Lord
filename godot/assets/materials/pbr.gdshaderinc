@@ -13,6 +13,7 @@ uniform float grime : hint_range(0.0, 1.0) = 0.2;
 uniform float wear : hint_range(0.0, 1.0) = 0.15;
 uniform float bump : hint_range(0.0, 2.0) = 0.12;
 uniform float seams = 0.0;  // plate seams every metre, 0 = off
+uniform float panel_var = 0.0;  // tone change between plates, 0 = even
 
 varying vec3 obj_pos;
 varying vec3 obj_nrm;
@@ -62,6 +63,15 @@ void pbr(int id, vec3 base, vec2 uv, out vec3 alb, out float metal,
 		vec3 f = abs(fract(obj_pos * seams + 0.5) - 0.5);
 		vec3 lines = step(f, vec3(0.012 * seams));
 		seam = max(max(lines.x * (1.0 - w.x), lines.y * (1.0 - w.y)), lines.z * (1.0 - w.z));
+		// each plate a slightly different tone, and bolt rows beside seams
+		vec3 cell = floor(obj_pos * seams + 0.5);
+		float h = fract(sin(dot(cell, vec3(12.99, 78.23, 37.72))) * 43758.55);
+		base *= 1.0 + (h - 0.5) * panel_var;
+		vec3 d = f / seams;  // metres to the nearest seam on each axis
+		vec3 r = abs(fract(obj_pos * 5.0) - 0.5);  // one bolt every 20 cm
+		float bx = step(abs(d.x - 0.08), 0.022) * step(r.z, 0.11);
+		float bz = step(abs(d.z - 0.08), 0.022) * step(r.x, 0.11);
+		seam = max(seam, max(bx, bz) * w.y * 0.7 * step(0.001, panel_var));
 	}
 	alb = mix(base, base * vec3(0.45, 0.41, 0.36), max(dirt, seam * 0.8)) * tint.rgb;
 	metal = mix(pr.y, 1.0, chip);

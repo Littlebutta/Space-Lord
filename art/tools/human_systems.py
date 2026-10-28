@@ -218,3 +218,44 @@ def shipdock(i, e, pts):
         e.ball((x, ROOF + 0.7, -1.6), 0.08, C["amber"], 1, glow=True)
     e.box((0, ROOF + 0.05, -0.4), (3.6, 0.1, 2.6), C["steel"], 0.04)
     return [((0, 2.1, -0.4), C["lamp"]), ((0, 2.1, 1.0), C["lamp"])]
+
+
+def generator(i, e, pts):
+    """Reactor. Blocked: z < 1 (the core); crew at (-1, 1.5) and (1, 1.5)
+    feed it fuel and watch it from two consoles at the back."""
+    floor(i, pts, grates=[(-1, 1), (0, 1)])
+    i.box((0, 0.15, -0.5), (3.9, 0.3, 2.9), C["gun"], 0.05)  # plinth
+    i.cyl((0, 1.25, -0.6), 0.95, 2.0, C["steel"], sides=24, bevel=0.04)
+    for y in (0.55, 1.05, 1.55, 2.05):  # containment rings and glow bands
+        i.cyl((0, y, -0.6), 1.02, 0.1, C["gun"], sides=24, bevel=0.02)
+        i.cyl((0, y + 0.22, -0.6), 0.97, 0.08, C["power"], sides=24, glow=True)
+    i.cyl((0, 2.3, -0.6), 0.6, 0.15, C["gun"], sides=16, bevel=0.03)
+    for x in (-1.6, 1.6):  # coolant stacks and pipes into the core
+        i.cyl((x, 1.0, -1.4), 0.25, 2.0, C["steel"], sides=12, bevel=0.02)
+        pipe(i, (x, 1.7, -1.1), (x * 0.6, 1.7, -1.1), 0.07, "metal")
+        pipe(i, (x, 0.6, -0.4), (x * 0.6, 0.6, -0.4), 0.09, "brass")
+    i.box((1.5, 0.7, 0.3), (0.8, 0.8, 1.0), C["hazard"], 0.04)  # fuel feed hopper
+    i.box((1.5, 1.12, 0.3), (0.6, 0.04, 0.8), C["gun"], 0.01)
+    for x in (-1, 1):
+        console(i, x, 0.75, (0, 1), 0.7, "power" if x < 0 else "amber")
+    e.cyl((0, ROOF + 0.15, -0.6), 1.1, 0.3, C["steel"], sides=24, bevel=0.04)
+    vent(e, (0, ROOF + 0.32, -0.6), 1.2, 1.2)
+    return [((0, 2.2, 0.9), C["power"])]
+
+
+def capacitor(i, e, pts):
+    """Capacitor bank. Blocked: z < 0; crew service it from z = 0.5."""
+    floor(i, pts)
+    for x in (-0.5, 0.0, 0.5):  # three cells in a rack
+        i.cyl((x, 0.75, -0.55), 0.2, 1.4, C["gun"], sides=12, bevel=0.02)
+        for y in (0.3, 0.7, 1.1):
+            i.cyl((x, y, -0.55), 0.22, 0.05, C["brass"], sides=12)
+        i.cyl((x, 1.5, -0.55), 0.12, 0.06, C["power"], sides=12, glow=True)
+    i.box((0, 0.06, -0.55), (1.8, 0.12, 0.8), C["steel"], 0.02)
+    i.box((0, 1.6, -0.9), (1.8, 0.1, 0.12), C["steel"], 0.02)
+    pipe(i, (-0.8, 1.6, -0.55), (0.8, 1.6, -0.55), 0.04, "metal", False)
+    screen(i, (0.75, 1.1, -0.15), 0.3, 0.25, col="power")
+    e.box((0, ROOF + 0.05, -0.4), (1.6, 0.1, 0.9), C["gun"], 0.03)
+    for x in (-0.5, 0.0, 0.5):
+        e.cyl((x, ROOF + 0.15, -0.4), 0.15, 0.12, C["steel"], sides=10, bevel=0.02)
+    return []

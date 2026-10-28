@@ -10,7 +10,6 @@ const HELP := "X damage · B wreck a module · F fire · V outside view · Alt o
 		+ "Blue operating · yellow hauling · green repairing · pink spacewalk · grey idle"
 
 @onready var _ship: ShipBody = $Ship
-var _fx := ShipFx.new()
 @onready var _info: Label = $UI/Info
 var _last := Vector2.ZERO  # ship middle last frame, for the camera to follow
 var _follow := false  # Space: camera rides along with the ship
@@ -27,9 +26,6 @@ func _ready() -> void:
 	_last = _ship.world(_ship.pivot())
 	_hud()
 	$Camera.focus = Vector3(_last.x, 0.0, _last.y)
-	_fx.name = &"Fx"
-	_ship.add_child(_fx)
-	_fx.bind(_ship.hulk, _ship.sim.state)
 
 
 func _design() -> ShipDesign:
@@ -42,7 +38,6 @@ func _design() -> ShipDesign:
 
 func _process(_delta: float) -> void:
 	var mid := _ship.world(_ship.pivot())
-	_fx.thrust_all = not _ship.helm.firing.is_empty()
 	if _follow:
 		$Camera.focus += Vector3(mid.x - _last.x, 0.0, mid.y - _last.y)
 	_last = mid
@@ -104,8 +99,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		KEY_X: _ship.sim.state.damage(randi() % _ship.sim.state.size(), 60.0)
 		KEY_B: _ship.sim.state.damage(randi() % _ship.sim.state.size(), INF)
 		KEY_V: _ship.hulk.outside = not _ship.hulk.outside
-		KEY_SPACE: _follow = not _follow
 		KEY_F: _fire()
+		KEY_SPACE: _follow = not _follow
 		KEY_ESCAPE: get_tree().change_scene_to_file("res://scenes/main.tscn")
 
 
@@ -114,6 +109,6 @@ func _fire() -> void:
 	var s := _ship.sim.state
 	var k := 0
 	for i in s.size():
-		if s.module(i).firepower > 0.0 and s.is_running(i):
-			get_tree().create_timer(0.12 * k).timeout.connect(_fx.fire.bind(i))
+		if s.module(i).firepower > 0.0 and s.can_shoot(i):
+			get_tree().create_timer(0.12 * k).timeout.connect(s.shoot.bind(i))
 			k += 1

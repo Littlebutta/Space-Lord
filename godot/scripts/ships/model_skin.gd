@@ -37,6 +37,7 @@ static func shell_material(t: ShipTheme) -> ShaderMaterial:
 		var m := material(t).duplicate() as ShaderMaterial
 		m.set_shader_parameter(&"tint", Color(0.5, 0.52, 0.56))
 		m.set_shader_parameter(&"seams", 0.5)
+		m.set_shader_parameter(&"panel_var", 0.14)
 		_mats[key] = m
 	return _mats[key]
 
@@ -116,7 +117,7 @@ static func _glass_mat() -> StandardMaterial3D:
 	g.albedo_color = Color(0.55, 0.75, 0.85, 0.18)
 	g.metallic = 0.4
 	g.roughness = 0.05
-	g.specular = 0.8
+	g.metallic_specular = 0.8
 	return g
 
 
