@@ -13,24 +13,16 @@ static var _mats := {}  # Color -> additive billboard material
 static var _wreck: Array[Mesh] = []
 
 
-## Engine plume: core cone, particle trail and a warm light, blowing +z.
+## Engine plume: a particle trail and a warm light, blowing +z.
 static func exhaust() -> Node3D:
 	var root := Node3D.new()
 	root.name = &"FxExhaust"
-	var cone := MeshInstance3D.new()
-	var cm := CylinderMesh.new()
-	cm.top_radius = 0.05
-	cm.bottom_radius = 0.55
-	cm.height = 1.8
-	cm.material = glow_mat(Color(1.0, 0.7, 0.35, 0.55), false)
-	cone.mesh = cm
-	cone.rotation.x = -PI / 2.0
-	cone.position.z = 0.9
-	cone.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	root.add_child(cone)
-	var p := particles(64, 0.55, Vector3(0, 0, 1), 6.0, Vector2(7.0, 10.0), 0.9)
-	p.local_coords = false  # leaves a trail when the ship moves
-	root.add_child(p)
+	for layer in 2:  # a wide orange plume round a tight white-hot core
+		var p := particles(80 if layer == 0 else 40, 0.55 if layer == 0 else 0.25,
+				Vector3(0, 0, 1), 7.0 if layer == 0 else 2.0,
+				Vector2(7.0, 10.0) if layer == 0 else Vector2(10.0, 14.0), 1.0 if layer == 0 else 0.45)
+		p.local_coords = false  # leaves a trail when the ship moves
+		root.add_child(p)
 	var l := light(FIRE, 2.5, 6.0)
 	l.position.z = 0.6
 	root.add_child(l)

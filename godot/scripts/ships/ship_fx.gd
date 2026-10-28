@@ -21,6 +21,7 @@ var state: ShipState
 var sim: CrewSim  # when set, spacewalks hiss the airlock
 var _outside := {}  # crew member -> was outside last frame
 var _spark_cd := 0.0
+var _stock_cd := 0.0
 var _alive := PackedByteArray()
 var _last := {}  # module -> last global transform, for debris
 
@@ -62,6 +63,10 @@ func _process(delta: float) -> void:
 	if state == null:
 		return
 	_spark_cd -= delta
+	_stock_cd -= delta
+	if _stock_cd <= 0.0:
+		_stock_cd = 0.5
+		_stock()
 	_spacewalks()
 	for i in state.size():
 		var alive := state.hp[i] > 0.0
@@ -153,3 +158,26 @@ func _spacewalks() -> void:
 			var at := state.spot(a) if a >= 0 else c.pos
 			Sfx.play(_world(), &"airlock_hiss", global_transform * Vector3(at.x, 1.0, at.y), -2.0, 40.0)
 		_outside[c] = out
+
+
+## Storage parts show their crates and shells ("Fill1".."Fill4" in the
+## model) in step with how full the ship's stores of what they hold are.
+func _stock() -> void:
+	var st := state.storage
+	for i in state.size():
+		var m := state.module(i)
+		if m.storage.is_empty():
+			continue
+		var n := hulk.part(i)
+		if n == null:
+			continue
+		var have := 0.0
+		var room := 0.0
+		for res in m.storage:
+			have += st.get_amount(res)
+			room += st.capacity.get(res, 0.0)
+		var frac := have / room if room > 0.0 else 0.0
+		for k in range(1, 5):
+			var f := n.find_child("Fill%d*" % k, true, false) as Node3D
+			if f:
+				f.visible = frac >= (k - 0.5) / 4.0

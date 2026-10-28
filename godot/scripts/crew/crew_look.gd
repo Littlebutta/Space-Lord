@@ -17,6 +17,8 @@ var _bodies: Array[Node3D] = []
 var _players: Array[AnimationPlayer] = []
 var _meshes: Array[MeshInstance3D] = []
 var _rings: Array[MeshInstance3D] = []  # selection markers
+var _suits: Array[MeshInstance3D] = []  # spacesuits, worn outside
+var _crates: Array[MeshInstance3D] = []  # loads held while hauling
 
 
 func draw(crew: Array[CrewMember], sim: CrewSim, delta: float) -> void:
@@ -27,6 +29,8 @@ func draw(crew: Array[CrewMember], sim: CrewSim, delta: float) -> void:
 		_players.pop_back()
 		_meshes.pop_back()
 		_rings.pop_back()
+		_suits.pop_back()
+		_crates.pop_back()
 	for k in crew.size():
 		var c := crew[k]
 		c.y = lerpf(c.y, sim.nav.height(c.pos), minf(delta * 10.0, 1.0))
@@ -40,8 +44,11 @@ func draw(crew: Array[CrewMember], sim: CrewSim, delta: float) -> void:
 		_rings[k].visible = c.selected
 		_play(k, _anim(c))
 		var col: Color = CrewJob.COLORS[c.job.type if c.job else &""]
-		_meshes[k].set_instance_shader_parameter(&"shirt",
-				col.lightened(0.4) if c.cargo > 0.0 else col)
+		_meshes[k].set_instance_shader_parameter(&"shirt", col)
+		_suits[k].visible = c.eva
+		_crates[k].visible = c.cargo > 0.0 and not c.eva  # ore chunks show themselves
+		if c.eva and is_inside_tree() and randf() < delta * 3.0:
+			CrewGear.puff(get_tree().current_scene, b)
 
 
 ## The shared crew material; shirts are an instance uniform.
@@ -57,8 +64,14 @@ static func material() -> ShaderMaterial:
 
 func _spawn() -> void:
 	var b: Node3D = MODEL.instantiate()
-	var mi: MeshInstance3D = b.find_children("*", "MeshInstance3D", true, false)[0]
+	var mi := b.find_child("CrewBody*", true, false) as MeshInstance3D
 	mi.material_override = material()
+	var suit := b.find_child("CrewSuit*", true, false) as MeshInstance3D
+	CrewGear.dress(suit)
+	var crate := CrewGear.crate()
+	b.add_child(crate)
+	_suits.append(suit)
+	_crates.append(crate)
 	var ap: AnimationPlayer = b.find_children("*", "AnimationPlayer", true, false)[0]
 	for n in ap.get_animation_list():
 		ap.get_animation(n).loop_mode = Animation.LOOP_LINEAR
@@ -108,6 +121,10 @@ func _facing(c: CrewMember, sim: CrewSim, at: Vector3) -> Vector3:
 
 
 static func _anim(c: CrewMember) -> StringName:
+	if c.eva:
+		return &"float"
+	if c.cargo > 0.0:
+		return &"carry"
 	if not c.arrived():
 		return &"walk"
 	return &"work" if c.job else &"idle"
@@ -117,6 +134,6 @@ func _play(k: int, anim: StringName) -> void:
 	var ap := _players[k]
 	if ap.current_animation != anim:
 		ap.play(anim, 0.15)
-		ap.speed_scale = WALK_SPEED if anim == &"walk" else 1.0
+		ap.speed_scale = WALK_SPEED if anim in [&"walk", &"carry"] else 1.0
 		ap.seek(randf() * ap.current_animation_length)  # don't march in step
 
