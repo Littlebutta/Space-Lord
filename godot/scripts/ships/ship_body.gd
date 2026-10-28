@@ -1,8 +1,9 @@
 class_name ShipBody
 extends Node3D
-## A ship flying in space: its crew (CrewSim), its pieces (HulkView) and
-## RTS flight. It turns and burns toward `goal` with whichever thrusters
-## face the right way (see ShipHelm) while the bridge is manned. Loose pieces
+## A ship flying in space: its crew (CrewSim), its pieces (HulkView), its
+## effects (ShipFx) and RTS flight. It turns and burns toward `goal` with
+## whichever thrusters face the right way (see ShipHelm) while the bridge
+## is manned. Loose pieces
 ## and crew outside stay put in space as it moves, and get shoved aside.
 
 const TOP := 9.0  # top cruising speed, m/s
@@ -16,6 +17,7 @@ var sim: CrewSim
 var hulk: HulkView
 var bumps: PieceBumps
 var helm: ShipHelm
+var fx: ShipFx
 var at := Transform2D.IDENTITY  # ship-local (x, z) -> world (x, z)
 var vel := Vector2.ZERO  # world metres per second
 var spin := 0.0  # radians per second
@@ -34,6 +36,11 @@ func setup(d: ShipDesign, crew: int) -> void:
 	helm.weigh()
 	sim.state.pieces.changed.connect(helm.weigh)
 	sim.died.connect(_corpse)
+	fx = ShipFx.new()
+	add_child(fx)
+	fx.bind(hulk, sim.state)
+	fx.helm = helm
+	fx.sim = sim
 	transform = ShipPieces.to_3d(at)
 
 

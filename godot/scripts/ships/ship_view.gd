@@ -63,6 +63,7 @@ func _shell() -> MeshInstance3D:
 	mi.name = &"Shell"
 	mi.mesh = HullShell.build(design, DECK * 0.5)
 	mi.material_override = ModelSkin.cut_shell(design.theme(0), HullShell.holes(design))
+	mi.add_child(HullShell.beacons(design, DECK * 0.5))
 	mi.visible = outside
 	return mi
 
@@ -89,6 +90,8 @@ static func make_part(m: ShipModule, r: Rect2i, turn: int, t: ShipTheme,
 		if t.glass_parts.has(m.id):
 			mi.set_meta(&"glass", true)
 		mi.set_surface_override_material(0, ModelSkin.deck_material())
+		if m.exterior:  # the model is the whole part: no placeholder
+			mi.mesh = null
 		model.rotation.y = -turn * PI / 2.0
 		model.position.y = DECK * 0.5
 		mi.add_child(model)
