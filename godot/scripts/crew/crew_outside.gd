@@ -58,7 +58,9 @@ static func order(sim: CrewSim, c: CrewMember, what: Dictionary) -> bool:
 		j.module = a
 		j.target = what.id
 		j.wreck = what.get("wreck")
-		j.res = {&"mine": CrewMining.ORE, &"salvage": CrewSalvage.RES}.get(j.type, "")
+		match j.type:
+			&"mine": j.res = sim.board.field.res(j.target)
+			&"salvage": j.res = CrewSalvage.RES
 		j.label = _label(sim, j)
 		sim.board.jobs[key] = j
 	elif j.worker:

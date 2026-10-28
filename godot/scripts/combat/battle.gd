@@ -6,12 +6,13 @@ extends Node3D
 
 const START := 55.0  # metres apart at the start, inside gun range
 const STANDOFF := 35.0  # the enemy circles at about this range
-const HELP := "Battle · right click fly · left click/drag select crew, right click order them" \
+const HELP := "Battle · right click fly · E stop · left click/drag select crew, right click order them" \
 		+ " · Space follow · V outside view · Alt/H module cards · Esc map\nWASD pan · middle mouse rotate · wheel zoom"
 
 @onready var _me: ShipBody = $Me
 @onready var _foe: ShipBody = $Foe
 @onready var _info: Label = $UI/Info
+var _marker := MoveMarker.new()
 var _guns: Array[ShipGuns] = []
 var _follow := true
 var _last := Vector2.ZERO
@@ -36,6 +37,8 @@ func _ready() -> void:
 	$Panel.bind(_me.sim)
 	$UI/Tags.bind(_me)
 	$UI/Orders.bind(_me)
+	add_child(_marker)
+	_marker.bind(_me, $UI/Orders)
 	_last = _me.world(_me.pivot())
 	$Camera.focus = Vector3(_last.x, 0.0, _last.y - START * 0.5)
 
@@ -113,10 +116,12 @@ func _unhandled_input(event: InputEvent) -> void:
 				cam.project_ray_origin(b.position), cam.project_ray_normal(b.position))
 		if hit != null:
 			_me.goal = Vector2(hit.x, hit.z)
+			_marker.ping(_me.goal)
 	var key := event as InputEventKey
 	if key == null or not key.pressed or key.echo:
 		return
 	match key.keycode:
+		KEY_E: _me.halt()
 		KEY_SPACE: _follow = not _follow
 		KEY_V: _me.hulk.outside = not _me.hulk.outside
 		KEY_ESCAPE: get_tree().change_scene_to_file("res://scenes/main.tscn")

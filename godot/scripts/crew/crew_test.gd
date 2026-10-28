@@ -5,12 +5,13 @@ extends Node3D
 
 const HELP := "X damage · B wreck a module · F fire · V outside view · Alt or H module cards\n" \
 		+ "Left click/drag select crew · right click order them (R releases)\n" \
-		+ "Right click with none selected flies the ship · Space follow ship\n" \
+		+ "Right click with none selected flies the ship · E stop · Space follow ship\n" \
 		+ "WASD pan · middle drag rotate · wheel zoom · Esc map\n" \
 		+ "Blue operating · yellow hauling · green repairing · pink spacewalk · grey idle"
 
 @onready var _ship: ShipBody = $Ship
 @onready var _info: Label = $UI/Info
+var _marker := MoveMarker.new()
 var _last := Vector2.ZERO  # ship middle last frame, for the camera to follow
 var _follow := false  # Space: camera rides along with the ship
 var _site := ""  # what's here, from the map site we arrived at
@@ -22,6 +23,8 @@ func _ready() -> void:
 	$Panel.bind(_ship.sim)
 	$UI/Tags.bind(_ship)
 	$UI/Orders.bind(_ship)
+	add_child(_marker)
+	_marker.bind(_ship, $UI/Orders)
 	_site = SiteScene.spawn(self, _ship)
 	_last = _ship.world(_ship.pivot())
 	_hud()
@@ -92,10 +95,12 @@ func _unhandled_input(event: InputEvent) -> void:
 				cam.project_ray_origin(b.position), cam.project_ray_normal(b.position))
 		if hit != null:
 			_ship.goal = Vector2(hit.x, hit.z)
+			_marker.ping(_ship.goal)
 	var key := event as InputEventKey
 	if key == null or not key.pressed or key.echo:
 		return
 	match key.keycode:
+		KEY_E: _ship.halt()
 		KEY_X: _ship.sim.state.damage(randi() % _ship.sim.state.size(), 60.0)
 		KEY_B: _ship.sim.state.damage(randi() % _ship.sim.state.size(), INF)
 		KEY_V: _ship.hulk.outside = not _ship.hulk.outside

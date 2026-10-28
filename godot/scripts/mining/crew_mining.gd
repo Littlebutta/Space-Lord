@@ -1,41 +1,41 @@
 class_name CrewMining
 extends RefCounted
 ## Ore runs. A crew member steps out an airlock, jetpacks to a floating
-## ore chunk, brings it back in and stows it in a hold. Jobs are only
-## posted for what fits: ore others already plan to bring counts against
-## the free space. A full hold stops everyone, and carriers let go.
+## chunk of ore, brings it back in and stows it in a hold. Jobs are only
+## posted for what fits: what others already plan to bring counts
+## against the free space. A full hold stops those runs; carriers let go.
 
-const ORE := "ore"
 const GRAB := 1.0  # seconds to net a chunk
 
 
-## Posts a job per loose chunk while the planned total still fits.
+## Posts a job per loose chunk while what's planned for its material
+## still fits in the hold.
 static func want(board: JobBoard, want: Dictionary) -> void:
 	var f: MiningField = board.field
 	if f == null:
 		return
-	var free := board.state.storage.free_space(ORE)
-	var planned := 0.0
+	var planned := {}
 	for j: CrewJob in board.jobs.values():
 		if j.type == &"mine" and j.worker:
-			planned += f.amount(j.target)
+			planned[j.res] = planned.get(j.res, 0.0) + f.amount(j.target)
 	for id in f.loose():
 		var key := "m%d" % id
 		if board.jobs.has(key) and board.jobs[key].worker:
 			continue  # counted above
-		planned += f.amount(id)
-		if planned > free:
-			return
+		var r := f.res(id)
+		if planned.get(r, 0.0) + f.amount(id) > board.state.storage.free_space(r):
+			continue
 		var a := board.state.airlock(f.local(id))
 		if a < 0:
 			return
-		want[key] = [&"mine", a, ORE, 0, id]
+		planned[r] = planned.get(r, 0.0) + f.amount(id)
+		want[key] = [&"mine", a, r, 0, id]
 
 
 static func work(sim: CrewSim, c: CrewMember, delta: float) -> void:
 	var f: MiningField = sim.board.field
 	var s := sim.state
-	if f == null or s.storage.free_space(ORE) <= 0.0:
+	if f == null or s.storage.free_space(c.job.res) <= 0.0:
 		sim.finish(c)  # hold full: stop, dropping anything carried
 		return
 	match c.stage:
@@ -63,7 +63,7 @@ static func work(sim: CrewSim, c: CrewMember, delta: float) -> void:
 		5:
 			c.timer += delta
 			if c.timer >= CrewSim.LOAD_TIME:
-				c.cargo -= s.storage.put(ORE, c.cargo)
+				c.cargo -= s.storage.put(c.job.res, c.cargo)
 				if c.cargo <= 0.0:
 					f.stow(c.job.target)
 				sim.finish(c)
@@ -76,7 +76,7 @@ static func _bring_in(sim: CrewSim, c: CrewMember, delta: float) -> void:
 		sim.finish(c)
 	elif CrewEva.fly(c, sim.state.spot(a), delta):
 		c.eva = false
-		var hold := sim.nearest_store(ORE, c.pos, a)
+		var hold := sim.nearest_store(c.job.res, c.pos, a)
 		if hold < 0:
 			sim.finish(c)
 			return

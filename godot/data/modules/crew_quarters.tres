@@ -10,6 +10,7 @@ category = "crew"
 size = Vector2i(2, 2)
 color = Color(0.45, 0.75, 0.5, 1)
 mass = 4.0
+materials = {"iron": 8.0, "copper": 0.8, "silicon": 0.4}
 hp = 140.0
 berths = 6
 storage = {"food": 30.0}

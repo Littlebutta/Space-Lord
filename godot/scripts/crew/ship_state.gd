@@ -70,9 +70,18 @@ func damage(i: int, amount: float) -> void:
 		pieces.update()
 
 
+## Repairs pay materials (Materials.repair_cost) from storage. Ships
+## with no room for a material at all aren't charged it.
 func repair(i: int, amount: float) -> void:
-	if hp[i] > 0.0:
-		hp[i] = minf(hp[i] + amount, module(i).hp)
+	if hp[i] <= 0.0:
+		return
+	var cost := Materials.repair_cost(module(i), amount)
+	for k in cost:
+		if storage.capacity.get(k, 0.0) > 0.0 and storage.get_amount(k) < cost[k]:
+			return  # out of materials
+	for k in cost:
+		storage.take(k, cost[k])
+	hp[i] = minf(hp[i] + amount, module(i).hp)
 
 
 ## A repair bay is up: crew repairs go faster, cost parts, and can be major.

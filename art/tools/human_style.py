@@ -111,3 +111,15 @@ def console(p, x, z, to, w=0.6, col="screen"):
     sx, sz = x - dx * 0.08, z - dz * 0.08
     p.box((sx, 1.3, sz), size(w - 0.04, 0.42, 0.05), C["gun"], 0.015)
     p.box((sx + dx * 0.03, 1.3, sz + dz * 0.03), size(w - 0.12, 0.34, 0.01), C[col], glow=True)
+
+
+FILLS = {}  # stock level k (1..4) -> Part, built by build_human.py
+
+
+def fill(k):
+    """Part for stock that shows once storage is about k quarters full:
+    the game shows "Fill1".."Fill4" as the hold fills (ShipFx)."""
+    import kit
+    if k not in FILLS:
+        FILLS[k] = kit.Part("Fill%d" % k)
+    return FILLS[k]

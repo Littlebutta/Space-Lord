@@ -10,6 +10,7 @@ category = "engine"
 size = Vector2i(1, 2)
 color = Color(0.95, 0.55, 0.2, 1)
 mass = 4.0
+materials = {"iron": 8.0, "copper": 2.4, "silicon": 0.4}
 hp = 120.0
 crew = 1
 thrust = 40.0

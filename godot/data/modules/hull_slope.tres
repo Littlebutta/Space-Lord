@@ -11,6 +11,7 @@ size = Vector2i(1, 1)
 outline = PackedVector2Array(0, 0, 0, 1, 1, 1)
 color = Color(0.55, 0.57, 0.6, 1)
 mass = 0.5
+materials = {"iron": 1.0}
 hp = 60.0
 salvage = {"alloy": 0.5}
 blocked = Array[Rect2]([Rect2(0.5, 0, 0.5, 0.5)])

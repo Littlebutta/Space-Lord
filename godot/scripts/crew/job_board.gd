@@ -121,5 +121,5 @@ func _make(key: String, w: Array) -> CrewJob:
 		&"repair": j.label = "Repairing %s" % n
 		&"eva": j.label = "Spacewalk: bring back %s" \
 				% state.module(j.target).display_name
-		&"mine": j.label = "Spacewalk: fetch ore"
+		&"mine": j.label = "Spacewalk: fetch %s" % j.res
 	return j
