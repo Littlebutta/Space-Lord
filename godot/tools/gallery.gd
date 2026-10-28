@@ -12,4 +12,5 @@ func _design() -> ShipDesign:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = SEED
 	return ShipGenerator.generate(ModuleLibrary.by_id(&"bridge"), pool, rng,
-			PARTS, &"human", 0.0)
+			PARTS, StringName(OS.get_environment("GALLERY_THEME")) if OS.has_environment(
+			"GALLERY_THEME") else &"human", 0.0)

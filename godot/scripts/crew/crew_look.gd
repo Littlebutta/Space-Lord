@@ -5,7 +5,7 @@ extends Node3D
 ## Shirts are coloured by job through an instance uniform, so the
 ## whole crew shares one material.
 
-const MODEL := preload("res://assets/models/human/crew.glb")
+const MODEL := "res://assets/models/human/crew.glb"  # fallback race
 const SHADER := preload("res://assets/materials/crew.gdshader")
 const WALK_SPEED := 1.3  # walk animation playback for CrewSim.SPEED
 const TURN := 10.0  # how fast they turn to face, per second
@@ -13,6 +13,7 @@ const TURN := 10.0  # how fast they turn to face, per second
 static var _mat: ShaderMaterial
 static var _ring_mesh: TorusMesh
 
+var _model: PackedScene  # this ship's race, from its bridge's theme
 var _bodies: Array[Node3D] = []
 var _players: Array[AnimationPlayer] = []
 var _meshes: Array[MeshInstance3D] = []
@@ -22,6 +23,8 @@ var _crates: Array[MeshInstance3D] = []  # loads held while hauling
 
 
 func draw(crew: Array[CrewMember], sim: CrewSim, delta: float) -> void:
+	if _model == null:
+		_model = race(sim.state.design.theme(0))
 	while _bodies.size() < crew.size():
 		_spawn()
 	while _bodies.size() > crew.size():
@@ -64,7 +67,7 @@ static func material() -> ShaderMaterial:
 
 
 func _spawn() -> void:
-	var b: Node3D = MODEL.instantiate()
+	var b: Node3D = _model.instantiate()
 	var mi := b.find_child("CrewBody*", true, false) as MeshInstance3D
 	mi.material_override = material()
 	var suit := b.find_child("CrewSuit*", true, false) as MeshInstance3D
@@ -138,3 +141,9 @@ func _play(k: int, anim: StringName) -> void:
 		ap.speed_scale = WALK_SPEED if anim in [&"walk", &"carry"] else 1.0
 		ap.seek(randf() * ap.current_animation_length)  # don't march in step
 
+
+
+## The crew model for theme `t`'s race (its crew.glb), else human.
+static func race(t: ShipTheme) -> PackedScene:
+	var p := t.model_dir.path_join("crew.glb") if t and not t.model_dir.is_empty() else MODEL
+	return load(p if ResourceLoader.exists(p) else MODEL)

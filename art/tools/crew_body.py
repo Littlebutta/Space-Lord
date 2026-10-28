@@ -94,3 +94,40 @@ def suit(p):
             p.cyl((x, y, 0.2), 0.03, 0.05, C["gear"], sides=8)
     for x in (-0.12, 0.12):  # chest lights
         p.box((x, 1.33, -0.13), (0.03, 0.03, 0.02), ("#59c8ff", "paint"), glow=True)
+
+
+# Faction crews: colour changes plus a head piece that marks the race.
+RACES = {
+    "human": {},
+    "bio": {"skin": ("#7fa06a", "skin"), "hair": ("#4d6a3c", "skin"),
+            "suit": ("#4a5240", "fabric"), "gear": ("#2c3324", "rubber")},
+    "crystal": {"skin": ("#a9b8e0", "skin"), "hair": ("#7f8ad0", "glass"),
+                "suit": ("#3f4266", "fabric"), "gear": ("#262840", "rubber")},
+    "scrap": {"skin": ("#b58a68", "skin"), "hair": ("#2e2620", "fabric"),
+              "suit": ("#5a4a3a", "fabric"), "gear": ("#33291f", "rubber")},
+}
+_BASE = dict(C)
+
+
+def race(name):
+    """Switches the body colours to race `name` (see RACES)."""
+    C.clear()
+    C.update(_BASE)
+    C.update(RACES[name])
+
+
+def headpiece(p, name):
+    """The race's mark on the head bone: bio crest, crystal shards,
+    scrap goggles. Humans have none."""
+    p.bone(IDX["head"])
+    if name == "bio":
+        for k, z in enumerate((-0.05, 0.03, 0.1)):
+            p.ball((0, 1.73 - k * 0.02, z), 0.05 - k * 0.008, C["hair"], 1, (0.6, 1.4, 1.0))
+    elif name == "crystal":
+        for x, tilt in ((-0.06, -1), (0.0, 0), (0.06, 1)):
+            p.cyl((x, 1.76, 0.02), 0.03, 0.14, ("#c8b4ff", "glass"), sides=6, r2=0.005)
+        p.box((0, 1.6, -0.12), (0.12, 0.015, 0.01), ("#c8b4ff", "paint"), glow=True)
+    elif name == "scrap":
+        p.box((0, 1.64, -0.1), (0.2, 0.05, 0.05), C["gear"], 0.01)  # goggles
+        for x in (-0.05, 0.05):
+            p.cyl((x, 1.64, -0.125), 0.025, 0.02, ("#ffb347", "paint"), "z", 10, glow=True)
