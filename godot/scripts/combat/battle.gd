@@ -13,7 +13,6 @@ const HELP := "Battle · right click fly · left click/drag select crew, right c
 @onready var _foe: ShipBody = $Foe
 @onready var _info: Label = $UI/Info
 var _guns: Array[ShipGuns] = []
-var _fx: Array[ShipFx] = []
 var _follow := true
 var _last := Vector2.ZERO
 var _think := 0.0
@@ -30,12 +29,7 @@ func _ready() -> void:
 		b.setup(d, maxi(int(d.total(&"berths")), int(d.total(&"crew")) + 2))
 		var g := ShipGuns.new(b)
 		g.shot.connect(func(_i, from, to, hit): $Tracers.add(from, to, hit))
-		_guns.append(g)
-		var fx := ShipFx.new()
-		b.add_child(fx)
-		fx.bind(b.hulk, b.sim.state)
-		b.sim.state.fired.connect(fx.fire)
-		_fx.append(fx)
+		_guns.append(g)  # ShipBody's own ShipFx shows each shot via state.fired
 	_foe.at = Transform2D(PI, Vector2(0.0, -START))  # nose to nose
 	$Panel.bind(_me.sim)
 	$UI/Tags.bind(_me)
@@ -47,8 +41,6 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	_guns[0].tick(_foe, delta)
 	_guns[1].tick(_me, delta)
-	_fx[0].thrust_all = not _me.helm.firing.is_empty()
-	_fx[1].thrust_all = not _foe.helm.firing.is_empty()
 	_think -= delta
 	if _think <= 0.0:
 		_think = 1.0

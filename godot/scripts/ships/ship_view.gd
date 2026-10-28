@@ -63,6 +63,7 @@ func _shell() -> MeshInstance3D:
 	mi.name = &"Shell"
 	mi.mesh = HullShell.build(design, DECK * 0.5)
 	mi.material_override = ModelSkin.cut_shell(design.theme(0), HullShell.holes(design))
+	mi.add_child(HullShell.beacons(design, DECK * 0.5))
 	mi.visible = outside
 	return mi
 
