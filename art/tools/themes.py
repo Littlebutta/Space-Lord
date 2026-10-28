@@ -1,8 +1,7 @@
-"""The other factions' looks, built from the same part builders as the
-Human set: each swaps the palette and adds its own touches outside.
-Bio is grown and organic, Crystal faceted and glowing, Scrap patched
-together from salvage. Equal in detail, distinct at a glance."""
-import random
+"""Faction palettes: interiors are the Human builders recoloured with
+these. Outsides are each faction's own (faction_parts.py) and the hull
+shell itself is made in the game (FactionShell)."""
+
 
 PALETTES = {
     "bio": {
@@ -38,39 +37,3 @@ PALETTES = {
 }
 
 
-def decor(theme, C, roof):
-    """A function adding the theme's outside touches to one part."""
-    def spots(mid, pts, n):
-        rng = random.Random(hash((theme, mid)) & 0xffff)
-        xs = [x for x, _ in pts]
-        zs = [z for _, z in pts]
-        out = []
-        for _ in range(n):  # inside the footprint, clear of the chamfer
-            out.append((rng.uniform(min(xs) * 0.55, max(xs) * 0.55),
-                        rng.uniform(min(zs) * 0.55, max(zs) * 0.55), rng))
-        return out
-
-    def bio(mid, e, pts):
-        for x, z, rng in spots(mid, pts, 3):  # grown pods and a vein
-            r = rng.uniform(0.18, 0.35)
-            e.ball((x, roof + r * 0.4, z), r, C["hull"], 2, (1.0, 0.55, 1.2))
-            e.ball((x, roof + r * 0.75, z), r * 0.35, C["screen"], 1, glow=True)
-        e.cyl((0, roof + 0.05, 0), 0.06, 1.2, C["accent"], "x", 8)
-
-    def crystal(mid, e, pts):
-        for x, z, rng in spots(mid, pts, 3):  # crystal spires
-            h = rng.uniform(0.4, 1.0)
-            r = rng.uniform(0.1, 0.22)
-            e.cyl((x, roof + h / 2, z), r, h, C["glass"], sides=6, r2=0.02, smooth=False)
-            e.cyl((x, roof + 0.05, z), r * 1.3, 0.1, C["power"], sides=6, glow=True)
-
-    def scrap(mid, e, pts):
-        for x, z, rng in spots(mid, pts, 4):  # welded-on patches and pipe
-            w, d = rng.uniform(0.3, 0.8), rng.uniform(0.3, 0.7)
-            col = C["red"] if rng.random() < 0.3 else C["steel"]
-            e.box((x, roof + 0.03, z), (w, 0.05, d), col, 0.01)
-            for sx in (-1, 1):
-                e.cyl((x + sx * w * 0.4, roof + 0.07, z), 0.03, 0.03, C["metal"], sides=6)
-        e.cyl((0.3, roof + 0.12, 0), 0.07, 1.0, C["brass"], "z", 8)
-
-    return {"bio": bio, "crystal": crystal, "scrap": scrap}[theme]

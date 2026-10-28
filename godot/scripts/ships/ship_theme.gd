@@ -19,6 +19,13 @@ const DIR := "res://data/themes/"
 ## Parts whose outside view is glass: the hull shell leaves a hole over
 ## them and their inside stays visible, so crew show through.
 @export var glass_parts: Array[StringName] = []
+## Outside hull style: chamfer (Human), plates (Scrap), flesh (Bio) or
+## facets (Crystal); see HullShell.make and FactionShell.
+@export var shell := &"chamfer"
+## False for parts that push with something other than exhaust (Bio
+## tentacles): no plume, the model's Tentacle mesh writhes instead.
+@export var exhaust := true
+@export var hull_tint := Color(0.5, 0.52, 0.56)  # outside hull paint (chamfer shells)
 @export_group("Hull edge")
 @export var corner := 0.0  # outer hull corners cut this far, in cells
 @export var corner_steps := 1  # 1 = straight chamfer, more = rounder

@@ -19,3 +19,5 @@ corner = 0.15
 corner_steps = 1
 model_dir = "res://assets/models/scrap"
 glass_parts = Array[StringName]([&"bridge"])
+shell = &"plates"
+hull_tint = Color(0.4, 0.33, 0.27, 1)

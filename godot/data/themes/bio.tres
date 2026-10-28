@@ -19,4 +19,6 @@ height = 1.15
 corner = 0.45
 corner_steps = 4
 model_dir = "res://assets/models/bio"
-glass_parts = Array[StringName]([&"bridge"])
+shell = &"flesh"
+exhaust = false
+glass_parts = Array[StringName]([])
