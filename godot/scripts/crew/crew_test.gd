@@ -6,13 +6,13 @@ extends Node3D
 const HELP := "Crew sandbox · X damage · B wreck a module · V outside view" \
 		+ " · Alt module cards · Esc map\nLeft click/drag select crew · right click order them" \
 		+ " (R releases) · right click with none selected flies the ship" \
-		+ "\nWASD pan · middle mouse rotate · wheel zoom · F follow ship\nBlue operating · yellow hauling" \
+		+ "\nWASD pan · middle mouse rotate · wheel zoom · Space follow ship\nBlue operating · yellow hauling" \
 		+ " · green repairing · pink spacewalk · grey idle"
 
 @onready var _ship: ShipBody = $Ship
 @onready var _info: Label = $UI/Info
 var _last := Vector2.ZERO  # ship middle last frame, for the camera to follow
-var _follow := false  # F: camera rides along with the ship
+var _follow := false  # Space: camera rides along with the ship
 
 
 func _ready() -> void:
@@ -72,6 +72,6 @@ func _unhandled_input(event: InputEvent) -> void:
 		KEY_X: _ship.sim.state.damage(randi() % _ship.sim.state.size(), 60.0)
 		KEY_B: _ship.sim.state.damage(randi() % _ship.sim.state.size(), INF)
 		KEY_V: _ship.hulk.outside = not _ship.hulk.outside
-		KEY_F: _follow = not _follow
+		KEY_SPACE: _follow = not _follow
 		KEY_ALT: $UI/Tags.visible = not $UI/Tags.visible
 		KEY_ESCAPE: get_tree().change_scene_to_file("res://scenes/main.tscn")
