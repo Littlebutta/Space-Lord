@@ -1,1 +1,10 @@
 launcher/dist/
+
+# Godot
+.godot/
+build/
+*.tmp
+
+# Blender autosaves
+*.blend1
+*.blend2

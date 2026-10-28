@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ShipModule" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ships/ship_module.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"cargo_hold"
+display_name = "Cargo Hold"
+size = Vector2i(2, 2)
+mass = 4.0
+hp = 120.0
+storage = {"ore": 100.0, "ammo": 50.0, "food": 50.0}
+salvage = {"alloy": 4.0}

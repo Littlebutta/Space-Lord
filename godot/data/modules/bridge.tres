@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ShipModule" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ships/ship_module.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"bridge"
+display_name = "Bridge"
+size = Vector2i(2, 2)
+mass = 8.0
+hp = 300.0
+crew = 3
+storage = {"food": 20.0}
+upkeep = {"food": 0.3}
+salvage = {"alloy": 6.0, "electronics": 4.0}
