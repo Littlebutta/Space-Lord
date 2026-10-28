@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ShipModule" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ships/ship_module.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"fuel_tank"
+display_name = "Fuel Tank"
+size = Vector2i(1, 2)
+mass = 3.0
+hp = 80.0
+storage = {"fuel": 200.0}
+salvage = {"alloy": 3.0}

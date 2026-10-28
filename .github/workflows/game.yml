@@ -1,0 +1,47 @@
+name: game
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+    paths: ["godot/**", ".github/workflows/game.yml"]
+  pull_request:
+    paths: ["godot/**", ".github/workflows/game.yml"]
+  workflow_dispatch:
+env:
+  GODOT: "4.5.1"
+permissions: { contents: write }
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { lfs: true }
+      - name: Install Godot and export templates
+        run: |
+          url=https://github.com/godotengine/godot/releases/download/$GODOT-stable
+          curl -fsSLo godot.zip $url/Godot_v$GODOT-stable_linux.x86_64.zip
+          curl -fsSLo tpl.tpz $url/Godot_v$GODOT-stable_export_templates.tpz
+          unzip -q godot.zip && sudo mv Godot_v$GODOT-stable_linux.x86_64 /usr/local/bin/godot
+          dir=~/.local/share/godot/export_templates/$GODOT.stable
+          mkdir -p $dir && unzip -q tpl.tpz -d tpl && mv tpl/templates/* $dir/
+      - name: Import and boot check
+        run: |
+          godot --headless --path godot --import 2>&1 | tee log.txt
+          godot --headless --path godot --quit-after 120 2>&1 | tee -a log.txt
+          ! grep -E "SCRIPT ERROR|Parse Error|Failed to load" log.txt
+      - name: Export Windows and Linux
+        run: |
+          mkdir -p build/windows build/linux
+          godot --headless --path godot --export-release Windows $PWD/build/windows/SpaceLord.exe
+          godot --headless --path godot --export-release Linux $PWD/build/linux/SpaceLord.x86_64
+          cd build
+          for os in windows linux; do
+            (cd $os && zip -qr ../SpaceLord-$os.zip .)
+            sha256sum SpaceLord-$os.zip > SpaceLord-$os.zip.sha256
+          done
+      - uses: actions/upload-artifact@v4
+        with: { name: game, path: "build/SpaceLord-*" }
+      - name: Publish release for v* tags
+        if: startsWith(github.ref, 'refs/tags/v')
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: gh release create "$GITHUB_REF_NAME" build/SpaceLord-* --generate-notes
