@@ -11,6 +11,7 @@ import bpy  # noqa: E402
 import kit  # noqa: E402
 import human_hull as hh  # noqa: E402
 import human_systems as hs  # noqa: E402
+import human_exterior as hx  # noqa: E402
 from human_style import poly, ROOF  # noqa: E402
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
@@ -47,13 +48,19 @@ PARTS = {
     "shipdock": ((3, 2), None, hs.shipdock),
     "generator": ((2, 2), None, hs.generator),
     "capacitor": ((1, 1), None, hs.capacitor),
+    "wing": ((3, 2), [(0, 0), (0.8, 0), (3, 1.4), (3, 2), (0, 2)], hx.wing),
+    "wing_stub": ((2, 1), [(0, 0), (1.2, 0.2), (2, 0.7), (2, 1), (0, 1)], hx.wing_stub),
+    "fin": ((1, 2), None, hx.fin),
+    "antenna": ((1, 1), None, hx.antenna),
+    "sensor_mast": ((1, 1), None, hx.sensor_mast),
 }
 
 
 def build(mid, mats):
     size, outline, fn = PARTS[mid]
     root = kit.empty(mid)
-    inner, outer = kit.Part("Interior"), kit.Part("Exterior")
+    outside = fn.__module__ == "human_exterior"  # one mesh, shown in both views
+    inner, outer = kit.Part("Body" if outside else "Interior"), kit.Part("Exterior")
     lamps = fn(inner, outer, poly(outline, size))
     inner.build(mats, root)
     outer.build(mats, root)

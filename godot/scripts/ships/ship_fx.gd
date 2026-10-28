@@ -121,6 +121,8 @@ func _flicker(n: Node3D, broken: bool, delta: float) -> void:
 
 ## Where loose effects go so they stay put in space as the ship moves.
 func _world() -> Node:
+	if not is_inside_tree():
+		return self
 	var s := get_tree().current_scene
 	return s if s and s != self else self
 

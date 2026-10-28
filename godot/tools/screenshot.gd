@@ -2,7 +2,8 @@ extends SceneTree
 ## Saves a screenshot of a scene, for checking art without clicking.
 ##   godot --path godot -s res://tools/screenshot.gd -- <scene> <out.png>
 ##       [distance] [pitch] [yaw] [outside|fire|wreck|thrust|-] [module id]
-## Needs a real window (not --headless) so something renders. Modes act
+## Needs a real window (not --headless) so something renders. Set
+## SHOT_FRAMES to wait longer than 90 frames (e.g. mid-battle). Modes act
 ## on a crew sandbox scene ($Ship); the module id centres the camera.
 
 
@@ -29,7 +30,7 @@ func _initialize() -> void:
 				var c := ship.world(Vector2(ShipView.center(d.rect(i)).x, ShipView.center(d.rect(i)).z))
 				cam.focus = Vector3(c.x, 0.0, c.y)
 				break
-	for k in 90:
+	for k in int(OS.get_environment("SHOT_FRAMES") if OS.has_environment("SHOT_FRAMES") else "90"):
 		_act(ship, mode, k)
 		await process_frame
 	root.get_texture().get_image().save_png(a[1])
