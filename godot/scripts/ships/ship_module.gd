@@ -21,6 +21,8 @@ extends Resource
 @export var firepower := 0.0  # damage per second, needs ammo upkeep
 ## Ore a mining laser cuts loose per second from a targeted asteroid.
 @export var mining := 0.0
+## Top-mounted turret: its model's Head swings round to aim anywhere.
+@export var swivel := false
 @export_group("Power")
 @export var power_out := 0.0  # power made per second while running
 @export var power_cap := 0.0  # power it can store (capacitors, buffers)

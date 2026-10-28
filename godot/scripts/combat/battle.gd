@@ -7,7 +7,7 @@ extends Node3D
 const START := 55.0  # metres apart at the start, inside gun range
 const STANDOFF := 35.0  # the enemy circles at about this range
 const HELP := "Battle · right click fly · left click/drag select crew, right click order them" \
-		+ " · Space follow · Alt/H module cards · Esc map\nWASD pan · middle mouse rotate · wheel zoom"
+		+ " · Space follow · V outside view · Alt/H module cards · Esc map\nWASD pan · middle mouse rotate · wheel zoom"
 
 @onready var _me: ShipBody = $Me
 @onready var _foe: ShipBody = $Foe
@@ -28,9 +28,11 @@ func _ready() -> void:
 		var d := mine if b == _me else theirs
 		b.setup(d, maxi(int(d.total(&"berths")), int(d.total(&"crew")) + 2))
 		var g := ShipGuns.new(b)
-		g.shot.connect(func(_i, from, to, hit): $Tracers.add(from, to, hit))
+		g.shot.connect(func(_i, to, hit): if hit: FxKit.sparks(self, to))
 		_guns.append(g)  # ShipBody's own ShipFx shows each shot via state.fired
 	_foe.at = Transform2D(PI, Vector2(0.0, -START))  # nose to nose
+	_foe.hulk.sealed = true  # never see inside the enemy, only broken-off bits
+	_foe.sim.sealed = true
 	$Panel.bind(_me.sim)
 	$UI/Tags.bind(_me)
 	$UI/Orders.bind(_me)
@@ -62,7 +64,18 @@ func _process(_delta: float) -> void:
 	var t := "You: %s · Enemy: %s\n" % [_status(_me), _status(_foe)]
 	if _beaten(_foe) or _beaten(_me):
 		t = ("VICTORY" if _beaten(_foe) else "DEFEAT") + " · Esc back to the map\n" + t
-	_info.text = t + HELP
+	_info.text = t + _idle_guns() + HELP
+
+
+## One line per idle gun of yours and why, so silent guns get noticed.
+func _idle_guns() -> String:
+	var s := _me.sim.state
+	var t := ""
+	for i in s.size():
+		var why := _guns[0].why(i) if s.module(i).firepower > 0.0 else ""
+		if why != "" and why != "charging":
+			t += "%s: %s\n" % [s.module(i).display_name, why]
+	return t
 
 
 func _status(b: ShipBody) -> String:
@@ -83,7 +96,7 @@ func _beaten(b: ShipBody) -> bool:
 
 
 ## Alt (or H) toggles the module cards; caught in _input like the crew
-## sandbox does, since Alt alone can be swallowed before unhandled input.
+## sandbox does, before a focused button can swallow it.
 func _input(event: InputEvent) -> void:
 	var k := event as InputEventKey
 	if k and k.pressed and not k.echo and (k.keycode == KEY_ALT \
@@ -105,4 +118,5 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	match key.keycode:
 		KEY_SPACE: _follow = not _follow
+		KEY_V: _me.hulk.outside = not _me.hulk.outside
 		KEY_ESCAPE: get_tree().change_scene_to_file("res://scenes/main.tscn")

@@ -6,6 +6,9 @@ extends Node3D
 
 var pieces: ShipPieces
 var outside := false: set = set_outside  # hull shells over the decks
+## Someone else's ship: the main piece always shows its hull; only
+## pieces broken off it show their insides.
+var sealed := false: set = set_sealed
 var _nodes: Array[Node3D] = []
 var _parts := {}  # module index -> its part node
 
@@ -53,11 +56,17 @@ func part(i: int) -> Node3D:
 	return n if is_instance_valid(n) and not n.is_queued_for_deletion() else null
 
 
+func set_sealed(v: bool) -> void:
+	sealed = v
+	set_outside(outside)
+
+
 func set_outside(v: bool) -> void:
 	outside = v
-	for n in _nodes:
-		ModelSkin.set_outside(n, v)
-		n.get_node(^"Shell").visible = v
+	for k in _nodes.size():
+		var shut := v or (sealed and k == pieces.main)
+		ModelSkin.set_outside(_nodes[k], shut)
+		_nodes[k].get_node(^"Shell").visible = shut
 
 
 func _process(_delta: float) -> void:
