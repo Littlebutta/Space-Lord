@@ -30,6 +30,8 @@ extends Resource
 ## Bulk supply store (depot): haulers restock from it before other stores.
 @export var bulk := false
 @export var airlock := false  # crew can go outside (EVA) from here
+## Onboard shipyard: lets the ship refit and do major repairs in space.
+@export var shipdock := false
 @export_group("Crew access")
 ## Areas crew can't walk through (tanks, engines, guns), as rects in
 ## cell units of the unturned footprint. Every theme's model must keep
