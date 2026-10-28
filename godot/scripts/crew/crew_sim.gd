@@ -6,6 +6,8 @@ extends Node3D
 
 signal crew_changed
 signal crew_lost(who: String)
+## Someone died: where (this node's space), which way they fly, shirt.
+signal died(at: Vector3, fling: Vector3, shirt: Color)
 
 const SPEED := 3.0  # metres per second
 const CARRY := 20.0  # units per haul trip
@@ -172,8 +174,9 @@ func local3d(c: CrewMember) -> Vector3:
 	return ShipPieces.to_3d(state.pieces.xf[i]) * at if i >= 0 else at
 
 
-## Out of air: they're gone.
-func kill(c: CrewMember) -> void:
+## Out of air or caught in a blast: they're gone, leaving a body.
+func kill(c: CrewMember, fling := Vector3.ZERO) -> void:
+	died.emit(local3d(c), fling, CrewJob.COLORS[c.job.type if c.job else &""])
 	drop(c)
 	crew.erase(c)
 	lost += 1
@@ -250,19 +253,18 @@ static func _give(c: CrewMember, other: CrewMember) -> float:
 
 
 ## The deck changed shape: re-plan walks, and anyone whose floor was
-## just shot away is blown outside (they jetpack back to an airlock).
+## just shot away dies in the blast.
 func _on_broken() -> void:
 	nav = ShipNav.new(state.intact())
 	board.nav = nav
-	for c in crew:
+	for c in crew.duplicate():
 		if c.eva:
 			continue
 		if not nav.walkable(c.pos):
 			var i := state.design.index_at(Vector2i((c.pos / ShipView.CELL).floor()))
-			c.pos = state.pieces.xf[i] * c.pos if i >= 0 else c.pos
-			drop(c)
-			c.eva = true
-			c.air = CrewEva.AIR_SUIT
+			var out: Vector2 = c.pos - state.center(i) if i >= 0 else Vector2.ZERO
+			var fling := Vector2.from_angle(randf() * TAU) + out.normalized() * 2.0
+			kill(c, Vector3(fling.x, randf_range(0.5, 1.5), fling.y))
 		elif not c.path.is_empty():
 			c.path = nav.route(c.pos, c.path[-1])
 			if c.path.is_empty():

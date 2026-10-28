@@ -12,7 +12,7 @@ func _initialize() -> void:
 	var bridge := ModuleLibrary.by_id(&"bridge")
 	var d := ShipDesign.new()
 	check(d.add(bridge, Vector2i.ZERO), "bridge placed")
-	check(not d.add(eng, Vector2i(0, 2), 2), "thruster can't fire forward")
+	check(not d.add(eng, Vector2i(0, 2), 2), "reverse thruster can't fire into the bridge")
 	check(d.add(eng, Vector2i(0, 2)), "rear thruster placed")
 	check(not d.add(hull, Vector2i(0, 9)), "hull blocked in exhaust lane")
 	check(d.add(hull, Vector2i(1, 2)), "hull beside thruster ok")
