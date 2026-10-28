@@ -6,7 +6,7 @@ extends Node3D
 
 const START := 55.0  # metres apart at the start, inside gun range
 const STANDOFF := 35.0  # the enemy circles at about this range
-const HELP := "Battle · right click fly · E stop · left click/drag select crew, right click order them" \
+const HELP := "Battle · click ship, right click fly · E stop · left click/drag select crew, right click order them" \
 		+ " · Space follow · V outside view · Alt/H module cards · Esc map\nWASD pan · middle mouse rotate · wheel zoom"
 
 @onready var _me: ShipBody = $Me
@@ -46,6 +46,7 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	_guns[0].tick(_foe, delta)
 	_guns[1].tick(_me, delta)
+	ShipClash.resolve(_me, _foe)
 	_think -= delta
 	if _think <= 0.0:
 		_think = 1.0
@@ -110,7 +111,7 @@ func _input(event: InputEvent) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	var b := event as InputEventMouseButton
-	if b and b.pressed and b.button_index == MOUSE_BUTTON_RIGHT:
+	if b and b.pressed and b.button_index == MOUSE_BUTTON_RIGHT and $UI/Orders.ship_selected:
 		var cam: Camera3D = $Camera
 		var hit = Plane(Vector3.UP, 0.0).intersects_ray(
 				cam.project_ray_origin(b.position), cam.project_ray_normal(b.position))

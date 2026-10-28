@@ -70,6 +70,7 @@ func twist(i: int, f: Vector2) -> float:
 ## (-1..1, + is the way +angle rotates). Returns [force, torque].
 func steer(dv: Vector2, turn: float, delta: float) -> Array:
 	firing.clear()
+	state.burning.clear()
 	var force := Vector2.ZERO
 	var torque := 0.0
 	var p := state.pieces

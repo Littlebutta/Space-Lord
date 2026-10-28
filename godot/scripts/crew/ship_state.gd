@@ -19,6 +19,7 @@ var hp := PackedFloat32Array()
 var stock: Array[Dictionary] = []  # per module: resource -> units on hand
 var operators := PackedInt32Array()  # crew at each station right now
 var auto := PackedFloat32Array()  # seconds of unmanned firing left
+var burning := {}  # engines firing this tick (they burn fuel)
 var pieces: ShipPieces  # how the ship has broken apart
 var power: ShipPower  # generators and capacitors
 
@@ -225,12 +226,14 @@ func can_fire(i: int) -> bool:
 
 ## Engine i fired for `delta` seconds; unmanned it uses up auto time.
 func fire(i: int, delta: float) -> void:
+	burning[i] = true
 	if not manned(i):
 		auto[i] = maxf(auto[i] - delta, 0.0)
 
 
 ## Engine i sat idle (or crewed): it winds back up to auto firing.
 func rest(i: int, delta: float) -> void:
+	burning.erase(i)
 	auto[i] = minf(auto[i] + delta * AUTO_REST, module(i).auto_time)
 
 
@@ -248,10 +251,11 @@ func shoot(i: int) -> bool:
 	return true
 
 
-## Burns the on-hand supplies of running modules.
+## Burns the on-hand supplies of running modules; engines only use fuel
+## while they are actually firing.
 func tick(hours: float) -> void:
 	for i in size():
-		if is_running(i):
+		if is_running(i) and (module(i).thrust <= 0.0 or burning.has(i)):
 			var up: Dictionary = module(i).upkeep
 			for res in up:
 				stock[i][res] = maxf(stock[i][res] - up[res] * hours, 0.0)
