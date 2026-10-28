@@ -6,12 +6,23 @@ extends Resource
 @export var ship_name := "Unnamed"
 @export var modules: Array[ShipModule] = []
 @export var cells: Array[Vector2i] = []  # grid origin of each module
-@export var turns: Array[int] = []  # quarter turns of each module
+@export var turns: Array[int] = []  # quarter turns of each module, +4 if mirrored
 @export var themes: Array[StringName] = []  # ShipTheme id of each module
 
 
 static func turned(m: ShipModule, turn: int) -> Vector2i:
 	return Vector2i(m.size.y, m.size.x) if turn % 2 else m.size
+
+
+## The same placement flipped left-right (the ship's own mirror image
+## is mirror(turn) at the reflected cell: see mirror_cell).
+static func mirror(turn: int) -> int:
+	return (4 - turn % 4) % 4 + (0 if turn >= 4 else 4)
+
+
+## Origin of the copy of a `size` part at `cell` reflected across x = 0.
+static func mirror_cell(cell: Vector2i, size: Vector2i) -> Vector2i:
+	return Vector2i(-cell.x - size.x, cell.y)
 
 
 func rect(i: int) -> Rect2i:
@@ -33,7 +44,7 @@ func add(m: ShipModule, cell: Vector2i, turn := 0, tid := &"human") -> bool:
 	themes.resize(modules.size())  # older saves had no themes
 	modules.append(m)
 	cells.append(cell)
-	turns.append(turn % 4)
+	turns.append(turn % 8)
 	themes.append(tid)
 	emit_changed()
 	return true

@@ -5,7 +5,7 @@ extends Node3D
 
 const HELP := "X damage · B wreck a module · F fire · V outside view · Alt or H module cards\n" \
 		+ "Left click/drag select crew · right click order them (R releases)\n" \
-		+ "Right click with none selected flies the ship · E stop · Space follow ship\n" \
+		+ "Click your ship, then right click to fly it · E stop · Space follow ship\n" \
 		+ "WASD pan · middle drag rotate · wheel zoom · Esc map\n" \
 		+ "Blue operating · yellow hauling · green repairing · pink spacewalk · grey idle"
 
@@ -52,9 +52,6 @@ func _process(_delta: float) -> void:
 	t += "Modules running %d / %d · speed %.1f m/s" % [running, s.size(),
 			_ship.vel.length()]
 	t += " · crew lost %d\n" % _ship.sim.lost if _ship.sim.lost else "\n"
-	for res in s.storage.capacity:
-		t += "%s %.0f / %.0f\n" % [res.capitalize(), s.storage.get_amount(res),
-				s.storage.capacity[res]]
 	_info.text = t.strip_edges()
 
 
@@ -74,6 +71,9 @@ func _hud() -> void:
 			func(): cards.set_pressed_no_signal($UI/Tags.visible))
 	box.add_child(cards)
 	UiKit.pin($UI, card, Control.PRESET_BOTTOM_LEFT)
+	var res := ResourceBar.new()
+	res.source = func(): return _ship.sim.state.storage
+	UiKit.pin($UI, res, Control.PRESET_CENTER_TOP)
 	UiKit.help($UI, HELP)
 
 
@@ -89,7 +89,7 @@ func _input(event: InputEvent) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	var b := event as InputEventMouseButton
-	if b and b.pressed and b.button_index == MOUSE_BUTTON_RIGHT:
+	if b and b.pressed and b.button_index == MOUSE_BUTTON_RIGHT and $UI/Orders.ship_selected:
 		var cam: Camera3D = $Camera
 		var hit = Plane(Vector3.UP, 0.0).intersects_ray(
 				cam.project_ray_origin(b.position), cam.project_ray_normal(b.position))
