@@ -134,3 +134,15 @@ static func _simplify(p: PackedVector2Array) -> PackedVector2Array:
 		if absf((b - a).cross(c - b)) > 1e-4 * (b - a).length() * (c - b).length() + 1e-6:
 			out.append(b)
 	return out
+
+
+## Footprints (ship metres) of glass parts among `mods` (all when empty):
+## the shell leaves these open; see ShipTheme.glass_parts.
+static func holes(d: ShipDesign, mods: Array = []) -> Array:
+	var out := []
+	for i in (mods if not mods.is_empty() else range(d.modules.size())):
+		var t := d.theme(i)
+		if t.glass_parts.has(d.modules[i].id) and t.model(d.modules[i]):
+			var r := d.rect(i)
+			out.append(Rect2(Vector2(r.position) * ShipView.CELL, Vector2(r.size) * ShipView.CELL))
+	return out

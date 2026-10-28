@@ -29,13 +29,14 @@ func _init() -> void:
 	quit(1 if _fails else 0)
 
 
-## Bridge, a corridor under it and a laser turret off the corridor.
+## Bridge, a corridor under it, a laser turret and a charged capacitor.
 func _ship(at: Vector2, turn: float) -> ShipBody:
 	var d := ShipDesign.new()
 	d.add(ModuleLibrary.by_id(&"bridge"), Vector2i.ZERO)
 	for x in [0, 1]:
 		d.add(ModuleLibrary.by_id(&"hull"), Vector2i(x, 2))
 	d.add(ModuleLibrary.by_id(&"turret"), Vector2i(2, 2))
+	d.add(ModuleLibrary.by_id(&"capacitor"), Vector2i(0, 3))  # charge for the laser
 	var b := ShipBody.new()
 	b.setup(d, 6)
 	b.at = Transform2D(turn, at)

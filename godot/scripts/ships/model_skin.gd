@@ -15,6 +15,7 @@ const LAMP_FADE := 80.0  # camera distance where lamps start to fade
 
 static var _mats := {}  # theme id -> ShaderMaterial
 static var _glow: ShaderMaterial
+static var _glass: StandardMaterial3D
 static var _grime: NoiseTexture2D
 static var _bump: NoiseTexture2D
 
@@ -61,6 +62,8 @@ static func apply(n: Node, t: ShipTheme) -> void:
 	if _glow == null:
 		_glow = ShaderMaterial.new()
 		_glow.shader = GLOW
+	if _glass == null:
+		_glass = _glass_mat()
 	var mat := material(t)
 	for c in n.find_children("*", "", true, false):
 		if c is MeshInstance3D:
@@ -70,19 +73,26 @@ static func apply(n: Node, t: ShipTheme) -> void:
 
 
 ## Outside view shows the hull shell, inside view the deck and crew.
-## Names may carry a Blender suffix, e.g. "Exterior_003".
+## Glass parts (meta "glass", see ShipView.make_part) keep their inside
+## visible under the glass. Names may carry a Blender suffix.
 static func set_outside(n: Node, outside: bool) -> void:
+	var glass: bool = n.get_meta(&"glass", false)
 	for c in n.find_children("Exterior*", "", true, false):
 		c.visible = outside
 	for c in n.find_children("Interior*", "", true, false):
-		c.visible = not outside
+		c.visible = glass or not outside
 
 
 static func _skin(mi: MeshInstance3D, mat: Material) -> void:
 	for k in mi.mesh.get_surface_count():
 		var m := mi.mesh.surface_get_material(k)
-		var glow := m != null and m.resource_name.begins_with("Glow")
-		mi.set_surface_override_material(k, _glow if glow else mat)
+		var id := m.resource_name if m else ""
+		var use: Material = mat
+		if id.begins_with("Glow"):
+			use = _glow
+		elif id.begins_with("Glass"):
+			use = _glass
+		mi.set_surface_override_material(k, use)
 
 
 static func _lamp(l: OmniLight3D) -> void:
@@ -96,6 +106,32 @@ static func _lamp(l: OmniLight3D) -> void:
 	l.distance_fade_begin = LAMP_FADE
 	l.distance_fade_length = 15.0
 	l.distance_fade_shadow = SHADOW_FADE
+
+
+## Clear, slightly tinted glass that reflects a little light.
+static func _glass_mat() -> StandardMaterial3D:
+	var g := StandardMaterial3D.new()
+	g.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	g.cull_mode = BaseMaterial3D.CULL_DISABLED
+	g.albedo_color = Color(0.55, 0.75, 0.85, 0.18)
+	g.metallic = 0.4
+	g.roughness = 0.05
+	g.specular = 0.8
+	return g
+
+
+## Hull shell with holes cut over glass parts (rects in ship metres).
+static func cut_shell(t: ShipTheme, holes: Array) -> ShaderMaterial:
+	if holes.is_empty():
+		return shell_material(t)
+	var m := shell_material(t).duplicate() as ShaderMaterial
+	var v := PackedVector4Array()
+	for r: Rect2 in holes.slice(0, 8):
+		v.append(Vector4(r.position.x, r.position.y, r.end.x, r.end.y))
+	v.resize(8)
+	m.set_shader_parameter(&"holes", v)
+	m.set_shader_parameter(&"hole_count", mini(holes.size(), 8))
+	return m
 
 
 ## Small seamless noise, made once: blotchy grime or a bump normal map.

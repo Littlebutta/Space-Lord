@@ -1,8 +1,9 @@
 class_name ShipGuns
 extends RefCounted
-## A ship's guns in a fight. Every running weapon (crewed, powered,
-## stocked) reloads, then fires at the nearest intact module of the enemy
-## in range. Turrets swivel; fixed guns only fire within ARC of where
+## A ship's guns in a fight. Every weapon that can shoot (crewed,
+## powered, stocked, lasers charged) reloads, then fires through
+## ShipState.shoot (which pays power and drives effects) at the nearest
+## intact module of the enemy in range. Turrets swivel; fixed guns only fire within ARC of where
 ## they point. Hits get likelier up close. Each shot is reported so
 ## effects can draw it.
 
@@ -24,14 +25,14 @@ func _init(b: ShipBody) -> void:
 func tick(foe: ShipBody, delta: float) -> void:
 	var s := me.sim.state
 	for i in s.size():
-		if s.module(i).firepower <= 0.0 or not s.is_running(i):
+		if not s.can_shoot(i):
 			continue
 		_wait[i] = _wait.get(i, randf() * RELOAD) - delta
 		if _wait[i] > 0.0:
 			continue
 		var from := me.world(s.pieces.world(i))
 		var t := _target(i, from, foe)
-		if t < 0:
+		if t < 0 or not s.shoot(i):
 			continue
 		_wait[i] = RELOAD
 		var to := foe.world(foe.sim.state.pieces.world(t))

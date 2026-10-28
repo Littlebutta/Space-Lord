@@ -62,7 +62,7 @@ func _shell() -> MeshInstance3D:
 	var mi := MeshInstance3D.new()
 	mi.name = &"Shell"
 	mi.mesh = HullShell.build(design, DECK * 0.5)
-	mi.material_override = ModelSkin.shell_material(design.theme(0))
+	mi.material_override = ModelSkin.cut_shell(design.theme(0), HullShell.holes(design))
 	mi.visible = outside
 	return mi
 
@@ -86,6 +86,8 @@ static func make_part(m: ShipModule, r: Rect2i, turn: int, t: ShipTheme,
 	if scene:
 		var model: Node3D = scene.instantiate()
 		ModelSkin.apply(model, t)
+		if t.glass_parts.has(m.id):
+			mi.set_meta(&"glass", true)
 		mi.set_surface_override_material(0, ModelSkin.deck_material())
 		model.rotation.y = -turn * PI / 2.0
 		model.position.y = DECK * 0.5

@@ -15,3 +15,5 @@ crew = 2
 storage = {"parts": 60.0}
 salvage = {"alloy": 8.0, "electronics": 3.0}
 shipdock = true
+blocked = Array[Rect2]([Rect2(0, 1.5, 3, 0.5), Rect2(0, 0, 0.5, 1.5), Rect2(2.5, 0, 0.5, 1.5)])
+access = PackedVector2Array(1, 1.35, 2, 1.35)
