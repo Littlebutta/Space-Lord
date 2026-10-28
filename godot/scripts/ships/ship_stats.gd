@@ -56,6 +56,6 @@ func _check(d: ShipDesign) -> void:
 	if loose.size() > 0:
 		warnings.append("%d module(s) not attached to the hull" % loose.size())
 	for i in ShipNav.walled_off(d):
-		if not loose.has(i):
+		if not loose.has(i) and not d.modules[i].exterior:  # outside parts need no crew
 			warnings.append("Crew can't reach the %s: equipment walls it off"
 					% d.modules[i].display_name)

@@ -34,6 +34,11 @@ extends Resource
 @export var airlock := false  # crew can go outside (EVA) from here
 ## Onboard shipyard: lets the ship refit and do major repairs in space.
 @export var shipdock := false
+## Bolted on outside the hull (wings, fins, antennas): no deck under it,
+## not walkable (set `blocked` to the whole footprint), no hull shell.
+@export var exterior := false
+@export var height := 0.0  # placeholder height override; 0 = by category
+@export var taper := 0.0  # placeholder top shrink, e.g. for fins
 @export_group("Crew access")
 ## Areas crew can't walk through (tanks, engines, guns), as rects in
 ## cell units of the unturned footprint. Every theme's model must keep

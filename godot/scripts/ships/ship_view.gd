@@ -100,9 +100,12 @@ static func part_mesh(m: ShipModule, r: Rect2i, turn: int, t: ShipTheme,
 		filled := {}) -> ArrayMesh:
 	var p := Prism.footprint(m, turn)
 	var mesh := ArrayMesh.new()
+	if m.exterior:  # no deck: just the part, standing from deck level
+		_slab(mesh, _local(p, r), -DECK * 0.5, m.height - DECK * 0.5, m.taper)
+		return mesh
 	var deck := Prism.round_corners(p, r, filled, t.corner, t.corner_steps)
 	_slab(mesh, _local(deck, r), -DECK * 0.5, DECK * 0.5, 0.0)
-	var h: float = HEIGHT.get(m.category, 0.9) * t.height
+	var h: float = (m.height if m.height > 0.0 else HEIGHT.get(m.category, 0.9)) * t.height
 	h *= 1.0 + t.jitter * (absi(hash(r.position)) % 100 / 100.0 - 0.5)
 	if m.category != "hull" and not t.model(m) and h > DECK + 0.05:
 		var top := Prism.shrink(p, 0.2)

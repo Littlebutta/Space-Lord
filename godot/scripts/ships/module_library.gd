@@ -3,7 +3,7 @@ extends RefCounted
 ## Every ShipModule .tres under res://data/modules, loaded once.
 
 const DIR := "res://data/modules/"
-const ORDER := ["command", "hull", "engine", "weapon", "storage", "crew", "utility"]
+const ORDER := ["command", "hull", "engine", "weapon", "storage", "crew", "utility", "exterior"]
 
 static var _all: Array[ShipModule] = []
 

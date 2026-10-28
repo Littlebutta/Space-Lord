@@ -26,6 +26,8 @@ static func build(d: ShipDesign, y0: float, mods: Array = []) -> ArrayMesh:
 static func outlines(d: ShipDesign, mods: Array = []) -> Array[PackedVector2Array]:
 	var polys: Array[PackedVector2Array] = []
 	for i in (mods if not mods.is_empty() else range(d.modules.size())):
+		if d.modules[i].exterior:
+			continue
 		var p := Prism.footprint(d.modules[i], d.turns[i])
 		var at := Vector2(d.rect(i).position)
 		for k in p.size():
