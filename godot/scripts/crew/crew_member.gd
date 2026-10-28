@@ -3,7 +3,7 @@ extends RefCounted
 ## One crew member: where they are, what they're doing and how much
 ## they want each job type (1 = first choice ... 4 = last, 0 = never).
 
-const DEFAULT := {&"operate": 2, &"haul": 3, &"repair": 2}
+const DEFAULT := {&"operate": 2, &"haul": 3, &"repair": 2, &"eva": 3}
 
 var name := ""
 var pos := Vector2.ZERO  # ship-local metres (x, z)
@@ -14,6 +14,7 @@ var stage := 0  # step within the job
 var timer := 0.0
 var cargo := 0.0  # haul: units in hand
 var source := -1  # haul: storage module loaded from
+var eva := false  # outside the hull; pos is in the ship's frame
 var priority := {}
 
 

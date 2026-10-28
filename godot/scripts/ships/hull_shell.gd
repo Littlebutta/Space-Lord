@@ -11,9 +11,10 @@ const PAINT := Vector2(0.5 / 8.0, 0.0)  # UV: painted metal preset
 const STRIPE := Vector2(7.5 / 8.0, 1.0)  # UV: accent preset, worn edge
 
 
-static func build(d: ShipDesign, y0: float) -> ArrayMesh:
+## Shell over modules `mods` of `d` (all when empty), deck top at y0.
+static func build(d: ShipDesign, y0: float, mods: Array = []) -> ArrayMesh:
 	var mesh := ArrayMesh.new()
-	for p in outlines(d):
+	for p in outlines(d, mods):
 		var st := SurfaceTool.new()
 		st.begin(Mesh.PRIMITIVE_TRIANGLES)
 		_shell(st, p, y0)
@@ -22,9 +23,9 @@ static func build(d: ShipDesign, y0: float) -> ArrayMesh:
 
 
 ## Merged outer outlines of the ship in metres (x, z).
-static func outlines(d: ShipDesign) -> Array[PackedVector2Array]:
+static func outlines(d: ShipDesign, mods: Array = []) -> Array[PackedVector2Array]:
 	var polys: Array[PackedVector2Array] = []
-	for i in d.modules.size():
+	for i in (mods if not mods.is_empty() else range(d.modules.size())):
 		var p := Prism.footprint(d.modules[i], d.turns[i])
 		var at := Vector2(d.rect(i).position)
 		for k in p.size():

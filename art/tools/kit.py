@@ -64,11 +64,19 @@ class Part:
                 lp[self.uv].uv = (u, 1.0 if f in edges else 0.0)
         return verts
 
-    def _bevel(self, verts, edges, off, seg):
+    def _bevel(self, verts, edges, off, seg, axis=None):
+        """Bevels edges; returns the verts and the new slanted faces. With
+        an axis (cylinders), only faces tilted from it count as bevels."""
         g = bmesh.ops.bevel(self.bm, geom=list(verts) + list(edges), offset=off,
                             segments=seg, affect="EDGES", profile=0.5)
-        v = {x for f in g["faces"] for x in f.verts} | set(verts)
-        return [x for x in v if x.is_valid], g["faces"]
+        v = [x for x in {x for f in g["faces"] for x in f.verts} | set(verts) if x.is_valid]
+        self.bm.normal_update()
+        faces = {f for x in v for f in x.link_faces}
+        if axis is None:
+            ef = [f for f in faces if max(abs(c) for c in f.normal) < 0.97]
+        else:
+            ef = [f for f in faces if 0.15 < abs(f.normal.z) < 0.97]
+        return v, ef
 
     def box(self, c, s, col, bevel=0.0, glow=False, seg=1):
         """Box centred at c with full size s; bevel chamfers its edges."""
@@ -91,7 +99,7 @@ class Part:
                and e.link_faces[0].normal.angle(e.link_faces[1].normal, 0) > 0.9]
         ef = []
         if bevel > 0:
-            v, ef = self._bevel(v, set(rim), bevel, 1)
+            v, ef = self._bevel(v, set(rim), bevel, 1, "z")
         rot = {"y": Matrix.Identity(4),
                "x": Matrix.Rotation(math.pi / 2, 4, "Y"),
                "z": Matrix.Rotation(-math.pi / 2, 4, "X")}[axis]

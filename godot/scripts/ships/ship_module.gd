@@ -24,6 +24,10 @@ extends Resource
 @export var exhaust := Vector2i.ZERO
 @export var needs_near := {}  # module id or category -> max cell gap
 @export var salvage := {}  # raw materials recovered when scrapped
+## Resources to rebuild it from wreckage in the field; empty means its
+## mass in parts. See ShipState.rebuild_cost.
+@export var rebuild := {}
+@export var airlock := false  # crew can go outside (EVA) from here
 @export_group("Crew access")
 ## Areas crew can't walk through (tanks, engines, guns), as rects in
 ## cell units of the unturned footprint. Every theme's model must keep

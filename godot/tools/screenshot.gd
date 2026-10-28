@@ -17,7 +17,8 @@ func _initialize() -> void:
 	if cam and a.size() > 4:
 		cam.yaw_deg = float(a[4])
 	if a.size() > 5 and a[5] == "outside":
-		scene.get_node("ShipView").outside = true
+		var v := scene.get_node_or_null("Hulk")
+		(v if v else scene.get_node("ShipView")).outside = true
 	for k in 90:
 		await process_frame
 	root.get_texture().get_image().save_png(a[1])

@@ -9,7 +9,7 @@ extends RefCounted
 const PBR := preload("res://assets/materials/pbr.gdshader")
 const GLOW := preload("res://assets/materials/glow.gdshader")
 const LAMP_RANGE := 6.0
-const LAMP_ENERGY := 2.2
+const LAMP_ENERGY := 1.1
 const SHADOW_FADE := 30.0  # camera distance where lamp shadows stop
 const LAMP_FADE := 80.0  # camera distance where lamps start to fade
 

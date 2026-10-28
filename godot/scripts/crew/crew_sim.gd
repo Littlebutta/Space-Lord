@@ -21,7 +21,7 @@ var state: ShipState
 var nav: ShipNav
 var board: JobBoard
 var crew: Array[CrewMember] = []
-var _look := CrewLook.new()
+var _looks := {}  # piece -> CrewLook drawing the crew on it
 var _think := 0.0
 
 
@@ -29,7 +29,7 @@ func setup(d: ShipDesign, count: int) -> void:
 	state = ShipState.new(d)
 	nav = ShipNav.new(d)
 	board = JobBoard.new(state, nav)
-	add_child(_look)
+	state.pieces.changed.connect(_on_broken)
 	for k in count:
 		add_crew()
 
@@ -62,12 +62,15 @@ func _physics_process(delta: float) -> void:
 		_act(c, delta)
 	_separate()
 	state.tick(delta * hours_per_second)
-	_look.draw(crew, self, delta)
+	state.pieces.tick(delta)
+	_draw(delta)
 
 
 func _act(c: CrewMember, delta: float) -> void:
 	var j := c.job
 	if j == null:
+		if c.eva:
+			CrewEva.go_home(self, c, delta)
 		return
 	if j.done and j.worker == c and j.type == &"operate":
 		_drop(c)
@@ -97,7 +100,9 @@ func _work(c: CrewMember, delta: float) -> void:
 		&"repair":
 			state.repair(j.module, REPAIR_RATE * delta)
 			if not state.damaged(j.module):
-				_finish(c)
+				finish(c)
+		&"eva":
+			CrewEva.work(self, c, delta)
 		&"haul":
 			c.timer += delta
 			if c.timer < LOAD_TIME:
@@ -110,7 +115,7 @@ func _work(c: CrewMember, delta: float) -> void:
 				_go(c, j.module)
 			else:
 				c.cargo -= state.deliver(j.module, j.res, c.cargo)
-				_finish(c)
+				finish(c)
 
 
 func _go(c: CrewMember, module: int) -> void:
@@ -144,7 +149,7 @@ func _walk(c: CrewMember, delta: float) -> void:
 		c.pos += (to - c.pos) / d * move
 
 
-func _finish(c: CrewMember) -> void:
+func finish(c: CrewMember) -> void:
 	board.finish(c.job)
 	_drop(c)
 
@@ -167,7 +172,7 @@ func _drop(c: CrewMember) -> void:
 func _separate() -> void:
 	var grid := {}
 	for c in crew:
-		if not c.arrived():
+		if c.eva or not c.arrived():
 			continue
 		var k := Vector2i((c.pos / (RADIUS * 2.0)).floor())
 		if grid.has(k):
@@ -193,6 +198,50 @@ func _push(a: CrewMember, b: CrewMember) -> void:
 		a.pos += p
 	if nav.walkable(b.pos - p):
 		b.pos -= p
+
+
+## The deck changed shape: re-plan walks, and anyone whose floor was
+## just shot away is blown outside (they jetpack back to an airlock).
+func _on_broken() -> void:
+	nav = ShipNav.new(state.intact())
+	board.nav = nav
+	for c in crew:
+		if c.eva:
+			continue
+		if not nav.walkable(c.pos):
+			var i := state.design.index_at(Vector2i((c.pos / ShipView.CELL).floor()))
+			c.pos = state.pieces.xf[i] * c.pos if i >= 0 else c.pos
+			_drop(c)
+			c.eva = true
+		elif not c.path.is_empty():
+			c.path = nav.route(c.pos, c.path[-1])
+			if c.path.is_empty():
+				_drop(c)
+
+
+## One CrewLook per piece so crew ride along when a piece drifts off.
+## Crew outside are drawn in the ship's frame.
+func _draw(delta: float) -> void:
+	var p := state.pieces
+	var by := {}
+	for c in crew:
+		var i := -1 if c.eva else state.design.index_at(Vector2i((c.pos / ShipView.CELL).floor()))
+		var k := p.piece_of[i] if i >= 0 else -1
+		if not by.has(k):
+			var a: Array[CrewMember] = []
+			by[k] = a
+		by[k].append(c)
+	var none: Array[CrewMember] = []
+	for k in _looks:
+		if not by.has(k):
+			_looks[k].draw(none, self, delta)
+	for k in by:
+		if not _looks.has(k):
+			_looks[k] = CrewLook.new()
+			add_child(_looks[k])
+		var t := p.xf[p.pieces[k][0]] if k >= 0 else Transform2D.IDENTITY
+		_looks[k].transform = ShipPieces.to_3d(t)
+		_looks[k].draw(by[k], self, delta)
 
 
 func _nearest_store(res: String, from: Vector2, skip: int) -> int:

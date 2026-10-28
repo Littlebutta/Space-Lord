@@ -34,6 +34,7 @@ PARTS = {
     "turret": ((2, 2), None, hs.turret),
     "engine": ((1, 2), None, hs.engine),
     "crew_quarters": ((2, 2), None, hs.crew_quarters),
+    "airlock": ((1, 1), None, hh.airlock),
 }
 
 
@@ -66,7 +67,8 @@ def main():
         kit.export(root, os.path.join(OUT, mid + ".glb"))
         root.location.x = x  # spread out in the .blend for browsing
         x += PARTS[mid][0][0] * 2 + 2
-    bpy.ops.wm.save_as_mainfile(filepath=os.path.join(ROOT, "art", "human_modules.blend"))
+    if not only:  # a partial build would overwrite the full .blend
+        bpy.ops.wm.save_as_mainfile(filepath=os.path.join(ROOT, "art", "human_modules.blend"))
 
 
 main()

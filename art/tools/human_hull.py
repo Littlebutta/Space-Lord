@@ -19,7 +19,7 @@ def _outer_edges(pts):
     return out
 
 
-def _bulkhead(i, pts, h=1.6):
+def _bulkhead(i, pts, h=0.9):
     """Hull wall with ribs and a porthole along the slanted outer side."""
     for a, b in _outer_edges(pts):
         i.wall(a, b, 0.0, h, 0.16, C["hull"], 0.03)
@@ -43,7 +43,7 @@ def hull(i, e, pts):
 
 def armor(i, e, pts):
     floor(i, pts)
-    _bulkhead(i, pts, 1.9)
+    _bulkhead(i, pts, 1.1)
     for x, z in pts if len(pts) == 4 else []:  # heavy corner braces
         i.box((x * 0.82, 0.5, z * 0.82), (0.25, 1.0, 0.25), C["gun"], 0.04)
         i.box((x * 0.82, 1.02, z * 0.82), (0.3, 0.05, 0.3), C["hazard"], 0.01)
@@ -125,3 +125,25 @@ def _c(k):
 def _s(k):
     import math
     return math.sin(k / 16 * 2 * math.pi)
+
+
+def airlock(i, e, pts):
+    """Blocked: x < 0 (suit lockers), so crew can come in from any other
+    side; the floor hatch at x = 0.5 is where they step out."""
+    floor(i, pts)
+    for z in (-0.5, 0.5):  # suit lockers with hanging EVA suits
+        i.box((-0.75, 1.0, z), (0.45, 2.0, 0.9), C["steel"], 0.03)
+        i.box((-0.52, 1.0, z), (0.02, 1.85, 0.8), C["gun"])
+        i.box((-0.6, 1.15, z), (0.2, 0.6, 0.4), C["white"], 0.06)  # suit
+        i.ball((-0.6, 1.6, z), 0.13, C["glass"], 1)  # helmet
+        i.box((-0.52, 1.85, z), (0.03, 0.06, 0.5), C["accent"], 0.01)
+    i.cyl((0.5, FLOOR + 0.02, 0), 0.55, 0.04, C["hazard"], sides=24, bevel=0.01)
+    i.cyl((0.5, FLOOR + 0.04, 0), 0.4, 0.04, C["gun"], sides=24, bevel=0.01)
+    for k in range(4):  # hatch dogs
+        i.box((0.5 + (-0.3, 0.3, 0, 0)[k], FLOOR + 0.07, (0, 0, -0.3, 0.3)[k]),
+              (0.08, 0.03, 0.08), C["metal"], 0.01)
+    screen(i, (0.5, 1.2, -0.95), 0.4, 0.3, col="amber")
+    e.cyl((0.4, ROOF + 0.06, 0), 0.6, 0.12, C["gun"], sides=24, bevel=0.03)
+    e.cyl((0.4, ROOF + 0.13, 0), 0.5, 0.04, C["hazard"], sides=24)
+    e.ball((0.7, ROOF + 0.1, -0.7), 0.06, C["amber"], 1, glow=True)
+    return [((0.4, 2.1, 0), C["amber"])]

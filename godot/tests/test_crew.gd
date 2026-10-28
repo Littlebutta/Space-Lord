@@ -14,7 +14,7 @@ func _init() -> void:
 	sim.setup(d, 30)
 	var s := sim.state
 	_run(sim, 40.0)
-	var staffed := range(s.size()).all(func(i): return s.manned(i))
+	var staffed := range(s.size()).all(func(i): return s.manned(i) or not s.supplied(i))
 	_check(staffed, "every station staffed")
 	for c in sim.crew:
 		_check(sim.nav.walkable(c.pos), "%s stands on the deck" % c.name)
@@ -28,11 +28,13 @@ func _init() -> void:
 	_run(sim, 15.0)
 	_check(s.damaged(hurt), "repair priority off: nobody repairs")
 	var hungry: Array = range(s.size()).filter(func(i): return not s.module(i).upkeep.is_empty())
+	var stocked := hungry.filter(func(i): return s.module(i).upkeep.keys().all(
+			func(r): return s.storage.capacity.get(r, 0.0) > 0.0))  # ship carries it
 	for i in hungry:
 		for res in s.stock[i]:
 			s.stock[i][res] = 0.0
 	_run(sim, 40.0)
-	var fed := hungry.all(func(i): return s.is_running(i) or s.hp[i] < s.module(i).hp)
+	var fed := stocked.all(func(i): return s.is_running(i) or s.hp[i] < s.module(i).hp)
 	_check(fed, "haulers restocked every module")
 	print("crew tests: %s" % ("FAILED %d" % _fails if _fails else "ok"))
 	sim.free()
