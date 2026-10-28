@@ -3,7 +3,8 @@ extends CanvasLayer
 ## buttons bottom-left, and the controls behind "?" (F1).
 
 const HELP := "Space pause · 1/2 speed · WASD pan · middle mouse drag rotate\n" \
-		+ "Wheel zoom · B builder at shipyard · N builder in space · C crew · V battle"
+		+ "Wheel zoom · B builder at shipyard · N builder in space · C crew · V battle\n" \
+		+ "Right click fly your ship there, or to a wreck or asteroid ping"
 const SCREENS := {"Builder": KEY_B, "Refit in space": KEY_N, "Crew": KEY_C, "Battle": KEY_V}
 
 var _clock := Label.new()

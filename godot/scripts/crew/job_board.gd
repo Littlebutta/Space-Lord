@@ -9,6 +9,7 @@ const HAUL_BELOW := 0.6  # restock once on-hand supply drops under this share
 var state: ShipState
 var nav: ShipNav
 var jobs := {}  # key -> CrewJob
+var field: MiningField  # asteroids to mine here, if any
 
 
 func _init(s: ShipState, n: ShipNav) -> void:
@@ -30,6 +31,7 @@ func refresh() -> void:
 		if state.damaged(i) and Shipyard.can_repair(state.hp[i], m.hp, state.design):
 			want["r%d" % i] = [&"repair", i, "", 0]
 	_want_eva(want)
+	CrewMining.want(self, want)
 	for k in jobs.keys():
 		var j: CrewJob = jobs[k]
 		if not want.has(k) and (j.worker == null or j.type == &"operate"):
@@ -119,4 +121,5 @@ func _make(key: String, w: Array) -> CrewJob:
 		&"repair": j.label = "Repairing %s" % n
 		&"eva": j.label = "Spacewalk: bring back %s" \
 				% state.module(j.target).display_name
+		&"mine": j.label = "Spacewalk: fetch ore"
 	return j

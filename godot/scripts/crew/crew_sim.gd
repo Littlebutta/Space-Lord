@@ -101,7 +101,7 @@ func _act(c: CrewMember, delta: float) -> void:
 func _first_stop(c: CrewMember) -> int:
 	if c.job.type != &"haul":
 		return c.job.module
-	c.source = _nearest_store(c.job.res, c.pos, c.job.module)
+	c.source = nearest_store(c.job.res, c.pos, c.job.module)
 	return c.source
 
 
@@ -116,6 +116,8 @@ func _work(c: CrewMember, delta: float) -> void:
 				finish(c)
 		&"eva":
 			CrewEva.work(self, c, delta)
+		&"mine":
+			CrewMining.work(self, c, delta)
 		&"haul":
 			c.timer += delta
 			if c.timer < LOAD_TIME:
@@ -187,6 +189,8 @@ func kill(c: CrewMember, fling := Vector3.ZERO) -> void:
 
 ## Lets go of the current job, putting back anything carried.
 func drop(c: CrewMember) -> void:
+	if c.cargo > 0.0 and c.job and c.job.type == &"mine":
+		CrewMining.release(self, c)
 	if c.cargo > 0.0:
 		state.storage.put(c.job.res if c.job else "", c.cargo)
 		c.cargo = 0.0
@@ -298,7 +302,7 @@ func _draw(delta: float) -> void:
 
 
 ## Closest intact store for `res`, bulk stores (supply depots) first.
-func _nearest_store(res: String, from: Vector2, skip: int) -> int:
+func nearest_store(res: String, from: Vector2, skip: int) -> int:
 	var best := skip if state.module(skip).storage.has(res) else -1
 	var best_d := INF
 	for i in state.size():
