@@ -159,3 +159,18 @@ static func noise(normal: bool) -> NoiseTexture2D:
 	else:
 		_grime = tex
 	return tex
+
+
+## The shared see-through glass (helmets, canopies).
+static func glass_material() -> StandardMaterial3D:
+	if _glass == null:
+		_glass = _glass_mat()
+	return _glass
+
+
+## The shared unlit glow (screens, lamps, trim).
+static func glow_material() -> ShaderMaterial:
+	if _glow == null:
+		_glow = ShaderMaterial.new()
+		_glow.shader = GLOW
+	return _glow

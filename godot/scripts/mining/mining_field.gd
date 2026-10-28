@@ -18,7 +18,7 @@ var chunks := {}  # id -> {node, vel, res, amount, carrier}
 var bumps: RockBumps
 var _next := 0
 var _cut := {}  # laser module -> units cut toward the next chunk
-var _beams := {}  # laser module -> beam mesh
+var _beams := {}  # laser module -> MiningBeam
 var _popup := RockPopup.new()
 
 
@@ -46,21 +46,11 @@ func bind(s: ShipBody, at_site: Dictionary) -> void:
 
 
 func _rock(rng: RandomNumberGenerator, r: float, p: Vector2, mix: Dictionary) -> MeshInstance3D:
-	var m := SphereMesh.new()
-	m.radius = r
-	m.height = r * 2.0
-	m.radial_segments = 20
-	m.rings = 12
-	var mat := StandardMaterial3D.new()
-	var tint := Color(0.34, 0.32, 0.3).lerp(Materials.COLORS["copper"], mix.copper * 0.3)
-	mat.albedo_color = tint.lerp(Materials.COLORS["gold"], mix.gold)
-	mat.roughness = 1.0
-	m.material = mat
+	var kind: String = mix.keys().reduce(func(a, k): return k if mix[k] > mix[a] else a)
 	var mi := MeshInstance3D.new()
-	mi.mesh = m
+	mi.mesh = AsteroidArt.mesh(rng, r, StringName(kind))
 	mi.position = Vector3(p.x, 0.0, p.y)
 	mi.rotation = Vector3(rng.randf(), rng.randf(), rng.randf()) * TAU
-	mi.scale = Vector3(rng.randf_range(0.85, 1.15), rng.randf_range(0.7, 0.95), 1.0)
 	add_child(mi)
 	return mi
 
@@ -102,7 +92,7 @@ func _physics_process(delta: float) -> void:
 		var c: Dictionary = chunks[id]
 		var n: Node3D = c.node
 		if c.carrier:
-			n.position = _world(ship.sim.local3d(c.carrier)) + Vector3.UP * 0.5
+			n.position = _world(ship.sim.local3d(c.carrier)) + Vector3.UP * 1.1  # in their arms
 			continue
 		n.position += c.vel * delta
 		c.vel *= 1.0 - DAMP * delta
@@ -166,23 +156,9 @@ func _muzzle(i: int) -> Vector3:
 
 func _beam(i: int, from: Vector3, to: Vector3, on: bool) -> void:
 	if not _beams.has(i):
-		var m := CylinderMesh.new()
-		m.top_radius = 0.08
-		m.bottom_radius = 0.08
-		m.height = 1.0
-		m.material = MapGlow.make(Color(1.0, 0.55, 0.15))
-		var mi := MeshInstance3D.new()
-		mi.mesh = m
-		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		add_child(mi)
-		_beams[i] = mi
-	var b: MeshInstance3D = _beams[i]
-	b.visible = on and from.distance_to(to) > 0.1
-	if b.visible:
-		var up := (to - from).normalized()
-		var side := up.cross(Vector3.UP if absf(up.y) < 0.9 else Vector3.RIGHT).normalized()
-		var bs := Basis(side, up, side.cross(up)).scaled(Vector3(1, from.distance_to(to), 1))
-		b.transform = Transform3D(bs, (from + to) * 0.5)
+		_beams[i] = MiningBeam.new()
+		add_child(_beams[i])
+	_beams[i].span(from, to, on)
 
 
 func _spawn(at: Vector3, vel: Vector3, res: String, amount: float) -> void:

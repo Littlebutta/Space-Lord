@@ -13,7 +13,7 @@ import sys
 sys.path.insert(0, os.path.dirname(__file__))
 import bpy  # noqa: E402
 import kit  # noqa: E402
-from crew_body import BONES, body  # noqa: E402
+from crew_body import BONES, body, suit  # noqa: E402
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 OUT = os.path.join(ROOT, "godot", "assets", "models", "human", "crew.glb")
@@ -43,6 +43,29 @@ def _swing(a, b, n):
 
 
 ANIMS = {
+    "carry": (16, {  # walking with a load held at the chest
+        "thigh.R": _swing((32, 0, 0), (-32, 0, 0), 16),
+        "thigh.L": _swing((-32, 0, 0), (32, 0, 0), 16),
+        "shin.R": [(0, (-8, 0, 0)), (4, (-40, 0, 0)), (8, (0, 0, 0)), (16, (-8, 0, 0))],
+        "shin.L": [(0, (0, 0, 0)), (8, (-8, 0, 0)), (12, (-40, 0, 0)), (16, (0, 0, 0))],
+        "arm.R": _swing((30, 0, 14), (33, 0, 14), 16),
+        "arm.L": _swing((33, 0, -14), (30, 0, -14), 16),
+        "hand.R": _swing((75, 0, 0), (72, 0, 0), 16),
+        "hand.L": _swing((72, 0, 0), (75, 0, 0), 16),
+        "spine": _swing((3, 3, 0), (3, -3, 0), 16),
+    }, 0.02),
+    "float": (72, {  # drifting in a suit, limbs loose, slow sway
+        "arm.R": _swing((15, 0, 28), (5, 0, 34), 72),
+        "arm.L": _swing((5, 0, -34), (15, 0, -28), 72),
+        "hand.R": _swing((25, 0, 0), (40, 0, 0), 72),
+        "hand.L": _swing((40, 0, 0), (25, 0, 0), 72),
+        "thigh.R": _swing((20, 0, 6), (8, 0, 9), 72),
+        "thigh.L": _swing((8, 0, -9), (20, 0, -6), 72),
+        "shin.R": _swing((-35, 0, 0), (-20, 0, 0), 72),
+        "shin.L": _swing((-20, 0, 0), (-35, 0, 0), 72),
+        "spine": _swing((-6, 0, -3), (-2, 0, 3), 72),
+        "head": _swing((-8, 6, 0), (-4, -6, 0), 72),
+    }, 0.0),
     "idle": (48, {
         "spine": _swing((0, 0, 0), (-2, 0, 0), 48),
         "head": _swing((0, 0, -4), (-2, 0, 4), 48),
@@ -109,6 +132,12 @@ def main():
     for name, *_ in BONES:
         me_ob.vertex_groups.new(name=name)
     me_ob.modifiers.new("Rig", "ARMATURE").object = ob
+    s = kit.Part("CrewSuit")
+    suit(s)
+    suit_ob = s.build(mats, ob)
+    for name, *_ in BONES:
+        suit_ob.vertex_groups.new(name=name)
+    suit_ob.modifiers.new("Rig", "ARMATURE").object = ob
     animate(ob)
     kit.export(ob, OUT, export_animations=True,
                export_animation_mode="NLA_TRACKS", export_skins=True)

@@ -2,7 +2,7 @@
 and Exterior Parts plus the centred footprint (metres, front is -z) and
 returns its lamps as [(pos, colour)]. Equipment keeps to the module's
 blocked cells; see the comment on each builder."""
-from human_style import C, FLOOR, ROOF, floor, pipe, vent, bolts, screen, console
+from human_style import C, FLOOR, ROOF, floor, pipe, vent, bolts, screen, console, fill
 
 
 def _outer_edges(pts):
@@ -83,9 +83,10 @@ def ammo_rack(i, e, pts):
         for k in range(3):
             for r, z in ((0, -0.82), (1, -0.6)):
                 x = -0.85 + k * 0.3
-                i.cyl((x, y + 0.02 + r * 0.16, z), 0.075, 0.42, C["brass"], "z", 12, bevel=0.01)
-                i.cyl((x, y + 0.02 + r * 0.16, z + 0.27), 0.075, 0.12, C["red"], "z", 12, r2=0.02)
-                i.cyl((x, y + 0.02 + r * 0.16, z - 0.22), 0.078, 0.02, C["metal"], "z", 12)
+                f = fill(1 + r + (2 if y > 0.5 else 0))  # rows fill bottom up
+                f.cyl((x, y + 0.02 + r * 0.16, z), 0.075, 0.42, C["brass"], "z", 12, bevel=0.01)
+                f.cyl((x, y + 0.02 + r * 0.16, z + 0.27), 0.075, 0.12, C["red"], "z", 12, r2=0.02)
+                f.cyl((x, y + 0.02 + r * 0.16, z - 0.22), 0.078, 0.02, C["metal"], "z", 12)
         i.box((-0.55, y + 0.12, -0.7), (0.9, 0.025, 0.04), C["dark"])  # strap
     i.box((-0.55, 1.68, -0.7), (0.9, 0.06, 0.6), C["hazard"], 0.01)
     i.box((0.0, 1.85, -0.6), (1.9, 0.1, 0.12), C["gun"], 0.02)  # hoist rail
@@ -111,12 +112,14 @@ def cargo_hold(i, e, pts):
     floor(i, pts, grates=[(0, 0), (-1, -1)])
     stacks = [(-1.5, -1.5, 2), (-1.5, -0.5, 1), (-1.5, 1.5, 2), (1.5, -1.5, 2),
               (1.5, 0.5, 1)]
-    for x, z, n in stacks:
+    for s, (x, z, n) in enumerate(stacks):  # crates appear as the hold fills
         for k in range(n):
-            _crate(i, x, 0.42 + k * 0.84, z, C["crate"] if (x + k) % 2 else C["crate2"])
-    for dx, dz in ((-0.22, -0.22), (0.22, -0.22), (-0.22, 0.22), (0.22, 0.22)):
-        i.cyl((1.5 + dx, 0.5, 1.5 + dz), 0.2, 0.9, C["red"], sides=12, bevel=0.015)
-        i.cyl((1.5 + dx, 0.6, 1.5 + dz), 0.205, 0.05, C["gun"], sides=12)
+            _crate(fill(1 + (s + k * 2) % 4), x, 0.42 + k * 0.84, z,
+                   C["crate"] if (x + k) % 2 else C["crate2"])
+    for k, (dx, dz) in enumerate(((-0.22, -0.22), (0.22, -0.22), (-0.22, 0.22), (0.22, 0.22))):
+        f = fill(k + 1)
+        f.cyl((1.5 + dx, 0.5, 1.5 + dz), 0.2, 0.9, C["red"], sides=12, bevel=0.015)
+        f.cyl((1.5 + dx, 0.6, 1.5 + dz), 0.205, 0.05, C["gun"], sides=12)
     i.box((1.5, 0.03, 1.5), (0.95, 0.06, 0.95), C["crate2"], 0.01)  # pallet
     for x in (-0.6, 0.6):
         i.box((x, FLOOR + 0.004, 0), (0.08, 0.01, 2.0), C["hazard"])
@@ -171,8 +174,8 @@ def supply_depot(i, e, pts):
     for z in (-1.5, -0.5, 0.5, 1.5):  # left racks, two shelves each
         i.box((-1.5, 0.05, z), (0.9, 0.1, 0.9), C["gun"], 0.02)
         i.box((-1.5, 1.0, z), (0.9, 0.05, 0.9), C["steel"], 0.01)
-        _crate(i, -1.5, 0.48, z, C["crate"] if z < 0 else C["crate2"])
-        _crate(i, -1.5, 1.45, z, C["crate2"] if z < 0 else C["crate"])
+        _crate(fill(1 + int(z + 1.5) // 2), -1.5, 0.48, z, C["crate"] if z < 0 else C["crate2"])
+        _crate(fill(3 + int(z + 1.5) // 2), -1.5, 1.45, z, C["crate2"] if z < 0 else C["crate"])
     for x in (-1.95, -1.05):
         for z in (-1.95, 0.0, 1.95):
             i.box((x, 1.0, z * 0.98), (0.06, 2.0, 0.06), C["steel"], 0.01)
