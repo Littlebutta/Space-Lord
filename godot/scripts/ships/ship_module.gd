@@ -19,6 +19,12 @@ extends Resource
 ## Seconds an engine can fire with nobody at it before crew must take over.
 @export var auto_time := 0.0
 @export var firepower := 0.0  # damage per second, needs ammo upkeep
+@export_group("Power")
+@export var power_out := 0.0  # power made per second while running
+@export var power_cap := 0.0  # power it can store (capacitors, buffers)
+## Power each shot draws from the grid (lasers); 0 means it uses ammo.
+@export var shot_power := 0.0
+@export_group("")
 @export var storage := {}  # resource id -> capacity it adds
 @export var upkeep := {}  # resource id -> units used per game hour
 ## Side thrust leaves from when unturned, e.g. (0, 1) = out the back.

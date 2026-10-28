@@ -9,6 +9,8 @@ var crew := 0  # needed
 var berths := 0  # housed
 var thrust := 0.0
 var firepower := 0.0
+var power_out := 0.0  # per second, all generators running
+var power_cap := 0.0
 var storage := {}  # resource -> capacity
 var upkeep := {}  # resource -> units per game hour
 var warnings: Array[String] = []
@@ -22,6 +24,8 @@ static func of(d: ShipDesign) -> ShipStats:
 	s.berths = int(d.total(&"berths"))
 	s.thrust = d.total(&"thrust")
 	s.firepower = d.total(&"firepower")
+	s.power_out = d.total(&"power_out")
+	s.power_cap = d.total(&"power_cap")
 	s.storage = d.total_dict(&"storage")
 	s.upkeep = d.total_dict(&"upkeep")
 	s._check(d)
@@ -48,6 +52,8 @@ func _check(d: ShipDesign) -> void:
 		warnings.append("Crew needs %d berths, has %d" % [crew, berths])
 	if thrust <= 0.0:
 		warnings.append("No engines: the ship can't move")
+	if power_out <= 0.0 and d.modules.any(func(m): return m.shot_power > 0.0):
+		warnings.append("Lasers need a reactor for power")
 	for res in upkeep:
 		if storage.get(res, 0.0) <= 0.0:
 			warnings.append("Uses %s but has no storage for it" % res)
