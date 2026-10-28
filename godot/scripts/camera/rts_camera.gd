@@ -1,6 +1,6 @@
 extends Camera3D
 ## Top-down orbit camera shared by the system map and RTS battles.
-## WASD pans, Q/E rotates, mouse wheel zooms.
+## WASD pans, middle mouse drag turns and tilts, mouse wheel zooms.
 
 @export var focus := Vector3.ZERO
 @export var distance := 140.0
@@ -8,6 +8,8 @@ extends Camera3D
 @export var pitch_deg := -55.0
 @export var yaw_deg := 0.0
 @export var pan_speed := 1.2  # scaled by distance
+@export var pitch_range := Vector2(-88.0, -10.0)
+@export var turn_speed := 0.3  # degrees per pixel dragged
 
 
 func _process(delta: float) -> void:
@@ -16,10 +18,6 @@ func _process(delta: float) -> void:
 	var basis_y := Basis(Vector3.UP, deg_to_rad(yaw_deg))
 	var step := Vector3(move.x, 0.0, move.y) * pan_speed * distance * delta
 	focus += basis_y * step
-	if Input.is_key_pressed(KEY_Q):
-		yaw_deg += 90.0 * delta
-	if Input.is_key_pressed(KEY_E):
-		yaw_deg -= 90.0 * delta
 	var rot := basis_y * Basis(Vector3.RIGHT, deg_to_rad(pitch_deg))
 	transform = Transform3D(rot, focus + rot * Vector3(0, 0, distance))
 
@@ -32,6 +30,11 @@ func _wasd() -> Vector2:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	var m := event as InputEventMouseMotion
+	if m and m.button_mask & MOUSE_BUTTON_MASK_MIDDLE:
+		yaw_deg -= m.relative.x * turn_speed
+		pitch_deg = clampf(pitch_deg - m.relative.y * turn_speed, pitch_range.x, pitch_range.y)
+		return
 	var b := event as InputEventMouseButton
 	if b == null or not b.pressed:
 		return

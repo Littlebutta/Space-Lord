@@ -1,9 +1,10 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/crew/crew_test.gd" id="1_test"]
 [ext_resource type="Script" path="res://scripts/camera/rts_camera.gd" id="2_cam"]
-[ext_resource type="Script" path="res://scripts/ships/hulk_view.gd" id="3_view"]
-[ext_resource type="Script" path="res://scripts/crew/crew_sim.gd" id="4_sim"]
+[ext_resource type="Script" path="res://scripts/ships/ship_body.gd" id="3_body"]
+[ext_resource type="Script" path="res://scripts/ui/module_tags.gd" id="4_tags"]
+[ext_resource type="Script" path="res://scripts/crew/crew_orders.gd" id="6_orders"]
 [ext_resource type="Script" path="res://scripts/ui/crew_panel.gd" id="5_panel"]
 
 [sub_resource type="Environment" id="Env"]
@@ -44,23 +45,28 @@ distance = 24.0
 zoom_range = Vector2(8, 120)
 pitch_deg = -65.0
 
-[node name="Hulk" type="Node3D" parent="."]
-script = ExtResource("3_view")
-
-[node name="CrewSim" type="Node3D" parent="."]
-script = ExtResource("4_sim")
+[node name="Ship" type="Node3D" parent="."]
+script = ExtResource("3_body")
 
 [node name="Panel" type="CanvasLayer" parent="."]
 script = ExtResource("5_panel")
 
 [node name="UI" type="CanvasLayer" parent="."]
 
+[node name="Tags" type="Control" parent="UI"]
+mouse_filter = 2
+script = ExtResource("4_tags")
+
+[node name="Orders" type="Control" parent="UI"]
+mouse_filter = 2
+script = ExtResource("6_orders")
+
 [node name="Info" type="Label" parent="UI"]
 anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
 offset_left = 16.0
-offset_top = -200.0
+offset_top = -240.0
 offset_right = 700.0
 offset_bottom = -12.0
 grow_vertical = 0

@@ -8,3 +8,7 @@ build/
 # Blender autosaves
 *.blend1
 *.blend2
+
+# Editor-generated (Godot regenerates these)
+*.uid
+*.import

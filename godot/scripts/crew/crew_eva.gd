@@ -7,6 +7,37 @@ extends RefCounted
 
 const FLY := 2.5  # metres per second on a jetpack
 const WELD_TIME := 2.0  # seconds to tether a piece or prep a gap
+const AIR_SUIT := 30.0  # seconds in an emergency suit
+const AIR_RIG := 180.0  # a proper rig for planned spacewalks
+const BAIL := Vector2(4.0, 14.0)  # seconds before someone leaves a dead piece
+
+
+## Air and dead pieces. Anyone outside burns air and dies when it runs
+## out. Anyone aboard a cut-off piece stays inside a while, then suits up
+## and jetpacks for an airlock. True when that took their turn.
+static func survive(sim: CrewSim, c: CrewMember, delta: float) -> bool:
+	if c.eva:
+		c.air -= delta
+		if c.air <= 0.0:
+			sim.kill(c)
+			return true
+		return false
+	var p := sim.state.pieces
+	var i := sim.state.design.index_at(Vector2i((c.pos / ShipView.CELL).floor()))
+	if i < 0 or not p.drifting(i):
+		c.strand = -1.0
+		return false
+	if c.strand < 0.0:
+		sim.drop(c)
+		c.order = false
+		c.strand = randf_range(BAIL.x, BAIL.y)
+	c.strand -= delta
+	if c.strand <= 0.0:
+		c.pos = p.xf[i] * c.pos
+		c.eva = true
+		c.air = AIR_SUIT
+		c.strand = -1.0
+	return true
 
 
 static func work(sim: CrewSim, c: CrewMember, delta: float) -> void:
@@ -19,6 +50,7 @@ static func work(sim: CrewSim, c: CrewMember, delta: float) -> void:
 	match c.stage:
 		1:  # at the airlock: step outside
 			c.eva = true
+			c.air = AIR_RIG
 			c.stage = 2
 		2:
 			if fly(c, p.world(t), delta):
