@@ -53,9 +53,6 @@ func _process(_delta: float) -> void:
 	t += "Modules running %d / %d · speed %.1f m/s" % [running, s.size(),
 			_ship.vel.length()]
 	t += " · crew lost %d\n" % _ship.sim.lost if _ship.sim.lost else "\n"
-	for res in s.storage.capacity:
-		t += "%s %.0f / %.0f\n" % [res.capitalize(), s.storage.get_amount(res),
-				s.storage.capacity[res]]
 	_info.text = t.strip_edges()
 
 
@@ -75,6 +72,9 @@ func _hud() -> void:
 			func(): cards.set_pressed_no_signal($UI/Tags.visible))
 	box.add_child(cards)
 	UiKit.pin($UI, card, Control.PRESET_BOTTOM_LEFT)
+	var res := ResourceBar.new()
+	res.source = func(): return _ship.sim.state.storage
+	UiKit.pin($UI, res, Control.PRESET_CENTER_TOP)
 	UiKit.help($UI, HELP)
 
 

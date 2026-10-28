@@ -6,7 +6,7 @@ extends RefCounted
 
 const MAJOR := 0.5  # below this share of hp a repair counts as major
 
-static var docked := true  # near a station; the map keeps this current
+static var docked := false  # near a station; the map keeps this current
 
 
 static func has_dock(d: ShipDesign) -> bool:

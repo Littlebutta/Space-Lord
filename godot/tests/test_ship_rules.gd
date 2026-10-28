@@ -43,10 +43,18 @@ func _initialize() -> void:
 	check(walled, "warns when equipment walls crew off a part")
 	for t in ShipTheme.all():
 		for m in ModuleLibrary.all():
-			for turn in 4:
+			for turn in 8:  # 4-7 mirrored
 				var r := Rect2i(Vector2i.ZERO, ShipDesign.turned(m, turn))
 				var mesh := ShipView.part_mesh(m, r, turn, t)
 				check(mesh.get_surface_count() >= 1, "%s %s mesh" % [t.id, m.id])
+	var slope := Prism.footprint(ModuleLibrary.by_id(&"hull_slope"), 4)
+	check(slope.has(Vector2(1, 0)) and not slope.has(Vector2.ZERO), "mirrored slope faces the other way")
+	var side := ShipRules.rotate(eng.exhaust, 1)
+	var flip := ShipRules.rotate(eng.exhaust, ShipDesign.mirror(1))
+	check(flip == Vector2i(-side.x, side.y), "mirror copy's thruster fires the other way")
+	for turn in 8:
+		check(ShipDesign.mirror(ShipDesign.mirror(turn)) == turn, "mirror twice is a no-op")
+	check(ShipDesign.mirror_cell(Vector2i(2, 0), Vector2i(1, 2)) == Vector2i(-3, 0), "mirror cell")
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 7
 	var g := ShipGenerator.generate(bridge, ModuleLibrary.all(), rng, 20, &"bio")
