@@ -44,16 +44,21 @@ func draw(crew: Array[CrewMember], sim: CrewSim, delta: float) -> void:
 				col.lightened(0.4) if c.cargo > 0.0 else col)
 
 
-func _spawn() -> void:
+## The shared crew material; shirts are an instance uniform.
+static func material() -> ShaderMaterial:
 	if _mat == null:
 		_mat = ShaderMaterial.new()
 		_mat.shader = SHADER
 		_mat.set_shader_parameter(&"grime_tex", ModelSkin.noise(false))
 		_mat.set_shader_parameter(&"bump_tex", ModelSkin.noise(true))
 		_mat.set_shader_parameter(&"grime", 0.35)
+	return _mat
+
+
+func _spawn() -> void:
 	var b: Node3D = MODEL.instantiate()
 	var mi: MeshInstance3D = b.find_children("*", "MeshInstance3D", true, false)[0]
-	mi.material_override = _mat
+	mi.material_override = material()
 	var ap: AnimationPlayer = b.find_children("*", "AnimationPlayer", true, false)[0]
 	for n in ap.get_animation_list():
 		ap.get_animation(n).loop_mode = Animation.LOOP_LINEAR
