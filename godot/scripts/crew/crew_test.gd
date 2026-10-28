@@ -13,14 +13,16 @@ const HELP := "X damage · B wreck a module · F fire · V outside view · Alt o
 @onready var _info: Label = $UI/Info
 var _last := Vector2.ZERO  # ship middle last frame, for the camera to follow
 var _follow := false  # Space: camera rides along with the ship
+var _site := ""  # what's here, from the map site we arrived at
 
 
 func _ready() -> void:
-	var d := _design()
+	var d := SiteScene.prepare(_design())
 	_ship.setup(d, maxi(int(d.total(&"berths")), int(d.total(&"crew")) + 2))
 	$Panel.bind(_ship.sim)
 	$UI/Tags.bind(_ship)
 	$UI/Orders.bind(_ship)
+	_site = SiteScene.spawn(self, _ship)
 	_last = _ship.world(_ship.pivot())
 	_hud()
 	$Camera.focus = Vector3(_last.x, 0.0, _last.y)
@@ -43,7 +45,8 @@ func _process(_delta: float) -> void:
 	var running := 0
 	for i in s.size():
 		running += int(s.is_running(i))
-	var t := "Modules running %d / %d · speed %.1f m/s" % [running, s.size(),
+	var t := _site + "\n" if _site else ""
+	t += "Modules running %d / %d · speed %.1f m/s" % [running, s.size(),
 			_ship.vel.length()]
 	t += " · crew lost %d\n" % _ship.sim.lost if _ship.sim.lost else "\n"
 	for res in s.storage.capacity:

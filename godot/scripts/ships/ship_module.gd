@@ -19,6 +19,8 @@ extends Resource
 ## Seconds an engine can fire with nobody at it before crew must take over.
 @export var auto_time := 0.0
 @export var firepower := 0.0  # damage per second, needs ammo upkeep
+## Ore a mining laser cuts loose per second from a targeted asteroid.
+@export var mining := 0.0
 ## Top-mounted turret: its model's Head swings round to aim anywhere.
 @export var swivel := false
 @export_group("Power")
