@@ -2,7 +2,9 @@ class_name CrewOrders
 extends Control
 ## RTS crew control. Left click picks a crew member (Shift adds, drag a
 ## box for several), right click on the deck sends them there, or to
-## work the module clicked if it has an open job. R puts the selected
+## work the module clicked if it has an open job. Right click something
+## outside (ore, a broken-off piece, a wreck) sends them out to it, see
+## CrewOutside. R puts the selected
 ## crew back on their usual duties. Right click with nobody selected is
 ## left to the scene (e.g. to fly the ship).
 
@@ -38,8 +40,13 @@ func _unhandled_input(event: InputEvent) -> void:
 			queue_redraw()
 		get_viewport().set_input_as_handled()
 	elif b and b.pressed and b.button_index == MOUSE_BUTTON_RIGHT and not selected().is_empty():
-		var at = _deck(b.position)
-		if at != null:
+		var out := CrewOutside.pick(body, get_viewport().get_camera_3d(), b.position)
+		var at = _deck(b.position) if out.is_empty() else null
+		if not out.is_empty():
+			for c in selected():
+				if CrewOutside.order(body.sim, c, out) and out.kind != &"salvage":
+					break  # one crew member is enough to fetch a thing
+		elif at != null:
 			for c in selected():
 				order(body.sim, c, at)
 		get_viewport().set_input_as_handled()

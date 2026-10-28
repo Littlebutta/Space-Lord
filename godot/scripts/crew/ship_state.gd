@@ -10,6 +10,7 @@ signal fired(i: int)
 const BUFFER_HOURS := 3.0  # hours of upkeep a module can keep on hand
 const REBUILT := 0.25  # share of hp a module is rebuilt with
 const WELD := {"parts": 2.0}  # extra cost to weld a drifting piece back
+const PARTS_PER_HP := 0.05  # repair bay work: a part per 20 hp
 const AUTO_REST := 0.25  # unmanned firing time won back per second idle
 
 var design: ShipDesign
@@ -72,6 +73,37 @@ func damage(i: int, amount: float) -> void:
 func repair(i: int, amount: float) -> void:
 	if hp[i] > 0.0:
 		hp[i] = minf(hp[i] + amount, module(i).hp)
+
+
+## A repair bay is up: crew repairs go faster, cost parts, and can be major.
+func workshop() -> bool:
+	for i in size():
+		if module(i).workshop and hp[i] > 0.0 and pieces.powered(i):
+			return true
+	return false
+
+
+## Crew repair work on module i for `delta` seconds at `rate` hp/s. With a
+## repair bay and parts it goes twice as fast and can fix major damage;
+## without, it stops once the damage is past what crew can patch.
+## False when there's nothing more this crew member can do.
+func crew_repair(i: int, rate: float, delta: float) -> bool:
+	var m := module(i)
+	if workshop():
+		var amount := minf(rate * 2.0 * delta, m.hp - hp[i])
+		if storage.take("parts", amount * PARTS_PER_HP) > 0.0:
+			repair(i, amount)
+			return damaged(i)
+	if not Shipyard.can_repair(hp[i], m.hp, design):
+		return false
+	repair(i, rate * delta)
+	return damaged(i)
+
+
+## Can crew work on module i's damage right now?
+func repairable(i: int) -> bool:
+	return damaged(i) and (Shipyard.can_repair(hp[i], module(i).hp, design) \
+			or workshop() and storage.get_amount("parts") > 0.0)
 
 
 ## Hurt but still standing; wrecked modules need rebuilding instead.
