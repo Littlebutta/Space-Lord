@@ -9,6 +9,7 @@ extends Node3D
 const RANGE := 150.0  # laser reach to the rock's surface, metres
 const CHUNK := 5.0  # units per chunk
 const DAMP := 0.6  # chunks slow to a float
+const PULL := 4.0  # metres per second a chunk drifts when pulled by mind
 
 var ship: ShipBody
 var site: Dictionary
@@ -94,6 +95,8 @@ func _physics_process(delta: float) -> void:
 		if c.carrier:
 			var cr: CrewMember = c.carrier
 			var held := Vector3(cr.face.x * 0.45, 1.0, cr.face.y * 0.45)  # out in front
+			if cr.species.pulls():  # floated along by mind, over their head
+				held = Vector3(0.0, 2.1 + sin(Time.get_ticks_msec() * 0.003) * 0.1, 0.0)
 			n.position = _world(ship.sim.local3d(cr) + held)
 			continue
 		n.position += c.vel * delta
@@ -199,6 +202,17 @@ func local(id: int) -> Variant:
 		return null
 	var p: Vector3 = ShipPieces.to_3d(ship.at).affine_inverse() * chunks[id].node.position
 	return Vector2(p.x, p.z)
+
+
+## Telekinesis: draws chunk id toward `to` (sim frame) at deck height.
+## True once it's there.
+func drag(id: int, to: Vector2, delta: float) -> bool:
+	var at: Vector2 = local(id)
+	var step := PULL * delta
+	var p := to if at.distance_to(to) <= step else at.move_toward(to, step)
+	chunks[id].node.position = _world(Vector3(p.x, 1.5, p.y))
+	chunks[id].vel = Vector3.ZERO
+	return p == to
 
 
 ## Crew member c grabs chunk id; returns the units in it.

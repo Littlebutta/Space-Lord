@@ -36,12 +36,14 @@ func setup(d: ShipDesign, count: int) -> void:
 	nav = ShipNav.new(d)
 	board = JobBoard.new(state, nav)
 	state.pieces.changed.connect(_on_broken)
+	var own := CrewSpecies.of_theme(d.theme(0))
 	for k in count:
-		add_crew()
+		add_crew(own)
 
 
-func add_crew() -> void:
-	var c := CrewMember.new(NAMES[crew.size() % NAMES.size()])
+## Hires one more; `sp` null means human.
+func add_crew(sp: CrewSpecies = null) -> void:
+	var c := CrewMember.new(NAMES[crew.size() % NAMES.size()], sp)
 	c.pos = _home() + Vector2(randf() - 0.5, randf() - 0.5)
 	if not nav.walkable(c.pos):  # don't start inside equipment
 		c.pos = _home()
@@ -164,7 +166,7 @@ func _seat(c: CrewMember) -> Vector2:
 func _walk(c: CrewMember, delta: float) -> void:
 	var to := c.path[0]
 	var d := c.pos.distance_to(to)
-	var move := SPEED * delta
+	var move := SPEED * c.species.speed * delta
 	if d <= move:
 		c.pos = to
 		c.path.remove_at(0)
