@@ -25,7 +25,7 @@ MARKERS = {
     "cannon": [("Muzzle0", (0, ROOF + 0.35, -3.35))],
     "turret": [("Muzzle0", (-0.45, ROOF + 0.85, -2.7)), ("Muzzle1", (0.45, ROOF + 0.85, -2.7))],
     "engine": [("Nozzle0", (0, ROOF - 0.9, 2.7))],
-    "mining_laser": [("Muzzle0", (0, ROOF + 0.45, -2.35))],
+    "mining_laser": [("Muzzle0", (0, ROOF + 0.55, -2.15))],
 }
 
 # module id: (size in cells, outline or None, builder)
@@ -70,9 +70,10 @@ def build(mid, mats):
         FILLS[k].build(mats, root)
     FILLS.clear()
     head = None
-    if mid == "turret":
+    heads = {"turret": hs.turret_head, "mining_laser": hs.mining_head}
+    if mid in heads:  # a turning head the game aims; markers ride on it
         head = kit.Part("Head")
-        hs.turret_head(head)
+        heads[mid](head)
         head = head.build(mats, root)
     for name, pos in MARKERS.get(mid, []):
         kit.empty(name, pos, head or root)
