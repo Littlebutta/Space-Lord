@@ -105,6 +105,7 @@ static func _smoke(world: Node, at: Vector3) -> void:
 
 
 static func _impact(world: Node, at: Vector3, col: Color) -> void:
+	Sfx.play(world, &"impact", at, -3.0, 70.0)
 	var p := FxKit.particles(26, 0.45, Vector3.UP, 180.0, Vector2(4, 12), 0.35)
 	p.one_shot = true
 	p.explosiveness = 1.0
