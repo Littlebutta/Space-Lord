@@ -44,6 +44,7 @@ PARTS = {
     "crew_quarters": ((2, 2), None, hs.crew_quarters),
     "airlock": ((1, 1), None, hh.airlock),
     "supply_depot": ((2, 2), None, hh.supply_depot),
+    "shipdock": ((3, 2), None, hs.shipdock),
 }
 
 
