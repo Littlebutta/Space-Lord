@@ -22,7 +22,7 @@ func _init(d: ShipDesign) -> void:
 	astar.fill_solid_region(astar.region)
 	for i in d.modules.size():
 		var r := d.rect(i)
-		var h: float = ShipView.HEIGHT.get(d.modules[i].category, 0.9) * 0.5
+		var h := ShipView.DECK * 0.5  # one flush deck, any theme
 		for x in range(r.position.x * RES, r.end.x * RES):
 			for y in range(r.position.y * RES, r.end.y * RES):
 				astar.set_point_solid(Vector2i(x, y), false)

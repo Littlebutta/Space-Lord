@@ -1,7 +1,7 @@
 class_name Prism
 extends RefCounted
-## Placeholder part meshes: a module's 2D footprint extruded into a
-## flat-shaded prism, so slopes and themed shapes work before real art.
+## Placeholder part meshes: 2D footprints extruded into flat-shaded
+## prisms, so slopes and themed shapes work before real art.
 
 
 ## Footprint polygon in cells (0..turned size) after `turn` quarter turns.
@@ -28,33 +28,72 @@ static func cut(p: PackedVector2Array, f: float) -> PackedVector2Array:
 	return out
 
 
-## Extrudes polygon `p` (x, z) to height `h`, top shrunk by `taper`.
-static func build(p: PackedVector2Array, h: float, taper := 0.0) -> ArrayMesh:
+## Rounds the corners of footprint `p` (placed at `r`) that stick out
+## of the ship: grid points no other part's cell touches. Inner joins
+## stay square so neighbouring parts sit flush. `steps` 1 = chamfer.
+static func round_corners(p: PackedVector2Array, r: Rect2i, filled: Dictionary,
+		radius: float, steps: int) -> PackedVector2Array:
+	if radius <= 0.0:
+		return p
+	var out := PackedVector2Array()
+	for i in p.size():
+		var v := p[i]
+		if not _exposed(v + Vector2(r.position), r, filled):
+			out.append(v)
+			continue
+		var a := v.move_toward(p[i - 1], radius)
+		var b := v.move_toward(p[(i + 1) % p.size()], radius)
+		for k in steps + 1:
+			var s := float(k) / maxi(steps, 1)
+			out.append(a.lerp(v, s).lerp(v.lerp(b, s), s))
+	return out
+
+
+static func _exposed(g: Vector2, r: Rect2i, filled: Dictionary) -> bool:
+	if not g.is_equal_approx(g.round()):
+		return false
+	var c := Vector2i(g.round())
+	for o in [Vector2i(-1, -1), Vector2i(0, -1), Vector2i(-1, 0), Vector2i.ZERO]:
+		if filled.has(c + o) and not r.has_point(c + o):
+			return false
+	return true
+
+
+## Moves every point `f` of the way toward the centre.
+static func shrink(p: PackedVector2Array, f: float) -> PackedVector2Array:
+	var mid := _mid(p)
+	var out := PackedVector2Array()
+	for v in p:
+		out.append(v.lerp(mid, f))
+	return out
+
+
+static func _mid(p: PackedVector2Array) -> Vector2:
 	var mid := Vector2.ZERO
 	for v in p:
 		mid += v
-	mid /= p.size()
-	var top := PackedVector2Array()
-	for v in p:
-		top.append(v.lerp(mid, taper))
-	var o := Vector3(mid.x, 0.0, mid.y)
-	var y := h * 0.5
-	var st := SurfaceTool.new()
-	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	return mid / p.size()
+
+
+## Extrudes polygon `p` (x, z) from y0 to y1, top shrunk by `taper`.
+static func add(st: SurfaceTool, p: PackedVector2Array, y0: float, y1: float,
+		taper := 0.0) -> void:
+	var top := shrink(p, taper)
+	var mid := _mid(p)
+	var o := Vector3(mid.x, (y0 + y1) * 0.5, mid.y)
 	var tri := Geometry2D.triangulate_polygon(p)
 	for k in range(0, tri.size(), 3):
 		var a := tri[k]
 		var b := tri[k + 1]
 		var c := tri[k + 2]
-		_face(st, o, _v(top[a], y), _v(top[b], y), _v(top[c], y))
-		_face(st, o, _v(p[a], -y), _v(p[b], -y), _v(p[c], -y))
+		_face(st, o, _v(top[a], y1), _v(top[b], y1), _v(top[c], y1))
+		_face(st, o, _v(p[a], y0), _v(p[b], y0), _v(p[c], y0))
 	for i in p.size():
 		var j := (i + 1) % p.size()
-		var b0 := _v(p[i], -y)
-		var t1 := _v(top[j], y)
-		_face(st, o, b0, _v(p[j], -y), t1)
-		_face(st, o, b0, t1, _v(top[i], y))
-	return st.commit()
+		var b0 := _v(p[i], y0)
+		var t1 := _v(top[j], y1)
+		_face(st, o, b0, _v(p[j], y0), t1)
+		_face(st, o, b0, t1, _v(top[i], y1))
 
 
 static func _v(p: Vector2, y: float) -> Vector3:

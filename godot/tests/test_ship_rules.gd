@@ -21,15 +21,18 @@ func _initialize() -> void:
 	check(ShipRules.problems(d).size() == 1, "far-from-fuel warning")
 	check(d.add(fuel, Vector2i(2, 0)), "near fuel tank placed")
 	check(ShipRules.problems(d).is_empty(), "no warnings once fuel is near")
+	var before := ShipStats.of(d)
 	d.paint(Vector2i(1, 2), &"crystal")
 	check(d.theme(2).id == &"crystal", "paint sets theme")
+	var after := ShipStats.of(d)
+	check(before.mass == after.mass and before.hp == after.hp, "themes are visual only")
 	check(ShipTheme.all().size() >= 4, "themes loaded")
 	for t in ShipTheme.all():
 		for m in ModuleLibrary.all():
 			for turn in 4:
 				var r := Rect2i(Vector2i.ZERO, ShipDesign.turned(m, turn))
 				var mesh := ShipView.part_mesh(m, r, turn, t)
-				check(mesh.get_surface_count() == 1, "%s %s mesh" % [t.id, m.id])
+				check(mesh.get_surface_count() >= 1, "%s %s mesh" % [t.id, m.id])
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 7
 	var g := ShipGenerator.generate(bridge, ModuleLibrary.all(), rng, 20, &"bio")

@@ -48,6 +48,17 @@ func paint(cell: Vector2i, tid: StringName) -> void:
 		emit_changed()
 
 
+## Every covered cell -> index of the module on it.
+func occupied() -> Dictionary:
+	var out := {}
+	for i in modules.size():
+		var r := rect(i)
+		for x in range(r.position.x, r.end.x):
+			for y in range(r.position.y, r.end.y):
+				out[Vector2i(x, y)] = i
+	return out
+
+
 ## Index of the module covering `cell`, or -1.
 func index_at(cell: Vector2i) -> int:
 	for i in modules.size():
@@ -78,11 +89,11 @@ func clear() -> void:
 	emit_changed()
 
 
-## Sums a numeric module property, e.g. total("mass"), with themes.
+## Sums a numeric module property, e.g. total("mass").
 func total(stat: StringName) -> float:
 	var sum := 0.0
-	for i in modules.size():
-		sum += float(modules[i].get(stat)) * theme(i).mult(stat)
+	for m in modules:
+		sum += float(m.get(stat))
 	return sum
 
 

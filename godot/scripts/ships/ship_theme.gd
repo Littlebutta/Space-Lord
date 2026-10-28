@@ -1,8 +1,8 @@
 class_name ShipTheme
 extends Resource
-## A style any part can wear (human, bio, crystal...): a colour, a
-## placeholder shape and stat tweaks. Themes are .tres files under
-## res://data/themes, so new ones need no code.
+## A purely visual style any part can wear (human, bio, crystal...):
+## a colour and a placeholder shape. Themes never change stats. They
+## are .tres files under res://data/themes, so new ones need no code.
 
 const DIR := "res://data/themes/"
 
@@ -12,8 +12,10 @@ const DIR := "res://data/themes/"
 @export var blurb := ""  # one line shown in the builder
 @export var tint := Color.WHITE
 @export var tint_mix := 0.3  # how much tint replaces the part colour
-@export var stat_mult := {}  # stat -> multiplier, e.g. {"mass": 0.8}
-@export_group("Placeholder shape")
+@export_group("Hull edge")
+@export var corner := 0.0  # outer hull corners cut this far, in cells
+@export var corner_steps := 1  # 1 = straight chamfer, more = rounder
+@export_group("Detail shape")
 @export var bevel := 0.0  # cut corners this far along each edge
 @export var smooth := 0  # extra corner rounding passes
 @export var taper := 0.0  # shrink the top face toward the centre
@@ -39,10 +41,6 @@ static func by_id(tid: StringName) -> ShipTheme:
 		if t.id == tid:
 			return t
 	return all()[0]
-
-
-func mult(stat: StringName) -> float:
-	return float(stat_mult.get(String(stat), 1.0))
 
 
 func paint(c: Color) -> Color:

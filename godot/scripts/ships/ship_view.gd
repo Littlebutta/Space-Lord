@@ -1,10 +1,14 @@
 class_name ShipView
 extends Node3D
-## Draws a ShipDesign in 3D. Uses each module's Blender model when it
-## has one, else a toon-shaded placeholder prism shaped by its theme.
+## Draws a ShipDesign in 3D. Every part sits on one flush hull deck, so
+## the ship reads as a single hull and crew can walk all of it. Themes
+## only shape the deck's outer corners and the detail on top: a module's
+## Blender model when it has one, else a toon-shaded placeholder.
 ## Reused by map and battle later.
 
 const CELL := 2.0  # metres per grid cell
+const DECK := 0.5  # hull deck thickness, the same for every part
+const HULL_COLOR := Color(0.55, 0.57, 0.6)
 const HEIGHT := {"hull": 0.5, "command": 1.4, "engine": 1.0, "weapon": 1.2}
 const TOON := preload("res://assets/materials/toon.gdshader")
 
@@ -28,10 +32,11 @@ func rebuild() -> void:
 		c.queue_free()
 	if design == null:
 		return
+	var filled := design.occupied()
 	for i in design.modules.size():
 		var m := design.modules[i]
 		var r := design.rect(i)
-		add_child(make_part(m, r, design.turns[i], design.theme(i)))
+		add_child(make_part(m, r, design.turns[i], design.theme(i), filled))
 		var l: MeshInstance3D = lane_mesh(m, r, design.turns[i]) if show_exhaust else null
 		if l:
 			add_child(l)
@@ -42,29 +47,56 @@ static func center(r: Rect2i) -> Vector3:
 	return Vector3(c.x, 0.0, c.y) * CELL
 
 
-static func make_part(m: ShipModule, r: Rect2i, turn: int, t: ShipTheme) -> Node3D:
-	var n: Node3D
+## `filled` is ShipDesign.occupied(), used to round only outer corners.
+static func make_part(m: ShipModule, r: Rect2i, turn: int, t: ShipTheme,
+		filled := {}) -> Node3D:
+	var mi := MeshInstance3D.new()
+	mi.mesh = part_mesh(m, r, turn, t, filled)
+	var hull := m.color if m.category == "hull" else HULL_COLOR
+	var deck := hull.lerp(t.tint, t.tint_mix * 0.5)  # subtle, so hulls blend
+	mi.set_surface_override_material(0, toon(deck))
+	if mi.mesh.get_surface_count() > 1:
+		mi.set_surface_override_material(1, toon(t.paint(m.color)))
 	if m.model:
-		n = m.model.instantiate()
-		n.rotation.y = -turn * PI / 2.0
-	else:
-		var mi := MeshInstance3D.new()
-		mi.mesh = part_mesh(m, r, turn, t)
-		mi.material_override = toon(t.paint(m.color))
-		n = mi
-	n.position = center(r)
-	return n
+		var model: Node3D = m.model.instantiate()
+		model.rotation.y = -turn * PI / 2.0
+		model.position.y = DECK * 0.5
+		mi.add_child(model)
+	mi.position = center(r)
+	return mi
 
 
-## Placeholder prism for `m`, centred on its footprint.
-static func part_mesh(m: ShipModule, r: Rect2i, turn: int, t: ShipTheme) -> Mesh:
+## Deck slab (surface 0) plus, for non-hull parts without a model, a
+## themed detail block on top (surface 1). Centred on the footprint.
+static func part_mesh(m: ShipModule, r: Rect2i, turn: int, t: ShipTheme,
+		filled := {}) -> ArrayMesh:
+	var p := Prism.footprint(m, turn)
+	var mesh := ArrayMesh.new()
+	var deck := Prism.round_corners(p, r, filled, t.corner, t.corner_steps)
+	_slab(mesh, _local(deck, r), -DECK * 0.5, DECK * 0.5, 0.0)
 	var h: float = HEIGHT.get(m.category, 0.9) * t.height
 	h *= 1.0 + t.jitter * (absi(hash(r.position)) % 100 / 100.0 - 0.5)
-	var p := Prism.footprint(m, turn)
+	if m.category != "hull" and not m.model and h > DECK + 0.05:
+		var top := Prism.shrink(p, 0.2)
+		_slab(mesh, _local(t.shape(top), r), DECK * 0.5, h - DECK * 0.5, t.taper)
+	return mesh
+
+
+## Cell-unit polygon -> metres around the footprint centre.
+static func _local(p: PackedVector2Array, r: Rect2i) -> PackedVector2Array:
 	var half := Vector2(r.size) * 0.5
-	for k in p.size():
-		p[k] = (p[k] - half) * CELL
-	return Prism.build(t.shape(p), h, t.taper)
+	var out := PackedVector2Array()
+	for v in p:
+		out.append((v - half) * CELL)
+	return out
+
+
+static func _slab(mesh: ArrayMesh, p: PackedVector2Array, y0: float, y1: float,
+		taper: float) -> void:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	Prism.add(st, p, y0, y1, taper)
+	st.commit(mesh)
 
 
 static func toon(c: Color) -> Material:
