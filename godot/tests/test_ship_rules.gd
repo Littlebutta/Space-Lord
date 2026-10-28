@@ -27,6 +27,12 @@ func _initialize() -> void:
 	var after := ShipStats.of(d)
 	check(before.mass == after.mass and before.hp == after.hp, "themes are visual only")
 	check(ShipTheme.all().size() >= 4, "themes loaded")
+	var w := ShipDesign.new()  # ammo rack's shelf (top half) walls off the hull below
+	w.add(hull, Vector2i.ZERO)
+	w.add(ModuleLibrary.by_id(&"ammo_rack"), Vector2i(0, 1))
+	w.add(hull, Vector2i(0, 2))
+	var walled := ShipStats.of(w).warnings.any(func(t): return t.begins_with("Crew can't reach"))
+	check(walled, "warns when equipment walls crew off a part")
 	for t in ShipTheme.all():
 		for m in ModuleLibrary.all():
 			for turn in 4:
