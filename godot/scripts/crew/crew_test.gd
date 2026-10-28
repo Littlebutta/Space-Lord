@@ -3,11 +3,11 @@ extends Node3D
 ## the crew run it. X damages a random module, B wrecks one outright so
 ## the ship can split; crew spacewalk out of an airlock to bring pieces back.
 
-const HELP := "Crew sandbox · X damage · B wreck a module · V outside view · F fire" \
-		+ " · Alt module cards · Esc map\nLeft click/drag select crew · right click order them" \
-		+ " (R releases) · right click with none selected flies the ship" \
-		+ "\nWASD pan · middle mouse rotate · wheel zoom · Space follow ship\nBlue operating · yellow hauling" \
-		+ " · green repairing · pink spacewalk · grey idle"
+const HELP := "X damage · B wreck a module · F fire · V outside view · Alt or H module cards\n" \
+		+ "Left click/drag select crew · right click order them (R releases)\n" \
+		+ "Right click with none selected flies the ship · Space follow ship\n" \
+		+ "WASD pan · middle drag rotate · wheel zoom · Esc map\n" \
+		+ "Blue operating · yellow hauling · green repairing · pink spacewalk · grey idle"
 
 @onready var _ship: ShipBody = $Ship
 var _fx := ShipFx.new()
@@ -23,6 +23,7 @@ func _ready() -> void:
 	$UI/Tags.bind(_ship)
 	$UI/Orders.bind(_ship)
 	_last = _ship.world(_ship.pivot())
+	_hud()
 	$Camera.focus = Vector3(_last.x, 0.0, _last.y)
 	_fx.name = &"Fx"
 	_ship.add_child(_fx)
@@ -53,7 +54,36 @@ func _process(_delta: float) -> void:
 	for res in s.storage.capacity:
 		t += "%s %.0f / %.0f\n" % [res.capitalize(), s.storage.get_amount(res),
 				s.storage.capacity[res]]
-	_info.text = t + HELP
+	_info.text = t.strip_edges()
+
+
+## Status card bottom-left with a cards toggle; controls behind "?".
+func _hud() -> void:
+	var card := PanelContainer.new()
+	var box := VBoxContainer.new()
+	card.add_child(box)
+	_info.reparent(box)
+	_info.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+	var cards := Button.new()
+	cards.text = "Module cards (Alt)"
+	cards.toggle_mode = true
+	cards.button_pressed = true
+	cards.toggled.connect(func(on): $UI/Tags.visible = on)
+	$UI/Tags.visibility_changed.connect(
+			func(): cards.set_pressed_no_signal($UI/Tags.visible))
+	box.add_child(cards)
+	UiKit.pin($UI, card, Control.PRESET_BOTTOM_LEFT)
+	UiKit.help($UI, HELP)
+
+
+## Alt (or H) toggles the module cards. Caught in _input, before any
+## focused button or the OS menu key handling can swallow it.
+func _input(event: InputEvent) -> void:
+	var k := event as InputEventKey
+	if k and k.pressed and not k.echo and (k.keycode == KEY_ALT \
+			or k.physical_keycode == KEY_ALT or k.keycode == KEY_H):
+		$UI/Tags.visible = not $UI/Tags.visible
+		get_viewport().set_input_as_handled()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -72,7 +102,6 @@ func _unhandled_input(event: InputEvent) -> void:
 		KEY_B: _ship.sim.state.damage(randi() % _ship.sim.state.size(), INF)
 		KEY_V: _ship.hulk.outside = not _ship.hulk.outside
 		KEY_SPACE: _follow = not _follow
-		KEY_ALT: $UI/Tags.visible = not $UI/Tags.visible
 		KEY_F: _fire()
 		KEY_ESCAPE: get_tree().change_scene_to_file("res://scenes/main.tscn")
 

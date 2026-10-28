@@ -7,7 +7,7 @@ extends Node3D
 const START := 55.0  # metres apart at the start, inside gun range
 const STANDOFF := 35.0  # the enemy circles at about this range
 const HELP := "Battle · right click fly · left click/drag select crew, right click order them" \
-		+ " · Space follow · Alt module cards · Esc map\nWASD pan · middle mouse rotate · wheel zoom"
+		+ " · Space follow · Alt/H module cards · Esc map\nWASD pan · middle mouse rotate · wheel zoom"
 
 @onready var _me: ShipBody = $Me
 @onready var _foe: ShipBody = $Foe
@@ -90,6 +90,16 @@ func _beaten(b: ShipBody) -> bool:
 	return p.main < 0 or not p.has_bridge(p.main)
 
 
+## Alt (or H) toggles the module cards; caught in _input like the crew
+## sandbox does, since Alt alone can be swallowed before unhandled input.
+func _input(event: InputEvent) -> void:
+	var k := event as InputEventKey
+	if k and k.pressed and not k.echo and (k.keycode == KEY_ALT \
+			or k.physical_keycode == KEY_ALT or k.keycode == KEY_H):
+		$UI/Tags.visible = not $UI/Tags.visible
+		get_viewport().set_input_as_handled()
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	var b := event as InputEventMouseButton
 	if b and b.pressed and b.button_index == MOUSE_BUTTON_RIGHT:
@@ -103,5 +113,4 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	match key.keycode:
 		KEY_SPACE: _follow = not _follow
-		KEY_ALT: $UI/Tags.visible = not $UI/Tags.visible
 		KEY_ESCAPE: get_tree().change_scene_to_file("res://scenes/main.tscn")
