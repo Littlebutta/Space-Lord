@@ -41,7 +41,11 @@ jobs:
           done
       - uses: actions/upload-artifact@v4
         with: { name: game, path: "build/SpaceLord-*" }
-      - name: Publish release for v* tags
-        if: startsWith(github.ref, 'refs/tags/v')
+      # Every merge to main (or a v* tag) ships a release the launcher picks up.
+      - name: Publish release
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
         env: { GH_TOKEN: "${{ github.token }}" }
-        run: gh release create "$GITHUB_REF_NAME" build/SpaceLord-* --generate-notes
+        run: |
+          tag=$GITHUB_REF_NAME
+          [ "$tag" = main ] && tag=v0.1.$GITHUB_RUN_NUMBER
+          gh release create "$tag" build/SpaceLord-* --target "$GITHUB_SHA" --generate-notes
