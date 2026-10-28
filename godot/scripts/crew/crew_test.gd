@@ -2,7 +2,7 @@ extends Node3D
 ## Crew sandbox: loads the saved player ship (or a random one) and lets
 ## the crew run it. X damages a random module, Esc returns to the map.
 
-const HELP := "Crew sandbox · X damage a module · WASD/QE/wheel camera · Esc map\n" \
+const HELP := "Crew sandbox · X damage a module · V outside view · WASD/QE/wheel camera · Esc map\n" \
 		+ "Blue operating · yellow hauling · green repairing · grey idle"
 
 @onready var _sim: CrewSim = $CrewSim
@@ -74,4 +74,5 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	match key.keycode:
 		KEY_X: _sim.state.damage(randi() % _sim.state.size(), 60.0)
+		KEY_V: $ShipView.outside = not $ShipView.outside
 		KEY_ESCAPE: get_tree().change_scene_to_file("res://scenes/main.tscn")

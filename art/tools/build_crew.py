@@ -1,0 +1,115 @@
+"""Human crew member: 1.75 m body (crew_body.py), 11-bone rig and
+idle/walk/work loops.
+
+  blender -b --factory-startup --python art/tools/build_crew.py
+
+Every body part is weighted to exactly one bone (rigid skinning), which
+keeps the mesh small and cheap to animate for big crews.
+"""
+import math
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(__file__))
+import bpy  # noqa: E402
+import kit  # noqa: E402
+from crew_body import BONES, body  # noqa: E402
+
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+OUT = os.path.join(ROOT, "godot", "assets", "models", "human", "crew.glb")
+
+
+def rig():
+    arm = bpy.data.armatures.new("Rig")
+    ob = bpy.data.objects.new("Crew", arm)
+    bpy.context.scene.collection.objects.link(ob)
+    bpy.context.view_layer.objects.active = ob
+    bpy.ops.object.mode_set(mode="EDIT")
+    for name, parent, h, t in BONES:
+        b = arm.edit_bones.new(name)
+        b.head = (h[0], -h[2], h[1])
+        b.tail = (t[0], -t[2], t[1])
+        b.roll = 0.0
+        if parent:
+            b.parent = arm.edit_bones[parent]
+            b.use_connect = False
+    bpy.ops.object.mode_set(mode="OBJECT")
+    return ob
+
+
+# action: (frames, {bone: [(frame, (x, y, z) degrees)]}, hip bob metres)
+def _swing(a, b, n):
+    return [(0, a), (n // 2, b), (n, a)]
+
+
+ANIMS = {
+    "idle": (48, {
+        "spine": _swing((0, 0, 0), (3, 0, 0), 48),
+        "head": _swing((0, 0, -4), (-2, 0, 4), 48),
+        "arm.R": _swing((0, 0, 4), (4, 0, 7), 48),
+        "arm.L": _swing((0, 0, -4), (4, 0, -7), 48),
+    }, 0.01),
+    "walk": (16, {
+        "thigh.R": _swing((40, 0, 0), (-40, 0, 0), 16),
+        "thigh.L": _swing((-40, 0, 0), (40, 0, 0), 16),
+        "shin.R": [(0, (-10, 0, 0)), (4, (-50, 0, 0)), (8, (0, 0, 0)), (16, (-10, 0, 0))],
+        "shin.L": [(0, (0, 0, 0)), (8, (-10, 0, 0)), (12, (-50, 0, 0)), (16, (0, 0, 0))],
+        "arm.R": _swing((-35, 0, 6), (35, 0, 6), 16),
+        "arm.L": _swing((35, 0, -6), (-35, 0, -6), 16),
+        "hand.R": _swing((-20, 0, 0), (-5, 0, 0), 16),
+        "hand.L": _swing((-5, 0, 0), (-20, 0, 0), 16),
+        "spine": _swing((-6, 4, 0), (-6, -4, 0), 16),
+    }, 0.03),
+    "work": (24, {
+        "arm.R": _swing((-70, 0, 0), (-55, 0, -8), 24),
+        "arm.L": _swing((-55, 0, 0), (-70, 0, 8), 24),
+        "hand.R": _swing((-30, 0, 0), (-10, 0, 0), 24),
+        "hand.L": _swing((-10, 0, 0), (-30, 0, 0), 24),
+        "spine": _swing((-10, 0, 0), (-14, 0, 0), 24),
+        "head": _swing((8, 0, 0), (14, 0, 0), 24),
+    }, 0.0),
+}
+
+
+def animate(ob):
+    ob.animation_data_create()
+    for name, (n, keys, bob) in ANIMS.items():
+        act = bpy.data.actions.new(name)
+        ob.animation_data.action = act
+        for pb in ob.pose.bones:
+            pb.rotation_mode = "XYZ"
+            pb.rotation_euler = (0, 0, 0)
+            pb.location = (0, 0, 0)
+        for bone, frames in keys.items():
+            pb = ob.pose.bones[bone]
+            for f, rot in frames:
+                pb.rotation_euler = [math.radians(r) for r in rot]
+                pb.keyframe_insert("rotation_euler", frame=f + 1)
+        hips = ob.pose.bones["hips"]
+        step = n // 2 if name == "walk" else n
+        for f in range(0, n + 1, max(step // 2, 1)):
+            hips.location = (0, bob * (0.5 + 0.5 * math.cos(f / step * 2 * math.pi)), 0)
+            hips.keyframe_insert("location", frame=f + 1)
+        track = ob.animation_data.nla_tracks.new()
+        track.name = name
+        track.strips.new(name, 1, act)
+        ob.animation_data.action = None
+
+
+def main():
+    kit.reset()
+    mats = kit.materials()
+    ob = rig()
+    p = kit.Part("CrewBody")
+    body(p)
+    me_ob = p.build(mats, ob)
+    for name, *_ in BONES:
+        me_ob.vertex_groups.new(name=name)
+    me_ob.modifiers.new("Rig", "ARMATURE").object = ob
+    animate(ob)
+    kit.export(ob, OUT, export_animations=True,
+               export_animation_mode="NLA_TRACKS", export_skins=True)
+    bpy.ops.wm.save_as_mainfile(filepath=os.path.join(ROOT, "art", "human_crew.blend"))
+
+
+main()

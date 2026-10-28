@@ -1,8 +1,8 @@
 class_name CrewSim
 extends Node3D
 ## Runs one ship's crew: free movement with light avoidance, job pickup
-## by priority, and what their work does to the ShipState. A single
-## MultiMesh draws the whole crew so big ships and fleets stay cheap.
+## by priority, and what their work does to the ShipState. CrewLook
+## draws them.
 
 signal crew_changed
 
@@ -21,7 +21,7 @@ var state: ShipState
 var nav: ShipNav
 var board: JobBoard
 var crew: Array[CrewMember] = []
-var _mm := MultiMeshInstance3D.new()
+var _look := CrewLook.new()
 var _think := 0.0
 
 
@@ -29,8 +29,7 @@ func setup(d: ShipDesign, count: int) -> void:
 	state = ShipState.new(d)
 	nav = ShipNav.new(d)
 	board = JobBoard.new(state, nav)
-	_mm.multimesh = CrewLook.multimesh()
-	add_child(_mm)
+	add_child(_look)
 	for k in count:
 		add_crew()
 
@@ -63,7 +62,7 @@ func _physics_process(delta: float) -> void:
 		_act(c, delta)
 	_separate()
 	state.tick(delta * hours_per_second)
-	CrewLook.draw(_mm.multimesh, crew, nav, delta)
+	_look.draw(crew, self, delta)
 
 
 func _act(c: CrewMember, delta: float) -> void:
@@ -119,6 +118,8 @@ func _go(c: CrewMember, module: int) -> void:
 		_drop(c)
 		return
 	var at := state.center(module) + _seat(c)
+	if not state.module(module).access.is_empty():
+		at = state.spot(module, c.job.slot)
 	c.path = nav.route(c.pos, at)
 	if c.path.is_empty() and not nav.connected(c.pos, at):
 		_drop(c)
@@ -198,7 +199,7 @@ func _nearest_store(res: String, from: Vector2, skip: int) -> int:
 	var best := skip if state.module(skip).storage.has(res) else -1
 	var best_d := INF
 	for i in state.size():
-		var at := state.center(i)
+		var at := state.spot(i)
 		if i == skip or not state.module(i).storage.has(res) \
 				or not nav.connected(from, at):
 			continue
@@ -211,5 +212,5 @@ func _nearest_store(res: String, from: Vector2, skip: int) -> int:
 func _home() -> Vector2:
 	for i in state.size():
 		if state.module(i).berths > 0:
-			return state.center(i)
-	return state.center(0)
+			return state.spot(i)
+	return state.spot(0)

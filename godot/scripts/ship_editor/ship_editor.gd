@@ -83,6 +83,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event is InputEventKey and event.pressed and not event.echo:
 		match event.keycode:
 			KEY_R: turn = (turn + 1) % 4
+			KEY_V: _view.outside = not _view.outside
 			KEY_ESCAPE: get_tree().change_scene_to_file(MAP_SCENE)
 		_update_ghost()
 

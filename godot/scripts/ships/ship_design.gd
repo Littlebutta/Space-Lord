@@ -136,3 +136,15 @@ func loose_modules() -> Array[int]:
 static func _touch(a: Rect2i, b: Rect2i) -> bool:
 	return a.grow_individual(1, 0, 1, 0).intersects(b) \
 			or a.grow_individual(0, 1, 0, 1).intersects(b)
+
+
+## Where crew stand to work on module i: its access spot k (wrapping
+## round), or the middle when it has none. Ship-local metres (x, z).
+func spot(i: int, k := 0) -> Vector2:
+	var m := modules[i]
+	var r := rect(i)
+	if m.access.is_empty():
+		return (Vector2(r.position) + Vector2(r.size) * 0.5) * ShipView.CELL
+	var p := Prism.turned(PackedVector2Array([m.access[k % m.access.size()]]),
+			Vector2(m.size), turns[i])
+	return (Vector2(r.position) + p[0]) * ShipView.CELL

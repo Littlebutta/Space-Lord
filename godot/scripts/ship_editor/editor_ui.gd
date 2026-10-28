@@ -7,7 +7,7 @@ signal module_picked(m: ShipModule)
 signal action(what: String)
 signal theme_picked(id: StringName)
 
-const HELP := "LMB place · RMB remove · MMB paint theme · R rotate · " \
+const HELP := "LMB place · RMB remove · MMB paint theme · R rotate · V outside view · " \
 		+ "WASD pan · wheel zoom · Esc map. Ship nose is up; thrusters " \
 		+ "fire back or sideways and need a clear lane."
 

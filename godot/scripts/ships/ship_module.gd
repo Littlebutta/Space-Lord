@@ -24,4 +24,12 @@ extends Resource
 @export var exhaust := Vector2i.ZERO
 @export var needs_near := {}  # module id or category -> max cell gap
 @export var salvage := {}  # raw materials recovered when scrapped
+@export_group("Crew access")
+## Areas crew can't walk through (tanks, engines, guns), as rects in
+## cell units of the unturned footprint. Every theme's model must keep
+## its equipment inside them so nobody walks through anything.
+@export var blocked: Array[Rect2] = []
+## Spots crew stand at to work this part, in the same cell units. Empty
+## means anywhere near the middle.
+@export var access := PackedVector2Array()
 @export var model: PackedScene  # Blender .glb scene, optional

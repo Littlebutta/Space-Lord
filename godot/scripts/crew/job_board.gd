@@ -59,7 +59,7 @@ func assign(crew: Array[CrewMember]) -> void:
 			var p := c.pref(j.type)
 			if j.worker or p <= 0 or p > best_p or (c.job and p >= cur):
 				continue
-			var at := state.center(j.module)
+			var at := state.spot(j.module)
 			if not nav.connected(c.pos, at):
 				continue
 			var d := c.pos.distance_squared_to(at)
