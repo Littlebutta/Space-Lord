@@ -89,6 +89,9 @@ func _act(c: CrewMember, delta: float) -> void:
 		drop(c)
 		c.order = false
 		return
+	if j.type == &"mine" and state.storage.free_space(j.res) <= 0.0:
+		finish(c)  # hold filled up on the way: stop now, not on arrival
+		return
 	if c.stage == 0:
 		_go(c, _first_stop(c))
 		c.stage = 1
