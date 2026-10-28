@@ -12,10 +12,9 @@ var _doing: Array[Label] = []
 func bind(s: CrewSim) -> void:
 	sim = s
 	var p := PanelContainer.new()
-	p.position = Vector2(12, 12)
-	add_child(p)
 	var box := VBoxContainer.new()
-	p.add_child(box)
+	p.add_child(UiKit.fold("Crew priorities", box, false))
+	UiKit.pin(self, p, Control.PRESET_TOP_LEFT)
 	var row := HBoxContainer.new()
 	for a in ["+ Crew", "- Crew"]:
 		var b := Button.new()
