@@ -23,17 +23,14 @@ def bridge(i, e, pts):
     for x in (-0.5, 0.5):
         console(i, x, -1.25, (0, 1), 0.7, "screen" if x < 0 else "amber")
     i.box((0, 1.3, -1.93), (3.6, 1.6, 0.1), C["glass"], 0.02)  # viewport
-    for x in (-1.8, -0.6, 0.6, 1.8):
+    for x in (-1.8, 1.8):  # viewport frame ends, inside the blocked row
         i.box((x, 1.3, -1.9), (0.14, 1.7, 0.18), C["gun"], 0.02)
     for s in (-1, 1):  # side stations
         i.box((1.55 * s, 0.45, 0.0), (0.7, 0.9, 1.9), C["steel"], 0.04)
         screen(i, (1.45 * s, 1.1, -0.3), 0.6, 0.4, "x", "screen")
         screen(i, (1.45 * s, 1.1, 0.4), 0.5, 0.35, "x", "amber")
         i.box((1.75 * s, 1.5, 0.0), (0.2, 0.06, 1.9), C["accent"], 0.01)
-    e.loft([(z, [(w * math.cos(k / 12 * math.pi), ROOF + h * math.sin(k / 12 * math.pi))
-                 for k in range(13)]) for z, w, h in
-            ((-1.9, 0.5, 0.2), (-1.4, 1.1, 0.55), (-0.4, 1.3, 0.7), (0.6, 1.1, 0.5),
-             (1.2, 0.6, 0.15))], C["glass"])
+    _canopy(e)
     e.cyl((1.2, ROOF + 0.45, 1.3), 0.03, 0.9, C["metal"], sides=6)
     e.ball((1.2, ROOF + 0.9, 1.3), 0.07, C["red"], 1, glow=True)
     return [((0, 2.1, 0.3), C["lamp"])]
@@ -143,3 +140,25 @@ def _bunk(i, x, z, along):
         for dz in (-1, 1):
             i.box((x + dx * (s[0] / 2 - 0.04), 0.8, z + dz * (s[2] / 2 - 0.04)),
                   (0.07, 1.6, 0.07), C["steel"], 0.01)
+
+def _canopy(e):
+    """Smooth teardrop glass dome over the bridge (outside view): eleven
+    half-ellipse rings, fullest a third of the way back, with a metal
+    spine along the top and a frame round the base."""
+    rings, base = [], []
+    for k in range(11):
+        t = k / 10
+        z = -1.9 + 3.2 * t
+        s = max(math.sin(math.pi * (t ** 0.75)), 0.08)
+        w, h = 1.35 * s, 0.8 * s
+        rings.append((z, [(w * math.cos(a / 20 * math.pi), ROOF + h * math.sin(a / 20 * math.pi))
+                          for a in range(21)]))
+        base.append((w, z))
+    e.loft(rings, C["glass"])
+    for k in range(10):
+        (w0, z0), (w1, z1) = base[k], base[k + 1]
+        top = ROOF + 0.8 * max(math.sin(math.pi * ((k + 0.5) / 10) ** 0.75), 0.08)
+        e.box((0, top + 0.01, (z0 + z1) / 2), (0.08, 0.05, z1 - z0 + 0.03), C["gun"], 0.01)
+        for s in (-1, 1):
+            e.wall((s * (w0 + 0.03), z0), (s * (w1 + 0.03), z1), ROOF, ROOF + 0.08, 0.08,
+                   C["gun"], 0.01)

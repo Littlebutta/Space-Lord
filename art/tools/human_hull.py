@@ -2,7 +2,7 @@
 and Exterior Parts plus the centred footprint (metres, front is -z) and
 returns its lamps as [(pos, colour)]. Equipment keeps to the module's
 blocked cells; see the comment on each builder."""
-from human_style import C, FLOOR, ROOF, floor, pipe, vent, bolts, screen
+from human_style import C, FLOOR, ROOF, floor, pipe, vent, bolts, screen, console
 
 
 def _outer_edges(pts):
@@ -20,17 +20,12 @@ def _outer_edges(pts):
 
 
 def _bulkhead(i, pts, h=0.9):
-    """Hull wall with ribs and a porthole along the slanted outer side."""
+    """Low hull wall with a kick plate and accent rail along the slanted
+    outer side. No ribs or pillars: crew would walk through them."""
     for a, b in _outer_edges(pts):
         i.wall(a, b, 0.0, h, 0.16, C["hull"], 0.03)
         i.wall(a, b, 0.0, 0.18, 0.24, C["steel"], 0.02)  # kick plate
         i.wall(a, b, h - 0.1, h, 0.24, C["accent"], 0.02)
-        d = ((b[0] - a[0]), (b[1] - a[1]))
-        n = max(int((d[0] ** 2 + d[1] ** 2) ** 0.5 / 0.7), 1)
-        for k in range(1, n):
-            t = k / n
-            x, z = a[0] + d[0] * t, a[1] + d[1] * t
-            i.box((x, h / 2, z), (0.12, h, 0.12), C["steel"], 0.02)
 
 
 def hull(i, e, pts):
@@ -44,9 +39,8 @@ def hull(i, e, pts):
 def armor(i, e, pts):
     floor(i, pts)
     _bulkhead(i, pts, 1.1)
-    for x, z in pts if len(pts) == 4 else []:  # heavy corner braces
-        i.box((x * 0.82, 0.5, z * 0.82), (0.25, 1.0, 0.25), C["gun"], 0.04)
-        i.box((x * 0.82, 1.02, z * 0.82), (0.3, 0.05, 0.3), C["hazard"], 0.01)
+    for x, z in pts if len(pts) == 4 else []:  # hazard corner inlays, flush
+        i.box((x * 0.8, FLOOR + 0.004, z * 0.8), (0.3, 0.01, 0.3), C["hazard"])
     k = [(x * 0.8, z * 0.8) for x, z in pts]
     e.slab(k, ROOF, ROOF + 0.12, C["steel"], 0.04)
     bolts(e, k, ROOF + 0.12, 0.12)
@@ -75,20 +69,41 @@ def fuel_tank(i, e, pts):
 
 
 def ammo_rack(i, e, pts):
-    """Blocked: z in [-1, 0]; crew load from z = 0.5."""
+    """Blocked: z in [-1, 0]; crew load from z = 0.5. Two-tier shell rack
+    along the back, an overhead loader hoist holding a round, ammo crates
+    and a small loader panel facing the crew."""
     floor(i, pts)
-    i.box((0, 0.7, -0.92), (1.9, 1.4, 0.12), C["steel"], 0.03)  # back frame
-    for x in (-0.9, 0.0, 0.9):
-        i.box((x, 0.7, -0.5), (0.08, 1.4, 0.9), C["gun"], 0.02)
-    for y in (0.25, 0.65, 1.05):
-        i.box((0, y - 0.12, -0.5), (1.85, 0.04, 0.85), C["steel"], 0.01)
-        for k in range(4):
-            x = -0.68 + k * 0.45 if k < 2 else -0.68 + k * 0.45 + 0.02
-            i.cyl((x * 0.95, y, -0.45), 0.09, 0.6, C["brass"], "z", 10)
-            i.cyl((x * 0.95, y, -0.8), 0.09, 0.12, C["red"], "z", 10, r2=0.02)
-    i.box((0, 1.45, -0.5), (1.9, 0.06, 0.95), C["hazard"], 0.01)
-    e.box((0, ROOF + 0.04, 0), (1.0, 0.08, 1.0), C["gun"], 0.03)
-    return []
+    for x in (-0.95, -0.15):  # rack uprights
+        for z in (-0.95, -0.45):
+            i.box((x, 0.85, z), (0.06, 1.7, 0.06), C["steel"], 0.01)
+    for y in (0.35, 0.95):  # two tiers of shells lying in V cradles
+        i.box((-0.55, y - 0.12, -0.7), (0.86, 0.04, 0.55), C["gun"], 0.01)
+        for z in (-0.85, -0.55):
+            i.box((-0.55, y - 0.07, z), (0.86, 0.06, 0.05), C["steel"], 0.01)
+        for k in range(3):
+            for r, z in ((0, -0.82), (1, -0.6)):
+                x = -0.85 + k * 0.3
+                i.cyl((x, y + 0.02 + r * 0.16, z), 0.075, 0.42, C["brass"], "z", 12, bevel=0.01)
+                i.cyl((x, y + 0.02 + r * 0.16, z + 0.27), 0.075, 0.12, C["red"], "z", 12, r2=0.02)
+                i.cyl((x, y + 0.02 + r * 0.16, z - 0.22), 0.078, 0.02, C["metal"], "z", 12)
+        i.box((-0.55, y + 0.12, -0.7), (0.9, 0.025, 0.04), C["dark"])  # strap
+    i.box((-0.55, 1.68, -0.7), (0.9, 0.06, 0.6), C["hazard"], 0.01)
+    i.box((0.0, 1.85, -0.6), (1.9, 0.1, 0.12), C["gun"], 0.02)  # hoist rail
+    i.box((0.45, 1.72, -0.6), (0.22, 0.16, 0.2), C["steel"], 0.02)  # trolley
+    i.cyl((0.45, 1.45, -0.6), 0.015, 0.4, C["dark"], sides=6)
+    i.box((0.45, 1.24, -0.6), (0.22, 0.05, 0.16), C["hazard"], 0.01)  # claw
+    i.cyl((0.45, 1.12, -0.6), 0.075, 0.42, C["brass"], "x", 12, bevel=0.01)
+    i.box((0.5, 0.25, -0.75), (0.8, 0.5, 0.45), C["crate"], 0.03)  # crates
+    i.box((0.5, 0.71, -0.75), (0.7, 0.42, 0.42), C["crate"], 0.03)
+    for y in (0.25, 0.71):
+        i.box((0.5, y, -0.52), (0.3, 0.1, 0.01), C["white"])
+        i.box((0.5, y + 0.12, -0.53), (0.2, 0.03, 0.03), C["dark"])
+    console(i, 0.55, -0.2, (0, 1), 0.6, "amber")
+    i.box((0, FLOOR + 0.004, -0.02), (1.9, 0.01, 0.08), C["hazard"])
+    e.box((0, ROOF + 0.04, -0.2), (1.2, 0.08, 1.1), C["gun"], 0.03)
+    e.box((0, ROOF + 0.1, -0.2), (0.9, 0.05, 0.8), C["red"], 0.02)
+    bolts(e, [(-0.55, -0.7), (0.55, -0.7), (0.55, 0.3), (-0.55, 0.3)], ROOF + 0.08, 0.02)
+    return [((0, 2.1, 0.2), C["lamp"])]
 
 
 def cargo_hold(i, e, pts):

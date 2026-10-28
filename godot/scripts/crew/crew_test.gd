@@ -3,11 +3,12 @@ extends Node3D
 ## the crew run it. X damages a random module, B wrecks one outright so
 ## the ship can split; crew spacewalk out of an airlock to bring pieces back.
 
-const HELP := "Crew sandbox · X damage · B wreck a module · V outside view · WASD/QE/wheel camera" \
+const HELP := "Crew sandbox · X damage · B wreck a module · V outside view · F fire · WASD/QE/wheel camera" \
 		+ " · Esc map\nBlue operating · yellow hauling · green repairing" \
 		+ " · pink spacewalk · grey idle"
 
 @onready var _sim: CrewSim = $CrewSim
+var _fx := ShipFx.new()
 @onready var _info: Label = $UI/Info
 var _tags: Array[Label3D] = []
 
@@ -17,6 +18,9 @@ func _ready() -> void:
 	_sim.setup(d, maxi(int(d.total(&"berths")), 4))
 	$Panel.bind(_sim)
 	$Hulk.bind(_sim.state.pieces)
+	_fx.name = &"Fx"
+	add_child(_fx)
+	_fx.bind($Hulk, _sim.state)
 	var box := Rect2(d.rect(0))
 	for i in d.modules.size():
 		box = box.merge(Rect2(d.rect(i)))
@@ -83,4 +87,15 @@ func _unhandled_input(event: InputEvent) -> void:
 		KEY_X: _sim.state.damage(randi() % _sim.state.size(), 60.0)
 		KEY_B: _sim.state.damage(randi() % _sim.state.size(), INF)
 		KEY_V: $Hulk.outside = not $Hulk.outside
+		KEY_F: _fire()
 		KEY_ESCAPE: get_tree().change_scene_to_file("res://scenes/main.tscn")
+
+
+## Every working weapon fires once, a little staggered.
+func _fire() -> void:
+	var s := _sim.state
+	var k := 0
+	for i in s.size():
+		if s.module(i).firepower > 0.0 and s.is_running(i):
+			get_tree().create_timer(0.12 * k).timeout.connect(_fx.fire.bind(i))
+			k += 1
