@@ -59,12 +59,14 @@ PARTS = {
 }
 
 
-def build(mid, mats):
+def build(mid, mats, decor=None):
     size, outline, fn = PARTS[mid]
     root = kit.empty(mid)
     outside = fn.__module__ == "human_exterior"  # one mesh, shown in both views
     inner, outer = kit.Part("Body" if outside else "Interior"), kit.Part("Exterior")
     lamps = fn(inner, outer, poly(outline, size))
+    if decor and not outside:  # theme flourishes on the outside shell
+        decor(mid, outer, poly(outline, size))
     inner.build(mats, root)
     outer.build(mats, root)
     for k in sorted(FILLS):  # stock that shows as storage fills
@@ -83,21 +85,22 @@ def build(mid, mats):
     return root
 
 
-def main():
+def main(out=OUT, blend="human_modules.blend", decor=None):
     kit.reset()
     mats = kit.materials()
-    os.makedirs(OUT, exist_ok=True)
+    os.makedirs(out, exist_ok=True)
     only = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     x = 0.0
     for mid in PARTS:
         if only and mid not in only:
             continue
-        root = build(mid, mats)
-        kit.export(root, os.path.join(OUT, mid + ".glb"))
+        root = build(mid, mats, decor)
+        kit.export(root, os.path.join(out, mid + ".glb"))
         root.location.x = x  # spread out in the .blend for browsing
         x += PARTS[mid][0][0] * 2 + 2
     if not only:  # a partial build would overwrite the full .blend
-        bpy.ops.wm.save_as_mainfile(filepath=os.path.join(ROOT, "art", "human_modules.blend"))
+        bpy.ops.wm.save_as_mainfile(filepath=os.path.join(ROOT, "art", blend))
 
 
-main()
+if __name__ == "__main__":
+    main()

@@ -20,7 +20,7 @@ static func spawn(parent: Node, at: Vector3, fling: Vector3, shirt: Color) -> Cr
 	var c := CrewCorpse.new()
 	c.vel = fling
 	c.spin = Vector3(randf_range(-2, 2), randf_range(-2, 2), randf_range(-2, 2))
-	var body: Node3D = CrewLook.MODEL.instantiate()
+	var body: Node3D = load(CrewLook.MODEL).instantiate()
 	var mi: MeshInstance3D = body.find_children("*", "MeshInstance3D", true, false)[0]
 	mi.material_override = CrewLook.material()
 	mi.set_instance_shader_parameter(&"shirt", shirt.darkened(0.3))
