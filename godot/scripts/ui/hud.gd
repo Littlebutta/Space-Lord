@@ -1,7 +1,7 @@
 extends CanvasLayer
 ## Minimal map HUD: date, time speed and controls.
 
-const HELP := "Space pause · 1/2 speed · WASD pan · Q/E rotate · wheel zoom · B builder at shipyard · N builder in space · C crew"
+const HELP := "Space pause · 1/2 speed · WASD pan · middle mouse rotate · wheel zoom · B builder at shipyard · N builder in space · C crew"
 
 @onready var _label: Label = $Label
 
