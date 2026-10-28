@@ -4,6 +4,7 @@
 package main
 
 import (
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -13,7 +14,8 @@ import (
 	"strings"
 )
 
-// Config is read from launcher.json next to the launcher binary.
+// Config is read from launcher.json next to the launcher binary (or the
+// copy built into it).
 type Config struct {
 	Repo  string            `json:"repo"`  // "owner/name"
 	Asset string            `json:"asset"` // e.g. "SpaceLord-{os}.zip"
@@ -59,9 +61,18 @@ func checkAndUpdate(cfg Config, dir, api string) error {
 	return install(rel, name, dir)
 }
 
+// defaultConfig is launcher.json baked in, so the exe works on its own.
+//
+//go:embed launcher.json
+var defaultConfig []byte
+
+// loadConfig reads path, falling back to the built-in config if it's missing.
 func loadConfig(path string) (Config, error) {
 	var c Config
 	b, err := os.ReadFile(path)
+	if os.IsNotExist(err) {
+		b, err = defaultConfig, nil
+	}
 	if err == nil {
 		err = json.Unmarshal(b, &c)
 	}

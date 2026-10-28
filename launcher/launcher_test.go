@@ -88,3 +88,10 @@ func TestZipSlipRejected(t *testing.T) {
 		t.Fatal("expected zip-slip rejection")
 	}
 }
+
+func TestLoadConfigFallsBackToBuiltIn(t *testing.T) {
+	c, err := loadConfig(filepath.Join(t.TempDir(), "missing.json"))
+	if err != nil || c.Repo != "Littlebutta/Space-Lord" {
+		t.Fatalf("got %+v, %v", c, err)
+	}
+}
