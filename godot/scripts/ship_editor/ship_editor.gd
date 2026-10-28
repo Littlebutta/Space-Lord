@@ -1,7 +1,8 @@
 extends Node3D
 ## Grid ship builder. Left click places the picked module in the picked
 ## theme, right click removes, middle click repaints, R rotates, Esc
-## returns to the system map. ShipRules blocks bad placements.
+## returns to the system map. ShipRules blocks bad placements, and out in
+## space without a Shipdock only crew repairs are allowed (see Shipyard).
 
 const SAVE_PATH := "user://ships/player.tres"
 const MAP_SCENE := "res://scenes/main.tscn"
@@ -61,6 +62,7 @@ func _pick_theme(tid: StringName) -> void:
 
 func _refresh() -> void:
 	_ui.show_stats(ShipStats.of(design), design.ship_name)
+	_ui.show_mode(Shipyard.status(design), Shipyard.can_refit(design))
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -69,7 +71,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		_update_ghost()
 	elif event is InputEventMouseButton and event.pressed:
 		_cell = _mouse_cell(event.position)
-		if event.button_index == MOUSE_BUTTON_LEFT and picked:
+		var refit: bool = event.button_index in [MOUSE_BUTTON_LEFT, MOUSE_BUTTON_RIGHT,
+				MOUSE_BUTTON_MIDDLE]
+		if refit and not Shipyard.can_refit(design):
+			_ui.flash("Needs a shipyard or a Shipdock module")
+		elif event.button_index == MOUSE_BUTTON_LEFT and picked:
 			var why := ShipRules.why_not(design, picked, _origin(), turn)
 			if why:
 				_ui.flash(why)
@@ -126,6 +132,9 @@ func _update_ghost() -> void:
 
 
 func _on_action(what: String) -> void:
+	if what != "save" and not Shipyard.can_refit(design):
+		_ui.flash("Needs a shipyard or a Shipdock module")
+		return
 	match what:
 		"clear": design.clear()
 		"random": _randomize()
