@@ -8,15 +8,21 @@ signal module_picked(m: ShipModule)
 signal action(what: String)
 signal theme_picked(id: StringName)
 
-const HELP := "LMB place · RMB remove · MMB paint theme · R rotate\n" \
+const HELP := "LMB place · RMB remove · MMB paint theme · R rotate · F mirror part\n" \
+		+ "X symmetry (builds both sides) · M move parts (works anywhere)\n" \
 		+ "V outside view · WASD pan · middle drag rotate · wheel zoom\n" \
 		+ "Esc map · the ship's nose points up the screen"
+const TOOLS := [["move", "Move", "Pick parts up and set them down (M). Allowed anywhere."],
+		["symmetry", "Symmetry", "Build both sides at once across the amber line (X)"],
+		["mirror", "Mirror", "Flip the part left-right (F)"],
+		["rotate", "Rotate", "Turn the part (R)"]]
 
 var _stats := RichTextLabel.new()
 var _warn := RichTextLabel.new()
 var _warn_box: Control
 var _note := Label.new()
 var _mode := Label.new()
+var _tools := {}  # action -> Button
 
 
 func _ready() -> void:
@@ -34,6 +40,19 @@ func _ready() -> void:
 	row.add_child(themes)
 	left.add_child(row)
 	_on_theme(0)
+	var tools := GridContainer.new()
+	tools.columns = 2
+	for t in TOOLS:
+		var b := Button.new()
+		b.text = t[1]
+		b.tooltip_text = t[2]
+		b.toggle_mode = t[0] in ["move", "symmetry"]
+		b.focus_mode = Control.FOCUS_NONE
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		b.pressed.connect(action.emit.bind(t[0]))
+		tools.add_child(b)
+		_tools[t[0]] = b
+	left.add_child(tools)
 	var sc := ScrollContainer.new()
 	sc.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -99,6 +118,12 @@ func _palette() -> VBoxContainer:
 func show_mode(text: String, refit: bool) -> void:
 	_mode.text = text
 	_mode.add_theme_color_override(&"font_color", UiStyle.OK if refit else UiStyle.WARN)
+
+
+## Keeps the Move and Symmetry buttons in step with keys.
+func show_tools(moving: bool, sym: bool) -> void:
+	_tools.move.set_pressed_no_signal(moving)
+	_tools.symmetry.set_pressed_no_signal(sym)
 
 
 func _on_theme(k: int) -> void:

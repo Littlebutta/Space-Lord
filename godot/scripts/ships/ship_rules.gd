@@ -8,8 +8,10 @@ const FORWARD := Vector2i(0, -1)  # ship nose points to -y on the grid
 const LANE := 64  # exhaust lane length in cells: "out to space"
 
 
-## `v` after `turn` clockwise quarter turns.
+## `v` after `turn` clockwise quarter turns (mirrored first for 4-7).
 static func rotate(v: Vector2i, turn: int) -> Vector2i:
+	if turn >= 4:
+		v.x = -v.x
 	for k in turn % 4:
 		v = Vector2i(-v.y, v.x)
 	return v
