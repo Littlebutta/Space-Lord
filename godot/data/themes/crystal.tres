@@ -20,4 +20,5 @@ height = 1.35
 corner = 0.4
 corner_steps = 1
 model_dir = "res://assets/models/crystal"
-glass_parts = Array[StringName]([&"bridge"])
+shell = &"facets"
+glass_parts = Array[StringName]([])

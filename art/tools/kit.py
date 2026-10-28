@@ -178,6 +178,17 @@ class Part:
         rot = Vector((0, 0, 1)).rotation_difference(b - a).to_matrix().to_4x4()
         return self._finish(v, col, False, False, Matrix.Translation((a + b) / 2) @ rot)
 
+    def prism(self, a, b, r, col, sides=6, r2=None, glow=False, smooth=False):
+        """`sides`-sided prism from Godot point a to b, any direction, r
+        wide at a and r2 at b (r2 near 0 makes a point: crystals, spines,
+        tentacle tips)."""
+        a, b = _g(a), _g(b)
+        d = b - a
+        v = bmesh.ops.create_cone(self.bm, cap_ends=True, segments=sides, radius1=r,
+                                  radius2=r if r2 is None else r2, depth=d.length)["verts"]
+        rot = Vector((0, 0, 1)).rotation_difference(d).to_matrix().to_4x4()
+        return self._finish(v, col, glow, smooth, Matrix.Translation((a + b) / 2) @ rot)
+
     def wall(self, a, b, y0, y1, t, col, bevel=0.02):
         """Straight wall of thickness t from floor point a to b (x, z)."""
         a, b = Vector(a), Vector(b)

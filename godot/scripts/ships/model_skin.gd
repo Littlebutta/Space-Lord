@@ -35,7 +35,7 @@ static func shell_material(t: ShipTheme) -> ShaderMaterial:
 	var key := StringName("_shell_" + String(t.id))
 	if not _mats.has(key):
 		var m := material(t).duplicate() as ShaderMaterial
-		m.set_shader_parameter(&"tint", Color(0.5, 0.52, 0.56))
+		m.set_shader_parameter(&"tint", t.hull_tint)
 		m.set_shader_parameter(&"seams", 0.5)
 		m.set_shader_parameter(&"panel_var", 0.14)
 		_mats[key] = m
@@ -85,6 +85,12 @@ static func set_outside(n: Node, outside: bool) -> void:
 
 
 static func _skin(mi: MeshInstance3D, mat: Material) -> void:
+	if String(mi.name).begins_with("Tentacle"):
+		if not _mats.has(&"_tentacle"):
+			_mats[&"_tentacle"] = ShaderMaterial.new()
+			_mats[&"_tentacle"].shader = load("res://assets/materials/tentacle.gdshader")
+		mi.material_override = _mats[&"_tentacle"]
+		return
 	for k in mi.mesh.get_surface_count():
 		var m := mi.mesh.surface_get_material(k)
 		var id := m.resource_name if m else ""
@@ -122,10 +128,16 @@ static func _glass_mat() -> StandardMaterial3D:
 
 
 ## Hull shell with holes cut over glass parts (rects in ship metres).
-static func cut_shell(t: ShipTheme, holes: Array) -> ShaderMaterial:
-	if holes.is_empty():
+static func cut_shell(t: ShipTheme, holes: Array, cuts: Array = []) -> ShaderMaterial:
+	if holes.is_empty() and cuts.is_empty():
 		return shell_material(t)
 	var m := shell_material(t).duplicate() as ShaderMaterial
+	var c := PackedVector4Array()
+	for r: Rect2 in cuts.slice(0, 48):
+		c.append(Vector4(r.position.x, r.position.y, r.end.x, r.end.y))
+	c.resize(48)
+	m.set_shader_parameter(&"cuts", c)
+	m.set_shader_parameter(&"cut_count", mini(cuts.size(), 48))
 	var v := PackedVector4Array()
 	for r: Rect2 in holes.slice(0, 8):
 		v.append(Vector4(r.position.x, r.position.y, r.end.x, r.end.y))
@@ -174,3 +186,15 @@ static func glow_material() -> ShaderMaterial:
 		_glow = ShaderMaterial.new()
 		_glow.shader = GLOW
 	return _glow
+
+
+## Bio hull flesh and Crystal hull facets (see FactionShell).
+static func faction_material(style: StringName) -> ShaderMaterial:
+	var key := StringName("_style_" + String(style))
+	if not _mats.has(key):
+		var m := ShaderMaterial.new()
+		m.shader = load("res://assets/materials/%s.gdshader" % ("flesh" if style == &"flesh" else "crystal"))
+		if style == &"flesh":
+			m.set_shader_parameter(&"veins", noise(false))
+		_mats[key] = m
+	return _mats[key]

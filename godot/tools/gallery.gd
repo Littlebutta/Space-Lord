@@ -13,4 +13,4 @@ func _design() -> ShipDesign:
 	rng.seed = SEED
 	return ShipGenerator.generate(ModuleLibrary.by_id(&"bridge"), pool, rng,
 			PARTS, StringName(OS.get_environment("GALLERY_THEME")) if OS.has_environment(
-			"GALLERY_THEME") else &"human", 0.0)
+			"GALLERY_THEME") else &"human", float(OS.get_environment("GALLERY_MIX")))

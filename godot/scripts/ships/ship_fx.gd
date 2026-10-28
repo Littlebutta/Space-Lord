@@ -183,3 +183,13 @@ func _stock() -> void:
 			var f := n.find_child("Fill%d*" % k, true, false) as Node3D
 			if f:
 				f.visible = frac >= (k - 0.5) / 4.0
+
+
+## Bio thrusters push with tentacles: they lash while the engine works
+## and ease back to a slow writhe when it stops.
+func _writhe(n: Node3D, on: bool, delta: float) -> void:
+	for t: MeshInstance3D in n.find_children("Tentacle*", "MeshInstance3D", true, false):
+		var k: float = t.get_meta(&"thrust", 0.0)
+		k = move_toward(k, 1.0 if on else 0.0, delta * 2.0)
+		t.set_meta(&"thrust", k)
+		t.set_instance_shader_parameter(&"thrust", k)

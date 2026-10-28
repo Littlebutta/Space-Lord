@@ -17,7 +17,7 @@ static var _mats := {}  # Color -> shared material, keeps draw calls low
 var design: ShipDesign: set = set_design
 var show_exhaust := false  # builder hint: tint thruster lanes
 var outside := false: set = set_outside  # hull shell over the decks
-var _hull: MeshInstance3D  # the outside shell
+var _hull: Node3D  # the outside shell
 
 
 func set_design(d: ShipDesign) -> void:
@@ -58,14 +58,10 @@ func set_outside(v: bool) -> void:
 
 
 ## The continuous outside hull, shown in outside view.
-func _shell() -> MeshInstance3D:
-	var mi := MeshInstance3D.new()
-	mi.name = &"Shell"
-	mi.mesh = HullShell.build(design, DECK * 0.5)
-	mi.material_override = ModelSkin.cut_shell(design.theme(0), HullShell.holes(design))
-	mi.add_child(HullShell.beacons(design, DECK * 0.5))
-	mi.visible = outside
-	return mi
+func _shell() -> Node3D:
+	var s := HullShell.make(design, DECK * 0.5)
+	s.visible = outside
+	return s
 
 
 static func center(r: Rect2i) -> Vector3:

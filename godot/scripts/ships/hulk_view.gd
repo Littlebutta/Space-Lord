@@ -43,12 +43,7 @@ func rebuild() -> void:
 					d.theme(i), filled)
 			node.add_child(part)
 			_parts[i] = part
-		var shell := MeshInstance3D.new()
-		shell.name = &"Shell"
-		shell.mesh = HullShell.build(d, ShipView.DECK * 0.5, mods)
-		shell.material_override = ModelSkin.cut_shell(d.theme(mods[0]), HullShell.holes(d, mods))
-		shell.add_child(HullShell.beacons(d, ShipView.DECK * 0.5, mods))
-		node.add_child(shell)
+		node.add_child(HullShell.make(d, ShipView.DECK * 0.5, mods))
 		add_child(node)
 		_nodes.append(node)
 	for i in aim:

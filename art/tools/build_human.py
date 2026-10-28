@@ -64,9 +64,15 @@ def build(mid, mats, decor=None):
     root = kit.empty(mid)
     outside = fn.__module__ == "human_exterior"  # one mesh, shown in both views
     inner, outer = kit.Part("Body" if outside else "Interior"), kit.Part("Exterior")
-    lamps = fn(inner, outer, poly(outline, size))
-    if decor and not outside:  # theme flourishes on the outside shell
-        decor(mid, outer, poly(outline, size))
+    own = decor and decor["replace"] and not outside  # faction's own outside
+    lamps = fn(inner, kit.Part("Unused") if own else outer, poly(outline, size))
+    if decor and not outside:
+        decor["ext"](mid, outer, poly(outline, size))
+    extras = []
+    if decor and decor["extra"]:  # e.g. Bio tentacles, the game animates them
+        decor["extra"](mid, lambda name: extras.append(kit.Part(name)) or extras[-1])
+    for x in extras:
+        x.build(mats, root)
     inner.build(mats, root)
     outer.build(mats, root)
     for k in sorted(FILLS):  # stock that shows as storage fills
@@ -76,7 +82,10 @@ def build(mid, mats, decor=None):
     heads = {"turret": hs.turret_head, "mining_laser": hs.mining_head}
     if mid in heads:  # a turning head the game aims; markers ride on it
         head = kit.Part("Head")
-        heads[mid](head)
+        if decor and decor["head"]:
+            decor["head"](mid, head)
+        else:
+            heads[mid](head)
         head = head.build(mats, root)
     for name, pos in MARKERS.get(mid, []):
         kit.empty(name, pos, head or root)

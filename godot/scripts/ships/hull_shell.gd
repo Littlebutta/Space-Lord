@@ -187,3 +187,52 @@ static func _beacon(at: Vector3, col: Color) -> MeshInstance3D:
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	mi.position = at
 	return mi
+
+
+## The whole outside hull for modules `mods` (all when empty): one shell
+## per faction, each over its own parts. Human and Scrap use the
+## chamfered shell built over the whole ship and cut away where other
+## factions' parts are, so it keeps its edges; Bio and Crystal grow their
+## own surfaces, which meet it at the same height. Plus running lights.
+static func make(d: ShipDesign, y0: float, mods: Array = []) -> Node3D:
+	var root := Node3D.new()
+	root.name = &"Shell"
+	var all := (mods if not mods.is_empty() else range(d.modules.size())).filter(
+			func(i): return not d.modules[i].exterior)
+	if all.is_empty():
+		return root
+	var groups := {}
+	for i in all:
+		var tid: StringName = d.theme(i).id
+		if not groups.has(tid):
+			groups[tid] = []
+		groups[tid].append(i)
+	var ship := outlines(d, all)
+	for tid in groups:
+		var t := ShipTheme.by_id(tid)
+		var mine: Array = groups[tid]
+		if t.shell in [&"chamfer", &"plates"]:
+			var cuts := all.filter(func(i): return not mine.has(i)).map(func(i): return _rect(d, i))
+			root.add_child(_mesh(build(d, y0, all), ModelSkin.cut_shell(t, holes(d, mine), cuts)))
+			if t.shell == &"plates":
+				for p in outlines(d, mine):
+					root.add_child(_mesh(FactionShell.plates(p, ship, y0 + HEIGHT, hash(p[0])),
+							ModelSkin.shell_material(t)))
+		else:
+			for p in outlines(d, mine):
+				var m := FactionShell.build(t.shell, p, ship, y0, hash(p[0]))
+				root.add_child(_mesh(m, ModelSkin.faction_material(t.shell)))
+	root.add_child(beacons(d, y0, all))
+	return root
+
+
+static func _mesh(m: Mesh, mat: Material) -> MeshInstance3D:
+	var mi := MeshInstance3D.new()
+	mi.mesh = m
+	mi.material_override = mat
+	return mi
+
+
+static func _rect(d: ShipDesign, i: int) -> Rect2:
+	var r := d.rect(i)
+	return Rect2(Vector2(r.position) * ShipView.CELL, Vector2(r.size) * ShipView.CELL)
