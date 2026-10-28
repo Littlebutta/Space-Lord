@@ -13,7 +13,6 @@ const HELP := "Battle · right click fly · left click/drag select crew, right c
 @onready var _foe: ShipBody = $Foe
 @onready var _info: Label = $UI/Info
 var _guns: Array[ShipGuns] = []
-var _fx: Array[ShipFx] = []
 var _follow := true
 var _last := Vector2.ZERO
 var _think := 0.0
@@ -30,14 +29,7 @@ func _ready() -> void:
 		b.setup(d, maxi(int(d.total(&"berths")), int(d.total(&"crew")) + 2))
 		var g := ShipGuns.new(b)
 		g.shot.connect(func(_i, to, hit): if hit: FxKit.sparks(self, to))
-		_guns.append(g)
-		var fx := ShipFx.new()
-		b.add_child(fx)
-		fx.bind(b.hulk, b.sim.state)
-		fx.helm = b.helm
-		b.add_child(ThrusterHum.new())
-		b.sim.state.fired.connect(fx.fire)
-		_fx.append(fx)
+		_guns.append(g)  # ShipBody's own ShipFx shows each shot via state.fired
 	_foe.at = Transform2D(PI, Vector2(0.0, -START))  # nose to nose
 	_foe.hulk.sealed = true  # never see inside the enemy, only broken-off bits
 	_foe.sim.sealed = true

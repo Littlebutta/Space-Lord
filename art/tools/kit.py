@@ -160,11 +160,15 @@ class Part:
         return v
 
     def quad(self, pts, col, glow=False):
-        """One flat face through four Godot points (glass panes, panels)."""
-        v = [self.bm.verts.new(_g(p)) for p in pts]
-        self.bm.faces.new(v)
+        """A flat face through Godot points (panes, plates), two-sided so
+        it shows whichever way it was wound."""
+        out = []
+        for order in (pts, pts[::-1]):
+            v = [self.bm.verts.new(_g(p)) for p in order]
+            self.bm.faces.new(v)
+            out += v
         self.bm.normal_update()
-        return self._finish(v, col, glow, False)
+        return self._finish(out, col, glow, False)
 
     def bar(self, a, b, r, col):
         """Square frame bar of half-width r between Godot points a and b."""

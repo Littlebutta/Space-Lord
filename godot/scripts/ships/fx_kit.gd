@@ -1,7 +1,7 @@
 class_name FxKit
 extends RefCounted
-## Builders for ship effects: engine exhaust, muzzle flashes, tracers,
-## sparks and floating debris. Everything is made in code from a soft
+## Builders for ship effects: engine exhaust, sparks and floating debris
+## (gun effects are in GunFx). Everything is made in code from a soft
 ## round sprite and a few shared materials, so there are no texture
 ## files and effects batch well.
 
@@ -22,64 +22,24 @@ static func exhaust() -> Node3D:
 	cm.top_radius = 0.05
 	cm.bottom_radius = 0.55
 	cm.height = 1.8
-	cm.material = _glow_mat(Color(1.0, 0.7, 0.35, 0.55), false)
+	cm.material = glow_mat(Color(1.0, 0.7, 0.35, 0.55), false)
 	cone.mesh = cm
 	cone.rotation.x = -PI / 2.0
 	cone.position.z = 0.9
 	cone.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	root.add_child(cone)
-	var p := _particles(64, 0.55, Vector3(0, 0, 1), 6.0, Vector2(7.0, 10.0), 0.9)
+	var p := particles(64, 0.55, Vector3(0, 0, 1), 6.0, Vector2(7.0, 10.0), 0.9)
 	p.local_coords = false  # leaves a trail when the ship moves
 	root.add_child(p)
-	var l := _light(FIRE, 2.5, 6.0)
+	var l := light(FIRE, 2.5, 6.0)
 	l.position.z = 0.6
 	root.add_child(l)
 	return root
 
 
-## Bright pop at a muzzle: flash sprite, sparks and a light that fades.
-static func flash(at: Node3D) -> void:
-	var root := Node3D.new()
-	at.add_child(root)
-	var s := _particles(18, 0.25, Vector3(0, 0, -1), 25.0, Vector2(8.0, 16.0), 0.18)
-	s.one_shot = true
-	s.explosiveness = 1.0
-	root.add_child(s)
-	var q := MeshInstance3D.new()
-	var qm := QuadMesh.new()
-	qm.size = Vector2(1.6, 1.6)
-	qm.material = _glow_mat(HOT, true)
-	q.mesh = qm
-	q.position.z = -0.4
-	root.add_child(q)
-	var l := _light(HOT, 6.0, 9.0)
-	root.add_child(l)
-	var tw := root.create_tween().set_parallel()
-	tw.tween_property(l, "light_energy", 0.0, 0.18)
-	tw.tween_property(q, "scale", Vector3.ONE * 0.1, 0.12)
-	tw.chain().tween_interval(0.5)
-	tw.chain().tween_callback(root.queue_free)
-
-
-## Glowing slug flying from `xf` forward (-z) for `dist` metres.
-static func tracer(parent: Node, xf: Transform3D, col: Color, dist := 60.0) -> void:
-	var mi := MeshInstance3D.new()
-	var bm := BoxMesh.new()
-	bm.size = Vector3(0.09, 0.09, 1.8)
-	bm.material = _glow_mat(col, false)
-	mi.mesh = bm
-	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	parent.add_child(mi)
-	mi.global_transform = xf
-	var to := xf.origin - xf.basis.z.normalized() * dist
-	var tw := mi.create_tween()
-	tw.tween_property(mi, "global_position", to, dist / 140.0)
-	tw.tween_callback(mi.queue_free)
-
-
 ## A short shower of sparks at world point `at`.
 static func sparks(parent: Node, at: Vector3) -> void:
-	var p := _particles(14, 0.5, Vector3.UP, 70.0, Vector2(2.0, 5.0), 0.08)
+	var p := particles(14, 0.5, Vector3.UP, 70.0, Vector2(2.0, 5.0), 0.08)
 	p.one_shot = true
 	p.explosiveness = 0.9
 	(p.process_material as ParticleProcessMaterial).gravity = Vector3(0, -6, 0)
@@ -99,7 +59,7 @@ static func debris(parent: Node, xf: Transform3D, size: Vector2) -> void:
 			var tilt := Basis.from_euler(Vector3(randf(), randf(), randf()) * TAU)
 			p.global_transform = Transform3D(xf.basis * tilt, xf.origin)
 			p.finished.connect(p.queue_free)
-	var boom := _particles(24, 0.55, Vector3.UP, 180.0, Vector2(3.0, 7.0), 0.8)
+	var boom := particles(24, 0.55, Vector3.UP, 180.0, Vector2(3.0, 7.0), 0.8)
 	boom.one_shot = true
 	boom.explosiveness = 1.0
 	parent.add_child(boom)
@@ -179,7 +139,7 @@ static func _wreck_meshes() -> Array[Mesh]:
 	return _wreck
 
 
-static func _particles(n: int, life: float, dir: Vector3, spread: float,
+static func particles(n: int, life: float, dir: Vector3, spread: float,
 		speed: Vector2, size: float) -> GPUParticles3D:
 	var p := GPUParticles3D.new()
 	p.amount = n
@@ -205,13 +165,13 @@ static func _particles(n: int, life: float, dir: Vector3, spread: float,
 	p.process_material = pm
 	var q := QuadMesh.new()
 	q.size = Vector2.ONE * size
-	q.material = _glow_mat(Color.WHITE, true)
+	q.material = glow_mat(Color.WHITE, true)
 	p.draw_pass_1 = q
 	p.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	return p
 
 
-static func _light(col: Color, energy: float, reach: float) -> OmniLight3D:
+static func light(col: Color, energy: float, reach: float) -> OmniLight3D:
 	var l := OmniLight3D.new()
 	l.light_color = col
 	l.light_energy = energy
@@ -222,7 +182,7 @@ static func _light(col: Color, energy: float, reach: float) -> OmniLight3D:
 
 ## Unshaded additive material; `sprite` makes it a soft round billboard
 ## coloured by the particle's vertex colour.
-static func _glow_mat(col: Color, sprite: bool) -> StandardMaterial3D:
+static func glow_mat(col: Color, sprite: bool) -> StandardMaterial3D:
 	var key := [col, sprite]
 	if _mats.has(key):
 		return _mats[key]

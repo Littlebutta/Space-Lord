@@ -5,11 +5,12 @@ var _fails := 0
 
 
 func _init() -> void:
+	seed(7)  # hits and crew are random: keep runs repeatable
 	var a := _ship(Vector2.ZERO, 0.0)
 	var b := _ship(Vector2(0.0, -40.0), PI)  # nose to nose, 40 m apart
 	var ga := ShipGuns.new(a)
-	var shots := [0]
-	ga.shot.connect(func(_i, _t, _h): shots[0] += 1)
+	var shots := [0, 0]  # fired, hit
+	ga.shot.connect(func(_i, _t, h): shots[0] += 1; shots[1] += int(h))
 	var hp := _hp(b)
 	var low := hp
 	for k in 30 * 30:
@@ -19,7 +20,8 @@ func _init() -> void:
 		ga.tick(b, 1.0 / 30.0)
 		low = minf(low, _hp(b))
 	_check(shots[0] > 3, "crewed guns open fire (%d shots)" % shots[0])
-	_check(low < hp, "and hurt the enemy (crew patch it up after)")
+	_check(shots[1] > 0, "some shots hit (%d)" % shots[1])
+	_check(low < hp - 1.0, "and hurt the enemy (crew patch it up after)")
 	var far := _ship(Vector2(0.0, -500.0), PI)
 	shots[0] = 0
 	for k in 30 * 5:
