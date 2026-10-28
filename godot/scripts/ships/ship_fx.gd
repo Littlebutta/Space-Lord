@@ -40,9 +40,9 @@ func bind(h: HulkView, s: ShipState) -> void:
 ## Fires module i's guns from every muzzle: red beams for lasers,
 ## slugs for everything else, each with its sound.
 func fire(i: int) -> void:
-	var n := hulk.part(i) if hulk else null
+	var n := hulk.part(i) if hulk and is_inside_tree() else null
 	if n == null:
-		return
+		return  # headless sims (tests) have nothing to draw on
 	var laser := is_laser(state.module(i))
 	for m: Node3D in n.find_children("Muzzle*", "", true, false):
 		if laser:

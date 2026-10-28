@@ -13,7 +13,6 @@ const HELP := "Battle · right click fly · left click/drag select crew, right c
 @onready var _foe: ShipBody = $Foe
 @onready var _info: Label = $UI/Info
 var _guns: Array[ShipGuns] = []
-var _fx: Array[ShipFx] = []
 var _follow := true
 var _last := Vector2.ZERO
 var _think := 0.0
@@ -30,8 +29,7 @@ func _ready() -> void:
 		b.setup(d, maxi(int(d.total(&"berths")), int(d.total(&"crew")) + 2))
 		var g := ShipGuns.new(b)
 		g.shot.connect(func(_i, from, to, hit): $Tracers.add(from, to, hit))
-		_guns.append(g)
-		_fx.append(b.fx)  # ShipBody's own effects; they follow its helm and guns
+		_guns.append(g)  # ShipBody's own ShipFx shows each shot via state.fired
 	_foe.at = Transform2D(PI, Vector2(0.0, -START))  # nose to nose
 	$Panel.bind(_me.sim)
 	$UI/Tags.bind(_me)
