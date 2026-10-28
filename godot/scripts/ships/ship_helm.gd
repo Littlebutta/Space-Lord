@@ -9,9 +9,12 @@ extends RefCounted
 const FORCE := 1.5  # scales module thrust into ship push
 const FIRE := 0.25  # how useful a thruster must be to fire
 const ALIGN := 0.7  # a thruster helps a burn only this well lined up (cos)
+const SPOOL_UP := 1.5  # throttle per second an engine gains when lit
+const SPOOL_DOWN := 2.5  # and loses when cut
 
 var state: ShipState
 var firing := PackedInt32Array()  # thrusters lit this tick, for effects
+var throttle := {}  # thruster module -> 0..1, spooling up and down
 var mass := 1.0
 var inertia := 1.0
 var com := Vector2.ZERO  # centre of mass, ship-local
@@ -71,7 +74,12 @@ func steer(dv: Vector2, turn: float, delta: float) -> Array:
 	var torque := 0.0
 	var p := state.pieces
 	if p.main < 0 or not _commanded():
+		for i in throttle:
+			throttle[i] = move_toward(throttle[i], 0.0, SPOOL_DOWN * delta)
 		return [force, torque]
+	for i in throttle:  # anything cut off from the ship winds down too
+		if not p.pieces[p.main].has(i):
+			throttle[i] = move_toward(throttle[i], 0.0, SPOOL_DOWN * delta)
 	for i in p.pieces[p.main]:
 		var f := push(i)
 		if f == Vector2.ZERO:
@@ -80,13 +88,18 @@ func steer(dv: Vector2, turn: float, delta: float) -> Array:
 		var lin := maxf(f.normalized().dot(dv.normalized()) - ALIGN, 0.0) / (1.0 - ALIGN)
 		lin *= minf(dv.length(), 1.0) * (1.0 - absf(turn) * 0.7)  # turning comes first
 		var rot := signf(t) * turn * minf(absf(t) / f.length(), 1.0)
-		if lin + rot > FIRE and state.can_fire(i):
+		var lit := lin + rot > FIRE and state.can_fire(i)
+		if lit:
 			state.fire(i, delta)
-			firing.append(i)
-			force += f
-			torque += t
 		else:
 			state.rest(i, delta)
+		var k: float = throttle.get(i, 0.0)
+		k = move_toward(k, 1.0 if lit else 0.0, (SPOOL_UP if lit else SPOOL_DOWN) * delta)
+		throttle[i] = k
+		if k > 0.0:
+			firing.append(i)  # still spooling down counts: it still pushes
+			force += f * k
+			torque += t * k
 	return [force, torque]
 
 

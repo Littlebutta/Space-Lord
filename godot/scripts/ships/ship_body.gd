@@ -10,8 +10,11 @@ const TOP := 9.0  # top cruising speed, m/s
 const BRAKE := 0.6  # m/s^2 the approach plans to slow down with
 const TURN_RATE := 0.6  # top spin, radians per second
 const HOP := 15.0  # closer goals are reached without turning to face them
-const ARRIVE := 1.5  # metres from the goal counts as there
-const DRAG := 0.03  # a little drag so drifting ships do settle
+const ARRIVE := 4.0  # metres from the goal counts as there
+const SLACK := 0.6  # m/s of velocity error the helm lets ride
+const AIM_SLACK := 0.08  # radians off heading it doesn't bother fixing
+const DRAG := 0.08  # ships slowly lose momentum, so they don't need
+                     # constant correcting and settle once there
 
 var sim: CrewSim
 var hulk: HulkView
@@ -72,16 +75,21 @@ func _fly(delta: float) -> void:
 	var face := -at.y  # the bow points up the grid (-z)
 	if goal != null:
 		var to: Vector2 = goal - at * helm.com
-		if to.length() < ARRIVE and vel.length() < 0.5:
-			goal = null
+		if to.length() < ARRIVE:
+			goal = null  # close enough: drag and the helm settle it
 		else:
 			want = to.normalized() * minf(TOP, sqrt(2.0 * BRAKE * to.length()))
 			face = to if to.length() > HOP else face
 	var dv := want - vel
-	if dv.length() > 0.3 and not helm.can_push(at.basis_xform_inv(dv)):
+	if dv.length() < SLACK:
+		dv = Vector2.ZERO
+	elif not helm.can_push(at.basis_xform_inv(dv)):
 		face = dv
-	var w_want := clampf((-at.y).angle_to(face) * 1.5, -TURN_RATE, TURN_RATE)
+	var ang := (-at.y).angle_to(face)
+	var w_want := 0.0 if absf(ang) < AIM_SLACK else clampf(ang * 1.5, -TURN_RATE, TURN_RATE)
 	var turn := clampf((w_want - spin) * 4.0, -1.0, 1.0)
+	if absf(turn) < 0.15:
+		turn = 0.0
 	var out := helm.steer(at.basis_xform_inv(dv), turn, delta)
 	vel += at.basis_xform(out[0] / helm.mass) * delta
 	spin += out[1] / helm.inertia * delta

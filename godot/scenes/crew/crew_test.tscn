@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://scripts/crew/crew_test.gd" id="1_test"]
 [ext_resource type="Script" path="res://scripts/camera/rts_camera.gd" id="2_cam"]
@@ -7,9 +7,18 @@
 [ext_resource type="Script" path="res://scripts/crew/crew_orders.gd" id="6_orders"]
 [ext_resource type="Script" path="res://scripts/ui/crew_panel.gd" id="5_panel"]
 
+[ext_resource type="Shader" path="res://assets/materials/space_sky.gdshader" id="8_sky"]
+[ext_resource type="Script" path="res://scripts/camera/space_dust.gd" id="9_dust"]
+
+[sub_resource type="ShaderMaterial" id="SkyMat"]
+shader = ExtResource("8_sky")
+
+[sub_resource type="Sky" id="Sky"]
+sky_material = SubResource("SkyMat")
+
 [sub_resource type="Environment" id="Env"]
-background_mode = 1
-background_color = Color(0.02, 0.025, 0.05, 1)
+background_mode = 2
+sky = SubResource("Sky")
 ambient_light_source = 2
 ambient_light_color = Color(0.32, 0.36, 0.46, 1)
 ambient_light_energy = 0.7
@@ -29,6 +38,9 @@ script = ExtResource("1_test")
 
 [node name="Env" type="WorldEnvironment" parent="."]
 environment = SubResource("Env")
+
+[node name="Dust" type="MultiMeshInstance3D" parent="."]
+script = ExtResource("9_dust")
 
 [node name="Sun" type="DirectionalLight3D" parent="."]
 transform = Transform3D(0.866, -0.25, 0.433, 0, 0.866, 0.5, -0.5, -0.433, 0.75, 0, 20, 0)
