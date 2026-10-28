@@ -44,7 +44,7 @@ static func spawn(scene: Node3D, ship: ShipBody) -> String:
 			var f := MiningField.new()
 			scene.add_child(f)
 			f.bind(ship, s)
-			return "Asteroid field · right click a rock to mine it"
+			return "Asteroid field · left click a rock to see what it holds and target it"
 		&"wreck":
 			_wreck(scene, s.seed)
 			return "Derelict wreck"

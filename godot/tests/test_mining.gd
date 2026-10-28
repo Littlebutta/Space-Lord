@@ -24,33 +24,47 @@ func _initialize() -> void:
 	root.add_child(f)
 	f.bind(ship, Travel.site())
 	var st := ship.sim.state
-	var ore := st.storage.get_amount("ore")
+	var ore := _held(st)
 	f.target = 0
 	var laser: int = range(st.size()).filter(func(i): return st.module(i).mining > 0)[0]
-	f.rocks[0].node.position = f._world(f._mount(laser)) + Vector3(0, 0, -15)  # in reach
+	f.rocks[0].node.position = f._world(f._mount(laser)) + Vector3(0, 0, -60)  # in reach
 	var cut := 0
 	var over := 0
 	for k in 120 * 30:
 		_step(ship, f)
 		cut = maxi(cut, f._next)
-		over += int(_planned(ship, f) > st.storage.free_space("ore") + 0.01)
+		over += _over(ship, f)
 	_check(cut > 0, "the laser cuts chunks loose (%d)" % cut)
-	_check(st.storage.get_amount("ore") > ore, "crew stow ore in the hold")
+	_check(_held(st) > ore, "crew stow ore in the hold")
 	_check(over == 0, "planned runs never exceed free space")
-	var cap: float = st.storage.capacity["ore"]
-	st.storage.amount["ore"] = cap - 7.0  # room for one chunk, not two
+	for m in Materials.ALL:  # full first, so runs from before stop
+		st.storage.amount[m] = st.storage.capacity[m]
+	for k in 30:
+		_step(ship, f)
+	for m in Materials.ALL:  # room for one chunk of each, not two
+		st.storage.amount[m] = st.storage.capacity[m] - 7.0
 	var most := 0
 	for k in 40 * 30:
 		_step(ship, f)
 		most = maxi(most, _runs(ship))
-		over += int(_planned(ship, f) > st.storage.free_space("ore") + 0.01)
-	_check(most == 1, "only one ore run when one chunk fits (%d)" % most)
-	_check(over == 0 and st.storage.get_amount("ore") <= cap, "never overfills")
-	st.storage.amount["ore"] = cap
+		over += _over(ship, f)
+	_check(most <= 4, "one run per material when one chunk fits (%d)" % most)
+	_check(over == 0, "never overfills")
+	for m in Materials.ALL:
+		st.storage.amount[m] = st.storage.capacity[m]
 	for k in 30:
 		_step(ship, f)
 	_check(_runs(ship) == 0, "a full hold stops everyone")
 	_check(ship.sim.crew.all(func(c): return c.cargo <= 0.0), "carriers let go")
+	var me := ship.world(ship.pivot())
+	f.rocks[1].node.position = Vector3(me.x, 0, me.y - 30.0)
+	var before := st.hp.duplicate()
+	ship.vel = Vector2(0, -8.0)  # ram it
+	for k in 4 * 30:
+		_step(ship, f)
+	var hurt := range(st.size()).any(func(i): return st.hp[i] < before[i])
+	_check(hurt, "ramming a rock damages the ship")
+	_check(ship.world(ship.pivot()).distance_to(me) < 30.0, "and the rock stops it")
 	print("mining tests: %s" % ("FAILED %d" % _fails if _fails else "ok"))
 	quit(1 if _fails else 0)
 
@@ -65,13 +79,20 @@ func _runs(ship: ShipBody) -> int:
 	return ship.sim.crew.filter(func(c): return c.job and c.job.type == &"mine").size()
 
 
-## Ore that crew on ore runs have claimed, carried or not.
-func _planned(ship: ShipBody, f: MiningField) -> float:
-	var n := 0.0
+func _held(st: ShipState) -> float:
+	return Materials.ALL.reduce(func(a, m): return a + st.storage.get_amount(m), 0.0)
+
+
+## 1 if the ore claimed on runs (carried or not) overfills any material.
+func _over(ship: ShipBody, f: MiningField) -> int:
+	var n := {}
 	for c in ship.sim.crew:
 		if c.job and c.job.type == &"mine" and c.stage < 5:
-			n += f.amount(c.job.target)
-	return n
+			n[c.job.res] = n.get(c.job.res, 0.0) + f.amount(c.job.target)
+	for m in n:
+		if n[m] > ship.sim.state.storage.free_space(m) + 0.01:
+			return 1
+	return 0
 
 
 func _check(ok: bool, what: String) -> void:

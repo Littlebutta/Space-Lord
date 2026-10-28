@@ -13,6 +13,7 @@ var power_out := 0.0  # per second, all generators running
 var power_cap := 0.0
 var storage := {}  # resource -> capacity
 var upkeep := {}  # resource -> units per game hour
+var cost := {}  # raw materials to build it
 var warnings: Array[String] = []
 
 
@@ -28,6 +29,7 @@ static func of(d: ShipDesign) -> ShipStats:
 	s.power_cap = d.total(&"power_cap")
 	s.storage = d.total_dict(&"storage")
 	s.upkeep = d.total_dict(&"upkeep")
+	s.cost = d.total_dict(&"materials")
 	s._check(d)
 	return s
 

@@ -10,6 +10,7 @@ category = "storage"
 size = Vector2i(1, 2)
 color = Color(0.9, 0.8, 0.25, 1)
 mass = 3.0
+materials = {"iron": 6.0, "copper": 0.3}
 hp = 80.0
 storage = {"fuel": 200.0}
 salvage = {"alloy": 3.0}

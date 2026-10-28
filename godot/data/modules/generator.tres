@@ -10,6 +10,7 @@ category = "power"
 size = Vector2i(2, 2)
 color = Color(0.3, 0.8, 0.95, 1)
 mass = 6.0
+materials = {"iron": 12.0, "copper": 6.0, "silicon": 2.4, "gold": 0.6}
 hp = 150.0
 power_out = 10.0
 power_cap = 20.0

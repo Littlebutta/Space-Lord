@@ -11,6 +11,7 @@ size = Vector2i(1, 1)
 outline = PackedVector2Array(0.5, 0.15, 0.85, 0.5, 0.5, 0.85, 0.15, 0.5)
 color = Color(0.35, 0.65, 0.85, 1)
 mass = 0.6
+materials = {"iron": 1.2, "copper": 0.5, "silicon": 0.6, "gold": 0.2}
 hp = 35.0
 salvage = {"electronics": 2.0}
 exterior = true
