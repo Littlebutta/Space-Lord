@@ -1,7 +1,7 @@
 extends CanvasLayer
 ## Minimal map HUD: date, time speed and controls.
 
-const HELP := "Space pause · 1/2 speed · WASD pan · Q/E rotate · wheel zoom · B ship builder"
+const HELP := "Space pause · 1/2 speed · WASD pan · Q/E rotate · wheel zoom · B ship builder · C crew"
 
 @onready var _label: Label = $Label
 
@@ -14,5 +14,8 @@ func _process(_delta: float) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	var key := event as InputEventKey
-	if key and key.pressed and key.keycode == KEY_B:
-		get_tree().change_scene_to_file("res://scenes/ship_editor/ship_editor.tscn")
+	if key == null or not key.pressed:
+		return
+	match key.keycode:
+		KEY_B: get_tree().change_scene_to_file("res://scenes/ship_editor/ship_editor.tscn")
+		KEY_C: get_tree().change_scene_to_file("res://scenes/crew/crew_test.tscn")
