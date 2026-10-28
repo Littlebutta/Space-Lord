@@ -28,7 +28,8 @@ jobs:
         run: |
           godot --headless --path godot --import 2>&1 | tee log.txt
           godot --headless --path godot --quit-after 120 2>&1 | tee -a log.txt
-          ! grep -E "SCRIPT ERROR|Parse Error|Failed to load" log.txt
+          godot --headless --path godot -s res://tests/test_ship_rules.gd 2>&1 | tee -a log.txt
+          ! grep -E "SCRIPT ERROR|Parse Error|Failed to load|FAIL:" log.txt
       - name: Crew tests
         run: godot --headless --path godot -s res://tests/test_crew.gd
       - name: Export Windows and Linux

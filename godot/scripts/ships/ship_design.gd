@@ -7,6 +7,7 @@ extends Resource
 @export var modules: Array[ShipModule] = []
 @export var cells: Array[Vector2i] = []  # grid origin of each module
 @export var turns: Array[int] = []  # quarter turns of each module
+@export var themes: Array[StringName] = []  # ShipTheme id of each module
 
 
 static func turned(m: ShipModule, turn: int) -> Vector2i:
@@ -17,22 +18,34 @@ func rect(i: int) -> Rect2i:
 	return Rect2i(cells[i], turned(modules[i], turns[i]))
 
 
+func theme(i: int) -> ShipTheme:
+	return ShipTheme.by_id(themes[i] if i < themes.size() else &"")
+
+
+## Overlap and layout rules; ShipRules.why_not says what's wrong.
 func fits(m: ShipModule, cell: Vector2i, turn := 0) -> bool:
-	var r := Rect2i(cell, turned(m, turn))
-	for i in modules.size():
-		if rect(i).intersects(r):
-			return false
-	return true
+	return ShipRules.why_not(self, m, cell, turn) == ""
 
 
-func add(m: ShipModule, cell: Vector2i, turn := 0) -> bool:
+func add(m: ShipModule, cell: Vector2i, turn := 0, tid := &"human") -> bool:
 	if not fits(m, cell, turn):
 		return false
+	themes.resize(modules.size())  # older saves had no themes
 	modules.append(m)
 	cells.append(cell)
 	turns.append(turn % 4)
+	themes.append(tid)
 	emit_changed()
 	return true
+
+
+## Re-themes the module covering `cell`.
+func paint(cell: Vector2i, tid: StringName) -> void:
+	var i := index_at(cell)
+	if i >= 0:
+		themes.resize(modules.size())
+		themes[i] = tid
+		emit_changed()
 
 
 ## Index of the module covering `cell`, or -1.
@@ -48,6 +61,8 @@ func remove_at(cell: Vector2i) -> ShipModule:
 	if i < 0:
 		return null
 	var m := modules[i]
+	themes.resize(modules.size())
+	themes.remove_at(i)
 	modules.remove_at(i)
 	cells.remove_at(i)
 	turns.remove_at(i)
@@ -59,14 +74,15 @@ func clear() -> void:
 	modules.clear()
 	cells.clear()
 	turns.clear()
+	themes.clear()
 	emit_changed()
 
 
-## Sums a numeric module property, e.g. total("mass").
+## Sums a numeric module property, e.g. total("mass"), with themes.
 func total(stat: StringName) -> float:
 	var sum := 0.0
-	for m in modules:
-		sum += float(m.get(stat))
+	for i in modules.size():
+		sum += float(modules[i].get(stat)) * theme(i).mult(stat)
 	return sum
 
 

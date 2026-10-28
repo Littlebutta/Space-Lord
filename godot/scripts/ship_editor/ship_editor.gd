@@ -1,12 +1,14 @@
 extends Node3D
-## Grid ship builder. Left click places the picked module, right click
-## removes, R rotates, Esc returns to the system map.
+## Grid ship builder. Left click places the picked module in the picked
+## theme, right click removes, middle click repaints, R rotates, Esc
+## returns to the system map. ShipRules blocks bad placements.
 
 const SAVE_PATH := "user://ships/player.tres"
 const MAP_SCENE := "res://scenes/main.tscn"
 
 var design := ShipDesign.new()
 var picked: ShipModule
+var theme_id := &"human"
 var turn := 0
 var _cell := Vector2i.ZERO
 
@@ -19,9 +21,11 @@ var _cell := Vector2i.ZERO
 func _ready() -> void:
 	if ResourceLoader.exists(SAVE_PATH):
 		design = load(SAVE_PATH)
+	_view.show_exhaust = true
 	_view.design = design
 	design.changed.connect(_refresh)
 	_ui.module_picked.connect(_pick)
+	_ui.theme_picked.connect(_pick_theme)
 	_ui.action.connect(_on_action)
 	_pick(ModuleLibrary.by_id(&"hull"))
 	_refresh()
@@ -50,6 +54,11 @@ func _pick(m: ShipModule) -> void:
 	_update_ghost()
 
 
+func _pick_theme(tid: StringName) -> void:
+	theme_id = tid
+	_update_ghost()
+
+
 func _refresh() -> void:
 	_ui.show_stats(ShipStats.of(design), design.ship_name)
 
@@ -61,9 +70,15 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event is InputEventMouseButton and event.pressed:
 		_cell = _mouse_cell(event.position)
 		if event.button_index == MOUSE_BUTTON_LEFT and picked:
-			design.add(picked, _origin(), turn)
+			var why := ShipRules.why_not(design, picked, _origin(), turn)
+			if why:
+				_ui.flash(why)
+			else:
+				design.add(picked, _origin(), turn, theme_id)
 		elif event.button_index == MOUSE_BUTTON_RIGHT:
 			design.remove_at(_cell)
+		elif event.button_index == MOUSE_BUTTON_MIDDLE:
+			design.paint(_cell, theme_id)
 		_update_ghost()
 	elif event is InputEventKey and event.pressed and not event.echo:
 		match event.keycode:
@@ -92,15 +107,20 @@ func _update_ghost() -> void:
 	if not picked:
 		return
 	var r := Rect2i(_origin(), ShipDesign.turned(picked, turn))
-	var mesh := ShipView.block(picked, r.size) as BoxMesh
 	var mat := StandardMaterial3D.new()
 	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	var ok := design.fits(picked, r.position, turn)
 	mat.albedo_color = Color(0.3, 1, 0.5, 0.45) if ok else Color(1, 0.3, 0.3, 0.45)
-	mesh.material = mat
-	_ghost.mesh = mesh
+	_ghost.mesh = ShipView.part_mesh(picked, r, turn, ShipTheme.by_id(theme_id))
+	_ghost.material_override = mat
 	_ghost.position = ShipView.center(r) + Vector3.UP * 0.05
+	for c in _ghost.get_children():
+		c.queue_free()
+	var lane := ShipView.lane_mesh(picked, r, turn)
+	if lane:
+		lane.position -= _ghost.position
+		_ghost.add_child(lane)
 
 
 func _on_action(what: String) -> void:
@@ -114,10 +134,12 @@ func _randomize() -> void:
 	var pool: Array[ShipModule] = ModuleLibrary.all().filter(
 			func(m): return m.category != "command")
 	var rng := RandomNumberGenerator.new()
-	var d := ShipGenerator.generate(ModuleLibrary.by_id(&"bridge"), pool, rng, 16)
+	var themes := ShipTheme.all()
+	var tid := themes[rng.randi() % themes.size()].id
+	var d := ShipGenerator.generate(ModuleLibrary.by_id(&"bridge"), pool, rng, 16, tid)
 	design.clear()
 	for i in d.modules.size():
-		design.add(d.modules[i], d.cells[i], d.turns[i])
+		design.add(d.modules[i], d.cells[i], d.turns[i], d.themes[i])
 	design.ship_name = "Derelict %03d" % rng.randi_range(1, 999)
 	_refresh()
 

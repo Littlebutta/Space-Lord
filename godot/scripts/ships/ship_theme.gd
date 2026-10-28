@@ -1,0 +1,57 @@
+class_name ShipTheme
+extends Resource
+## A style any part can wear (human, bio, crystal...): a colour, a
+## placeholder shape and stat tweaks. Themes are .tres files under
+## res://data/themes, so new ones need no code.
+
+const DIR := "res://data/themes/"
+
+@export var id: StringName
+@export var display_name := ""
+@export var order := 0  # position in the builder's list
+@export var blurb := ""  # one line shown in the builder
+@export var tint := Color.WHITE
+@export var tint_mix := 0.3  # how much tint replaces the part colour
+@export var stat_mult := {}  # stat -> multiplier, e.g. {"mass": 0.8}
+@export_group("Placeholder shape")
+@export var bevel := 0.0  # cut corners this far along each edge
+@export var smooth := 0  # extra corner rounding passes
+@export var taper := 0.0  # shrink the top face toward the centre
+@export var height := 1.0
+@export var jitter := 0.0  # random height change per part
+
+static var _all: Array[ShipTheme] = []
+
+
+static func all() -> Array[ShipTheme]:
+	if _all.is_empty():
+		for f in ResourceLoader.list_directory(DIR):
+			var t := load(DIR + f) as ShipTheme
+			if t:
+				_all.append(t)
+		_all.sort_custom(func(a, b): return a.order < b.order)
+	return _all
+
+
+## The theme with `tid`, or the first one (human) if unknown.
+static func by_id(tid: StringName) -> ShipTheme:
+	for t in all():
+		if t.id == tid:
+			return t
+	return all()[0]
+
+
+func mult(stat: StringName) -> float:
+	return float(stat_mult.get(String(stat), 1.0))
+
+
+func paint(c: Color) -> Color:
+	return c.lerp(tint, tint_mix)
+
+
+func shape(p: PackedVector2Array) -> PackedVector2Array:
+	if bevel > 0.0:
+		p = Prism.cut(p, bevel)
+	for k in smooth:
+		p = Prism.cut(p, 0.25)
+	return p

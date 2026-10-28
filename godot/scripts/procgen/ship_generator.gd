@@ -1,13 +1,16 @@
 class_name ShipGenerator
 extends RefCounted
 ## Grows random ship designs from a core module so every encounter, and
-## every wreck to salvage, is different.
+## every wreck to salvage, is different. Ships keep to one theme with
+## the odd part from another, like a patched-up hull.
 
 
 static func generate(core: ShipModule, pool: Array[ShipModule],
-		rng: RandomNumberGenerator, parts := 12) -> ShipDesign:
+		rng: RandomNumberGenerator, parts := 12, tid := &"human",
+		mix := 0.15) -> ShipDesign:
+	var themes := ShipTheme.all()
 	var d := ShipDesign.new()
-	d.add(core, Vector2i.ZERO)
+	d.add(core, Vector2i.ZERO, 0, tid)
 	var tries := parts * 10
 	while d.modules.size() < parts and tries > 0:
 		tries -= 1
@@ -16,7 +19,8 @@ static func generate(core: ShipModule, pool: Array[ShipModule],
 		var turn := rng.randi() % 4
 		var r := d.rect(i)
 		var at := _neighbor(r.position, r.size, ShipDesign.turned(m, turn), rng)
-		d.add(m, at, turn)
+		var t: StringName = themes[rng.randi() % themes.size()].id if rng.randf() < mix else tid
+		d.add(m, at, turn, t)
 	return d
 
 

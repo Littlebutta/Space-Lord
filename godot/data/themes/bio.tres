@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ShipTheme" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ships/ship_theme.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"bio"
+display_name = "Biological"
+order = 1
+blurb = "Grown, not built. Light and fast, but softer under fire."
+tint = Color(0.5, 0.78, 0.42, 1)
+tint_mix = 0.55
+stat_mult = {"hp": 0.85, "mass": 0.75}
+smooth = 2
+height = 1.15

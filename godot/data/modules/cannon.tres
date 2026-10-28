@@ -13,5 +13,6 @@ mass = 6.0
 hp = 140.0
 crew = 2
 firepower = 20.0
+needs_near = {"ammo_rack": 6}
 upkeep = {"ammo": 2.0}
 salvage = {"alloy": 4.0, "parts": 2.0}

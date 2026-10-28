@@ -5,15 +5,27 @@ extends CanvasLayer
 
 signal module_picked(m: ShipModule)
 signal action(what: String)
+signal theme_picked(id: StringName)
 
-const HELP := "LMB place · RMB remove · R rotate · WASD pan · wheel zoom · Esc map"
+const HELP := "LMB place · RMB remove · MMB paint theme · R rotate · " \
+		+ "WASD pan · wheel zoom · Esc map. Ship nose is up; thrusters " \
+		+ "fire back or sideways and need a clear lane."
 
 var _stats := RichTextLabel.new()
 var _note := Label.new()
+var _blurb := _label("", true)
 
 
 func _ready() -> void:
 	var left := _panel(Vector2(12, 12), 210)
+	left.add_child(_label("Theme"))
+	var themes := OptionButton.new()
+	for t in ShipTheme.all():
+		themes.add_item(t.display_name)
+	themes.item_selected.connect(_on_theme)
+	left.add_child(themes)
+	left.add_child(_blurb)
+	_on_theme(0)
 	var group := ButtonGroup.new()
 	var last_cat := ""
 	for m in ModuleLibrary.all():
@@ -38,6 +50,12 @@ func _ready() -> void:
 	_stats.bbcode_enabled = true
 	right.add_child(_stats)
 	right.add_child(_label(HELP, true))
+
+
+func _on_theme(k: int) -> void:
+	var t := ShipTheme.all()[k]
+	_blurb.text = t.blurb
+	theme_picked.emit(t.id)
 
 
 func show_stats(s: ShipStats, ship_name: String) -> void:

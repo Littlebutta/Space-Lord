@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ShipTheme" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ships/ship_theme.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"crystal"
+display_name = "Crystalline"
+order = 2
+blurb = "Alien lattice. Very tough and a bit heavy."
+tint = Color(0.45, 0.85, 1, 1)
+tint_mix = 0.6
+stat_mult = {"hp": 1.3, "mass": 1.15}
+bevel = 0.22
+taper = 0.3
+height = 1.35

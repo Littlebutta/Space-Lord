@@ -51,6 +51,7 @@ func _check(d: ShipDesign) -> void:
 	for res in upkeep:
 		if storage.get(res, 0.0) <= 0.0:
 			warnings.append("Uses %s but has no storage for it" % res)
+	warnings.append_array(ShipRules.problems(d))
 	var loose := d.loose_modules().size()
 	if loose > 0:
 		warnings.append("%d module(s) not attached to the hull" % loose)
