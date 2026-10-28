@@ -54,7 +54,7 @@ func draw(crew: Array[CrewMember], sim: CrewSim, delta: float) -> void:
 		var ore := c.job != null and c.job.type == &"mine"  # ore chunks show themselves
 		_crates[k].visible = c.cargo > 0.0 and not c.eva and not ore
 		if c.eva and is_inside_tree() and randf() < delta * 3.0:
-			CrewGear.puff(get_tree().current_scene, b)
+			CrewGear.puff(_world(), b)
 		_footstep(c, b, delta)
 
 
@@ -159,4 +159,10 @@ func _footstep(c: CrewMember, b: Node3D, delta: float) -> void:
 	if c.eva or c.arrived() or _step_cd > 0.0 or not is_inside_tree():
 		return
 	_step_cd = 1.0 / STEPS
-	Sfx.play(get_tree().current_scene, &"footstep", b.global_position, -10.0, 14.0)
+	Sfx.play(_world(), &"footstep", b.global_position, -10.0, 14.0)
+
+
+## Where puffs and sounds go: the scene, or this node when there's none.
+func _world() -> Node:
+	var s := get_tree().current_scene
+	return s if s else self
