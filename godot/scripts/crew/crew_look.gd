@@ -9,13 +9,13 @@ const MODEL := "res://assets/models/human/crew.glb"  # fallback race
 const SHADER := preload("res://assets/materials/crew.gdshader")
 const WALK_SPEED := 1.3  # walk animation playback for CrewSim.SPEED
 const TURN := 10.0  # how fast they turn to face, per second
-const STEPS := 3.0  # footstep sounds per second, for the whole crew at most
+const STEP := 0.42  # seconds between one walker's footsteps
 
 static var _mat: ShaderMaterial
 static var _ring_mesh: TorusMesh
 
 var _kinds: Array[CrewSpecies] = []  # whose model each body is
-var _step_cd := 0.0
+var _step_cd: Array[float] = []  # each walker's time to next step
 var _bodies: Array[Node3D] = []
 var _players: Array[AnimationPlayer] = []
 var _meshes: Array[MeshInstance3D] = []
@@ -36,10 +36,12 @@ func draw(crew: Array[CrewMember], sim: CrewSim, delta: float) -> void:
 		_rings.pop_back()
 		_suits.pop_back()
 		_crates.pop_back()
+		_step_cd.pop_back()
 	var ship := sim.state.design.theme(0)
 	while _bodies.size() < crew.size():
 		var sp := crew[_bodies.size()].species
 		_kinds.append(sp)
+		_step_cd.append(randf() * STEP)
 		var own := CrewSpecies.of_theme(ship) == sp  # e.g. scrap crews look scrappy
 		_spawn(race(ship if own else sp.look()))
 	for k in crew.size():
@@ -61,7 +63,7 @@ func draw(crew: Array[CrewMember], sim: CrewSim, delta: float) -> void:
 		_crates[k].visible = c.cargo > 0.0 and not c.eva and not ore and c.species.carry
 		if c.eva and is_inside_tree() and randf() < delta * 3.0:
 			CrewGear.puff(_world(), b)
-		_footstep(c, b, delta)
+		_footstep(k, c, b, delta)
 
 
 ## The shared crew material; shirts are an instance uniform.
@@ -158,14 +160,13 @@ static func race(t: ShipTheme) -> PackedScene:
 	return load(p if ResourceLoader.exists(p) else MODEL)
 
 
-## Now and then a walker's boots are heard; capped so a busy crew
-## patters quietly instead of drowning everything out.
-func _footstep(c: CrewMember, b: Node3D, delta: float) -> void:
-	_step_cd -= delta / maxf(_bodies.size(), 1.0)
-	if c.eva or c.arrived() or _step_cd > 0.0 or not is_inside_tree():
+## Each walker's boots patter softly on their own beat.
+func _footstep(k: int, c: CrewMember, b: Node3D, delta: float) -> void:
+	_step_cd[k] -= delta * c.species.speed
+	if c.eva or c.arrived() or _step_cd[k] > 0.0 or not is_inside_tree():
 		return
-	_step_cd = 1.0 / STEPS
-	Sfx.play(_world(), &"footstep", b.global_position, -10.0, 14.0)
+	_step_cd[k] = STEP * randf_range(0.9, 1.1)
+	Sfx.play(_world(), &"footstep", b.global_position, -24.0, 12.0)
 
 
 ## Where puffs and sounds go: the scene, or this node when there's none.
