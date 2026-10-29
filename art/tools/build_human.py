@@ -25,6 +25,7 @@ MARKERS = {
     "cannon": [("Muzzle0", (0, ROOF + 0.35, -3.35))],
     "turret": [("Muzzle0", (-0.45, ROOF + 0.85, -2.7)), ("Muzzle1", (0.45, ROOF + 0.85, -2.7))],
     "engine": [("Nozzle0", (0, ROOF - 0.9, 2.7))],
+    "engine_ion": [("Nozzle0", (0, ROOF - 0.9, 2.75))],
     "mining_laser": [("Muzzle0", (0, ROOF + 0.55, -2.15))],
 }
 
@@ -43,6 +44,7 @@ PARTS = {
     "cannon": ((1, 3), None, hs.cannon),
     "turret": ((2, 2), None, hs.turret),
     "engine": ((1, 2), None, hs.engine),
+    "engine_ion": ((1, 2), None, hs.ion_engine),
     "crew_quarters": ((2, 2), None, hs.crew_quarters),
     "airlock": ((1, 1), None, hh.airlock),
     "supply_depot": ((2, 2), None, hh.supply_depot),
@@ -62,6 +64,7 @@ PARTS = {
 # kept, so crew fit) under a raised, stepped housing; see build().
 TIERS = {t: base for base in ("engine", "fuel_tank", "cargo_hold", "cannon", "turret")
          for t in (base + "_t2", base + "_t3")}
+TIERS["engine_ion_t2"] = "engine_ion"
 RAISE = {"_t2": 0.45, "_t3": 0.85}  # how much taller the outside housing is
 PARTS["teleporter"] = ((2, 2), None, hs.teleporter)
 PARTS["breach_pod"] = ((2, 3), None, hs.breach_pod)
