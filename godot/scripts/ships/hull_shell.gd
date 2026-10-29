@@ -218,10 +218,12 @@ static func make(d: ShipDesign, y0: float, mods: Array = []) -> Node3D:
 				for p in outlines(d, mine):
 					root.add_child(_mesh(FactionShell.plates(p, ship, y0 + HEIGHT, hash(p[0])),
 							ModelSkin.shell_material(t)))
+					root.add_child(FactionDressing.dress(t.shell, p, ship, y0, hash(p[0]) + 1))
 		else:
 			for p in outlines(d, mine):
 				var m := FactionShell.build(t.shell, p, ship, y0, hash(p[0]))
 				root.add_child(_mesh(m, ModelSkin.faction_material(t.shell)))
+				root.add_child(FactionDressing.dress(t.shell, p, ship, y0, hash(p[0]) + 1))
 	root.add_child(beacons(d, y0, all))
 	return root
 

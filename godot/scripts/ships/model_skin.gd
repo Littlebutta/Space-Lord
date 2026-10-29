@@ -194,7 +194,7 @@ static func faction_material(style: StringName) -> ShaderMaterial:
 	if not _mats.has(key):
 		var m := ShaderMaterial.new()
 		m.shader = load("res://assets/materials/%s.gdshader" % ("flesh" if style == &"flesh" else "crystal"))
-		if style == &"flesh":
-			m.set_shader_parameter(&"veins", noise(false))
+		m.set_shader_parameter(&"veins", noise(false))
+		m.set_shader_parameter(&"detail", noise(true))
 		_mats[key] = m
 	return _mats[key]
