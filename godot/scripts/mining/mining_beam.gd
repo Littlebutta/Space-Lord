@@ -2,7 +2,8 @@ class_name MiningBeam
 extends Node3D
 ## The mining laser's beam: a steady orange beam with a white-hot core,
 ## a glow and spray of sparks and dust where it bites the rock, and a
-## light at each end. MiningField calls span() every tick.
+## light at each end. MiningField calls span() every tick; between
+## ticks the beam stays pinned to `muzzle` as the ship moves and turns.
 
 const COL := Color(1.0, 0.55, 0.15)
 
@@ -11,6 +12,8 @@ var _core := MeshInstance3D.new()
 var _hit := Node3D.new()
 var _spray: GPUParticles3D
 var _t := 0.0
+var _to := Vector3.ZERO
+var muzzle: Node3D  # the barrel's Muzzle marker, when the model has one
 
 
 func _init() -> void:
@@ -42,13 +45,17 @@ func span(from: Vector3, to: Vector3, on: bool) -> void:
 	var up := (to - from).normalized()
 	var side := up.cross(Vector3.UP if absf(up.y) < 0.9 else Vector3.RIGHT).normalized()
 	var w := 1.0 + sin(_t * 9.0) * 0.03  # a steady beam, faint shimmer
-	var bs := Basis(side, up, side.cross(up))
-	var mid := (from + to) * 0.5
-	_beam.transform = Transform3D(bs.scaled(Vector3(w, from.distance_to(to), w)), mid)
-	_core.transform = Transform3D(bs.scaled(Vector3(1, from.distance_to(to), 1)), mid)
+	var fwd := side.cross(up)
+	var n := from.distance_to(to)
+	var mid := (from + to) * 0.5  # scale along the beam's own axes, not the world's
+	_beam.transform = Transform3D(Basis(side * w, up * n, fwd * w), mid)
+	_core.transform = Transform3D(Basis(side, up * n, fwd), mid)
 	_hit.position = to
+	_to = to
 	(_spray.process_material as ParticleProcessMaterial).direction = -up
 
 
 func _process(delta: float) -> void:
 	_t += delta
+	if visible and is_instance_valid(muzzle) and muzzle.is_inside_tree():
+		span(muzzle.global_position, _to, true)

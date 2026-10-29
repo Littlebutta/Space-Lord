@@ -165,6 +165,8 @@ func _beam(i: int, from: Vector3, to: Vector3, on: bool) -> void:
 	if not _beams.has(i):
 		_beams[i] = MiningBeam.new()
 		add_child(_beams[i])
+	var n: Node3D = ship.hulk.part(i) if ship.hulk else null
+	_beams[i].muzzle = n.find_child("Muzzle*", true, false) as Node3D if n else null
 	_beams[i].span(from, to, on)
 
 
