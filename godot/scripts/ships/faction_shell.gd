@@ -21,9 +21,9 @@ static func build(style: StringName, region: PackedVector2Array,
 	rng.seed = seed
 	match style:
 		&"flesh":
-			return _field(region, ship, y0, rng, 0.6, FLESH_H, true)
+			return _field(region, ship, y0, rng, 0.32, FLESH_H, true)
 		&"facets":
-			return _field(region, ship, y0, rng, 1.5, FACET_H, false)
+			return _field(region, ship, y0, rng, 0.9, FACET_H, false)
 	return null
 
 
@@ -60,7 +60,10 @@ static func _field(region: PackedVector2Array, ship: Array[PackedVector2Array], 
 		var e := _edge(p, ship)
 		var rise := sqrt(clampf(e / (1.8 if smooth else 1.0), 0.0, 1.0))
 		var lump := noise.get_noise_2dv(p) * (0.55 if smooth else 0.5)
-		if not smooth:
+		if smooth:  # folds and wrinkles on top of the big swells
+			lump += noise.get_noise_2dv(p * 4.3 + Vector2(17, 3)) * 0.12
+			lump += absf(noise.get_noise_2dv(p * 9.0 + Vector2(5, 41))) * -0.06
+		else:
 			lump += rng.randf_range(-0.35, 0.35)
 		# meet a neighbouring faction at the Human hull height, swell inside
 		var inner := clampf(_edge(p, [region]) / 1.5, 0.0, 1.0)
@@ -89,6 +92,7 @@ static func _field(region: PackedVector2Array, ship: Array[PackedVector2Array], 
 	if smooth:
 		st.index()
 	st.generate_normals()
+	st.generate_tangents()  # for the detail normal maps
 	return st.commit()
 
 

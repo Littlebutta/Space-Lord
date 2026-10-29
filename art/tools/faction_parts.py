@@ -97,11 +97,13 @@ def _tentacles(mid, new_part):
 # ---- Crystal: grown lattice and lances -------------------------------------
 
 def _crystal(e, base, length, r, rng, col=None, lean=0.5):
+    """A glowing crystal: a hexagonal shaft and a pointed tip."""
     x, y, z = base
     tip = (x + rng.uniform(-lean, lean), y + length, z + rng.uniform(-lean, lean))
     mid = tuple(base[k] + (tip[k] - base[k]) * 0.8 for k in range(3))
-    e.prism(base, mid, r, col or C["glass"], 6, r * 0.9)
-    e.prism(mid, tip, r * 0.9, col or C["glass"], 6, 0.01)
+    col = col or rng.choice((C["power"], C["screen"], C["amber"]))
+    e.prism(base, mid, r, col, 6, r * 0.9, glow=True)
+    e.prism(mid, tip, r * 0.9, col, 6, 0.01, glow=True)
 
 
 def _crystal_ext(mid, e, pts):
@@ -113,7 +115,7 @@ def _crystal_ext(mid, e, pts):
     for x, z in _spots(rng, pts, 4 if len(pts) == 4 else 2):
         for k in range(rng.randint(2, 4)):  # a cluster
             _crystal(e, (x + rng.uniform(-0.3, 0.3), y, z + rng.uniform(-0.3, 0.3)),
-                     rng.uniform(0.5, 1.6), rng.uniform(0.1, 0.25), rng)
+                     rng.uniform(1.2, 3.2), rng.uniform(0.18, 0.4), rng)
         e.cyl((x, y + 0.04, z), 0.45, 0.08, C["power"], sides=6, glow=True, smooth=False)
 
 
