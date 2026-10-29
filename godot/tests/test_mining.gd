@@ -82,6 +82,10 @@ func _check_crystals(ship: ShipBody, f: MiningField) -> void:
 		c.pos = sim._home()
 	for m in Materials.ALL:
 		sim.state.storage.amount[m] = 0.0
+		f.rocks[0].left[m] = 40.0  # the crews before may have mined it out
+	f.target = 0
+	var lock: int = range(sim.state.size()).filter(func(i): return sim.state.module(i).airlock)[0]
+	f.rocks[0].node.position = f._world(f._mount(lock)) + Vector3(0, 0, -30)  # in pull reach
 	var out := false
 	for k in 60 * 30:
 		_step(ship, f)
