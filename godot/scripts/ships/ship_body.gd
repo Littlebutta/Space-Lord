@@ -1,0 +1,137 @@
+class_name ShipBody
+extends Node3D
+## A ship flying in space: its crew (CrewSim), its pieces (HulkView), its
+## effects (ShipFx) and RTS flight. It turns and burns toward `goal` with
+## whichever thrusters face the right way (see ShipHelm) while the bridge
+## is manned. Loose pieces
+## and crew outside stay put in space as it moves, and get shoved aside.
+
+const TOP := 9.0  # top cruising speed, m/s
+const BRAKE := 0.6  # m/s^2 the approach plans to slow down with
+const TURN_RATE := 0.6  # top spin, radians per second
+const HOP := 15.0  # closer goals are reached without turning to face them
+const ARRIVE := 4.0  # metres from the goal counts as there
+const SLACK := 0.6  # m/s of velocity error the helm lets ride
+const AIM_SLACK := 0.08  # radians off heading it doesn't bother fixing
+const DRAG := 0.08  # ships slowly lose momentum, so they don't need
+                     # constant correcting and settle once there
+
+var sim: CrewSim
+var hulk: HulkView
+var bumps: PieceBumps
+var helm: ShipHelm
+var fx: ShipFx
+var at := Transform2D.IDENTITY  # ship-local (x, z) -> world (x, z)
+var vel := Vector2.ZERO  # world metres per second
+var spin := 0.0  # radians per second
+var goal: Variant = null  # world point to fly to, or null
+var look: Variant = null  # world point to keep the nose on (AI), or null
+var heading: Variant = null  # world direction to face on arrival, or null
+var holding := false  # after halt(): kill even slow drift, stay put
+
+
+func setup(d: ShipDesign, crew: int) -> void:
+	add_to_group(&"ships")
+	sim = CrewSim.new()
+	add_child(sim)
+	sim.setup(d, crew)
+	hulk = HulkView.new()
+	add_child(hulk)
+	hulk.bind(sim.state.pieces)
+	bumps = PieceBumps.new(sim.state.pieces)
+	helm = ShipHelm.new(sim.state)
+	helm.weigh()
+	sim.state.pieces.changed.connect(helm.weigh)
+	sim.died.connect(_corpse)
+	sim.teleported.connect(_blink)
+	fx = ShipFx.new()
+	add_child(fx)
+	fx.bind(hulk, sim.state)
+	fx.helm = helm
+	fx.sim = sim
+	transform = ShipPieces.to_3d(at)
+
+
+func _physics_process(delta: float) -> void:
+	if sim == null:
+		return
+	var old := at
+	_fly(delta)
+	bumps.carry(at.affine_inverse() * old, sim.crew)
+	bumps.collide(at.basis_xform_inv(vel))
+	transform = ShipPieces.to_3d(at)
+
+
+## Centre of mass of the ship's own piece, ship-local.
+func pivot() -> Vector2:
+	return helm.com
+
+
+## World point of a ship-local one.
+func world(local: Vector2) -> Vector2:
+	return at * local
+
+
+## Stops moving and turning as well as the engines can, then holds here.
+func halt() -> void:
+	goal = null
+	heading = null
+	holding = true
+
+
+## Plans a velocity toward the goal, then points the nose where the
+## thrusters can deliver the change: at the goal, or (lacking thrusters
+## that way) along the burn needed, e.g. flipping round to brake.
+func _fly(delta: float) -> void:
+	var want := Vector2.ZERO
+	var face := -at.y  # the bow points up the grid (-z)
+	var near := true  # close enough to swing round to `heading`
+	if goal != null:
+		var to: Vector2 = goal - at * helm.com
+		if to.length() < ARRIVE:
+			goal = null  # close enough: drag and the helm settle it
+		else:
+			want = to.normalized() * minf(TOP, sqrt(2.0 * BRAKE * to.length()))
+			near = to.length() <= HOP
+			face = to if not near else face
+	if heading != null and near:
+		face = heading
+	if look != null:
+		face = look - at * helm.com
+	var dv := want - vel
+	if dv.length() < (0.05 if holding and goal == null else SLACK):
+		dv = Vector2.ZERO
+	elif not helm.can_push(at.basis_xform_inv(dv)):
+		face = dv
+	var ang := (-at.y).angle_to(face)
+	var w_want := 0.0 if absf(ang) < AIM_SLACK else clampf(ang * 1.5, -TURN_RATE, TURN_RATE)
+	var turn := clampf((w_want - spin) * 4.0, -1.0, 1.0)
+	if absf(turn) < 0.15:
+		turn = 0.0
+	var out := helm.steer(at.basis_xform_inv(dv), turn, delta)
+	vel += at.basis_xform(out[0] / helm.mass) * delta
+	spin += out[1] / helm.inertia * delta
+	vel *= 1.0 - DRAG * delta
+	spin *= 1.0 - DRAG * 4.0 * delta
+	var c := helm.com
+	var a := spin * delta
+	at = at * Transform2D(a, c - c.rotated(a))
+	at.origin += vel * delta
+
+
+## A crew member died: leave their body tumbling in space.
+func _corpse(local: Vector3, fling: Vector3, shirt: Color) -> void:
+	if get_parent():
+		var t := global_transform
+		var drift := Vector3(vel.x, 0.0, vel.y)
+		CrewCorpse.spawn(get_parent(), t * local, t.basis * fling + drift, shirt)
+
+
+## A teleporter flash where someone left and where they arrived.
+func _blink(from: Vector2, to: Vector2) -> void:
+	if get_parent():
+		for p in [from, to]:
+			var i := sim.state.design.index_at(Vector2i((p / ShipView.CELL).floor()))
+			var w: Vector2 = sim.state.pieces.xf[i] * p if i >= 0 else p
+			FxKit.sparks(get_parent(), global_transform * Vector3(w.x, 1.0, w.y))
+			Sfx.play(get_parent(), &"teleport", global_transform * Vector3(w.x, 1.0, w.y), -6.0, 40.0)

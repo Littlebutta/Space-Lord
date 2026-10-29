@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ShipModule" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ships/ship_module.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"fuel_tank_t2"
+display_name = "Fuel Tank II"
+category = "storage"
+size = Vector2i(2, 3)
+look = &"fuel_tank"
+color = Color(0.9, 0.8, 0.25, 1)
+mass = 8.0
+materials = {"iron": 16.0, "copper": 1.0}
+hp = 200.0
+storage = {"fuel": 650.0}
+salvage = {"alloy": 7.2}
+blocked = Array[Rect2]([Rect2(0, 0.5, 2, 2.5)])
+access = PackedVector2Array(1, 0.25)

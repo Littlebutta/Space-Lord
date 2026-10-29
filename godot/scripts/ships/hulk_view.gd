@@ -1,0 +1,84 @@
+class_name HulkView
+extends Node3D
+## Draws a live ship that can break apart: one node per piece, built
+## from ShipView's parts, moved each frame by the piece's drift. Wrecked
+## modules leave a hole; cut edges get their own rounded corners.
+
+var pieces: ShipPieces
+var outside := false: set = set_outside  # hull shells over the decks
+## Someone else's ship: the main piece always shows its hull; only
+## pieces broken off it show their insides.
+var sealed := false: set = set_sealed
+var _nodes: Array[Node3D] = []
+var _parts := {}  # module index -> its part node
+
+
+func bind(p: ShipPieces) -> void:
+	pieces = p
+	p.changed.connect(rebuild)
+	rebuild()
+
+
+func rebuild() -> void:
+	var aim := {}  # turret heads keep their aim through the rebuild
+	for i in _parts:
+		var h := _head(i)
+		if h:
+			aim[i] = h.rotation.y
+	for n in _nodes:
+		n.queue_free()
+	_nodes.clear()
+	_parts.clear()
+	var d := pieces.design
+	for mods in pieces.pieces:
+		var filled := {}
+		for i in mods:
+			var r := d.rect(i)
+			for x in range(r.position.x, r.end.x):
+				for y in range(r.position.y, r.end.y):
+					filled[Vector2i(x, y)] = i
+		var node := Node3D.new()
+		for i in mods:
+			var part := ShipView.make_part(d.modules[i], d.rect(i), d.turns[i],
+					d.theme(i), filled)
+			node.add_child(part)
+			_parts[i] = part
+		node.add_child(HullShell.make(d, ShipView.DECK * 0.5, mods))
+		add_child(node)
+		_nodes.append(node)
+	for i in aim:
+		var h := _head(i)
+		if h:
+			h.rotation.y = aim[i]
+	set_outside(outside)
+	_process(0.0)
+
+
+## Module i's part node, or null when it's been destroyed.
+func part(i: int) -> Node3D:
+	var n = _parts.get(i)  # untyped: may hold a freed node
+	return n if is_instance_valid(n) and not n.is_queued_for_deletion() else null
+
+
+## Module i's turning turret head, if it has one.
+func _head(i: int) -> Node3D:
+	var n := part(i)
+	return n.find_child("Head*", true, false) as Node3D if n else null
+
+
+func set_sealed(v: bool) -> void:
+	sealed = v
+	set_outside(outside)
+
+
+func set_outside(v: bool) -> void:
+	outside = v
+	for k in _nodes.size():
+		var shut := v or (sealed and k == pieces.main)
+		ModelSkin.set_outside(_nodes[k], shut)
+		_nodes[k].get_node(^"Shell").visible = shut
+
+
+func _process(_delta: float) -> void:
+	for k in mini(_nodes.size(), pieces.pieces.size()):
+		_nodes[k].transform = ShipPieces.to_3d(pieces.xf[pieces.pieces[k][0]])

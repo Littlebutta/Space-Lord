@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="ShipModule" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ships/ship_module.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"airlock"
+display_name = "Airlock"
+category = "crew"
+size = Vector2i(1, 1)
+color = Color(0.85, 0.55, 0.2, 1)
+mass = 2.0
+materials = {"iron": 4.0, "copper": 0.4, "silicon": 0.4}
+hp = 140.0
+storage = {"parts": 20.0}
+salvage = {"alloy": 2.0, "parts": 1.0}
+rebuild = {"parts": 3.0}
+airlock = true
+blocked = Array[Rect2]([Rect2(0, 0, 0.5, 1)])
+access = PackedVector2Array(0.75, 0.5)

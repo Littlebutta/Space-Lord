@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="ShipModule" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ships/ship_module.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"engine_t2"
+display_name = "Thruster II"
+category = "engine"
+size = Vector2i(2, 3)
+look = &"engine"
+color = Color(0.95, 0.55, 0.2, 1)
+mass = 10.0
+materials = {"iron": 20.0, "copper": 6.0, "silicon": 1.0}
+hp = 260.0
+crew = 2
+thrust = 180.0
+auto_time = 15.0
+exhaust = Vector2i(0, 1)
+needs_near = {"fuel_tank": 4}
+upkeep = {"fuel": 2.5}
+salvage = {"alloy": 7.0, "electronics": 2.0}
+blocked = Array[Rect2]([Rect2(0, 1.5, 2, 1.5)])
+access = PackedVector2Array(0.5, 1.25, 1.5, 1.25)

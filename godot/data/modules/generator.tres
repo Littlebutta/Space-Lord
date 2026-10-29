@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="ShipModule" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ships/ship_module.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"generator"
+display_name = "Reactor"
+category = "power"
+size = Vector2i(2, 2)
+color = Color(0.3, 0.8, 0.95, 1)
+mass = 6.0
+materials = {"iron": 12.0, "copper": 6.0, "silicon": 2.4, "gold": 0.6}
+hp = 150.0
+power_out = 10.0
+power_cap = 20.0
+needs_near = {"fuel_tank": 6}
+upkeep = {"fuel": 3.0}
+salvage = {"alloy": 3.0, "electronics": 3.0}
+blocked = Array[Rect2]([Rect2(0, 0, 2, 1.5)])
+access = PackedVector2Array(0.5, 1.75, 1.5, 1.75)

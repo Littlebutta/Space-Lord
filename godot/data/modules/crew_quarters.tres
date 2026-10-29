@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ShipModule" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ships/ship_module.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"crew_quarters"
+display_name = "Crew Quarters"
+category = "crew"
+size = Vector2i(2, 2)
+color = Color(0.45, 0.75, 0.5, 1)
+mass = 4.0
+materials = {"iron": 8.0, "copper": 0.8, "silicon": 0.4}
+hp = 140.0
+berths = 6
+storage = {"food": 30.0}
+upkeep = {"food": 0.6}
+salvage = {"alloy": 3.0, "parts": 1.0}
+blocked = Array[Rect2]([Rect2(0, 0, 0.5, 1), Rect2(1.5, 0, 0.5, 1), Rect2(0.5, 1.5, 1.5, 0.5), Rect2(0, 1, 0.5, 1)])

@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ShipModule" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ships/ship_module.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"hull_wedge"
+display_name = "Hull Wedge"
+category = "hull"
+size = Vector2i(1, 2)
+outline = PackedVector2Array(0, 0, 0, 2, 1, 2)
+color = Color(0.55, 0.57, 0.6, 1)
+mass = 1.0
+materials = {"iron": 2.0}
+hp = 120.0
+salvage = {"alloy": 1.0}
+blocked = Array[Rect2]([Rect2(0.5, 0, 0.5, 1)])
+access = PackedVector2Array(0.25, 1.25)

@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="ShipModule" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ships/ship_module.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"cannon_t3"
+display_name = "Mass Cannon III"
+category = "weapon"
+size = Vector2i(3, 5)
+look = &"cannon"
+color = Color(0.7, 0.2, 0.2, 1)
+mass = 26.0
+materials = {"iron": 55.0, "copper": 10.0, "silicon": 3.0, "gold": 1.0}
+hp = 600.0
+crew = 4
+firepower = 260.0
+reach = 125.0
+needs_near = {"ammo_rack": 6}
+upkeep = {"ammo": 11.0}
+salvage = {"alloy": 15.6, "parts": 6.0}
+blocked = Array[Rect2]([Rect2(1, 0, 2, 5)])
+access = PackedVector2Array(0.5, 2.5, 0.5, 3.1, 0.5, 3.7, 0.5, 4.3)

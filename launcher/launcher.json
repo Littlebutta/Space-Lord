@@ -4,7 +4,7 @@
   "dir": "game",
   "exe": {
     "windows": "SpaceLord.exe",
-    "linux": "SpaceLord.sh",
+    "linux": "SpaceLord.x86_64",
     "darwin": "SpaceLord.app/Contents/MacOS/SpaceLord"
   }
 }

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ShipModule" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ships/ship_module.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"armor"
+display_name = "Heavy Armor"
+category = "hull"
+size = Vector2i(1, 1)
+color = Color(0.38, 0.4, 0.44, 1)
+mass = 3.0
+materials = {"iron": 6.0}
+hp = 400.0
+salvage = {"alloy": 3.0}
