@@ -2,8 +2,10 @@ extends Node3D
 ## Grid ship builder. Left click places the picked module in the picked
 ## theme, right click removes, middle click repaints. R rotates, F
 ## mirrors the part, X builds both sides at once, M picks parts up to
-## move them, Esc returns to the map. Moving is allowed anywhere; adding,
-## removing and repainting need a shipyard or a Shipdock (see Shipyard).
+## move them, G shows where crew walk (click a part for its supply
+## routes), Ctrl+Z undoes, Esc returns to the map. Moving is allowed
+## anywhere; adding, removing and repainting need a shipyard or a
+## Shipdock (see Shipyard).
 
 const SAVE_PATH := "user://ships/player.tres"
 const MAP_SCENE := "res://scenes/main.tscn"
@@ -14,11 +16,14 @@ var theme_id := &"human"
 var turn := 0  # 0-3 quarter turns, +4 when mirrored
 var sym := false  # also build the mirror image across the centre line
 var moving := false  # move tool: click a part to pick it up
+var walk := false  # crew view: walkable deck, click a part for its routes
 var _held := {}  # the part being moved: {m, cell, turn, theme}
 var _cell := Vector2i.ZERO
 var _grid := Rect2i()
 var _holos: Array[Node3D] = []  # [placed, mirror copy]
 var _holo_key := ""
+var _undo: EditorUndo
+var _crew_view := CrewView.new()
 
 @onready var _view: ShipView = $ShipView
 @onready var _ghost: Node3D = $Ghost
@@ -32,6 +37,9 @@ func _ready() -> void:
 	_view.show_exhaust = true
 	_view.design = design
 	design.changed.connect(_refresh)
+	_undo = EditorUndo.new(design)
+	add_child(_crew_view)
+	_crew_view.show_floor(null)
 	_ui.module_picked.connect(_pick)
 	_ui.theme_picked.connect(_pick_theme)
 	_ui.action.connect(_on_action)
@@ -42,6 +50,8 @@ func _ready() -> void:
 func _pick(m: ShipModule) -> void:
 	_drop_back()
 	moving = false
+	walk = false
+	_crew_view.show_floor(null)
 	picked = m
 	_sync()
 
@@ -55,6 +65,8 @@ func _refresh() -> void:
 	_ui.show_stats(ShipStats.of(design), design.ship_name)
 	_ui.show_mode(Shipyard.status(design), Shipyard.can_refit(design))
 	_fit_grid(true)
+	if walk:
+		_crew_view.show_floor(design)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -64,6 +76,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		_fit_grid()
 	elif event is InputEventMouseButton and event.pressed:
 		_cell = _mouse_cell(event.position)
+		_undo.mark()
 		_click(event.button_index)
 		_update_ghost()
 	elif event is InputEventKey and event.pressed and not event.echo:
@@ -72,6 +85,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_F: _on_action("mirror")
 			KEY_X: _on_action("symmetry")
 			KEY_M: _on_action("move")
+			KEY_G: _on_action("walk")
+			KEY_Z when event.ctrl_pressed or event.meta_pressed: _on_action("undo")
 			KEY_V: _view.outside = not _view.outside
 			KEY_ESCAPE:
 				if _held.is_empty():
@@ -81,7 +96,10 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _click(button: MouseButton) -> void:
-	if moving and button == MOUSE_BUTTON_LEFT:
+	if walk:
+		if button == MOUSE_BUTTON_LEFT:
+			_crew_view.show_routes(design, design.index_at(_cell))
+	elif moving and button == MOUSE_BUTTON_LEFT:
 		_move_click()
 	elif moving and button == MOUSE_BUTTON_RIGHT:
 		_drop_back()
@@ -202,6 +220,7 @@ func _update_ghost() -> void:
 				_holos.append(BuildAids.hologram(picked, ShipDesign.mirror(turn), t))
 			for h in _holos:
 				_ghost.add_child(h)
+	_ghost.visible = not walk
 	if not picked:
 		return
 	var size := ShipDesign.turned(picked, turn)
@@ -217,7 +236,7 @@ func _update_ghost() -> void:
 
 
 func _sync() -> void:
-	_ui.show_tools(moving, sym)
+	_ui.show_tools(moving, sym, walk)
 	_update_ghost()
 
 
@@ -230,10 +249,22 @@ func _on_action(what: String) -> void:
 			_fit_grid(true)
 		"move":
 			_drop_back()
+			walk = false
+			_crew_view.show_floor(null)
 			moving = not moving
 			picked = null if moving else ModuleLibrary.by_id(&"hull")
+		"walk":
+			_drop_back()
+			walk = not walk
+			moving = false
+			_crew_view.show_floor(design if walk else null)
+		"undo":
+			_drop_back()
+			if not _undo.undo():
+				_ui.flash("Nothing to undo")
 		"save": _save()
 		_:
+			_undo.mark()
 			if not Shipyard.can_refit(design):
 				_ui.flash("Needs a shipyard or a Shipdock module")
 			elif what == "clear":
@@ -244,7 +275,7 @@ func _on_action(what: String) -> void:
 
 
 func _randomize() -> void:
-	var pool: Array[ShipModule] = ModuleLibrary.all().filter(
+	var pool: Array[ShipModule] = ModuleLibrary.buildable().filter(
 			func(m): return m.category != "command")
 	var rng := RandomNumberGenerator.new()
 	var themes := ShipTheme.all()

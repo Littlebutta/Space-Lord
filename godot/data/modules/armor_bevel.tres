@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ShipModule" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ships/ship_module.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"armor_bevel"
+display_name = "Armor Bevel"
+category = "hull"
+size = Vector2i(1, 1)
+outline = PackedVector2Array(0, 0.5, 0.5, 0, 1, 0, 1, 1, 0, 1)
+color = Color(0.38, 0.4, 0.44, 1)
+mass = 2.6
+materials = {"iron": 5.2}
+hp = 350.0
+salvage = {"alloy": 2.6}

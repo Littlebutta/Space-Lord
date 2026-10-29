@@ -15,6 +15,7 @@ materials = {"iron": 0.6, "copper": 0.3, "silicon": 0.3, "gold": 0.1}
 hp = 20.0
 salvage = {"electronics": 1.0}
 exterior = true
+buildable = false
 height = 3.0
 taper = 0.4
 blocked = Array[Rect2]([Rect2(0, 0, 1, 1)])

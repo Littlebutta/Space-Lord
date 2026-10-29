@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ShipModule" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ships/ship_module.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"cargo_hold_t3"
+display_name = "Cargo Hold III"
+category = "storage"
+size = Vector2i(4, 4)
+look = &"cargo_hold"
+color = Color(0.55, 0.45, 0.35, 1)
+mass = 16.0
+materials = {"iron": 38.0, "copper": 2.0, "silicon": 1.0}
+hp = 500.0
+hold = true
+storage = {"iron": 324.0, "copper": 216.0, "silicon": 216.0, "gold": 81.0, "parts": 216.0, "food": 270.0}
+salvage = {"alloy": 16.0}
+blocked = Array[Rect2]([Rect2(0, 0, 1.5, 1.5), Rect2(2.5, 0, 1.5, 1.5), Rect2(0, 2.5, 1.5, 1.5), Rect2(2.5, 2.5, 1.5, 1.5)])

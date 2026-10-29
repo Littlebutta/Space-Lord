@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ShipModule" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ships/ship_module.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"armor_curve"
+display_name = "Armor Curve"
+category = "hull"
+size = Vector2i(2, 2)
+look = &"hull_curve"
+outline = PackedVector2Array(0, 2, 0, 0, 0.61, 0.09, 1.17, 0.34, 1.62, 0.76, 1.91, 1.33, 2, 2)
+color = Color(0.42, 0.44, 0.5, 1)
+mass = 10.0
+materials = {"iron": 20.0}
+hp = 1400.0
+salvage = {"alloy": 10.0}
+blocked = Array[Rect2]([Rect2(1.5, 0, 0.5, 0.5)])
+access = PackedVector2Array(0.75, 1.25)

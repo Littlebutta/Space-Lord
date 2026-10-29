@@ -29,6 +29,7 @@ var holding := false  # after halt(): kill even slow drift, stay put
 
 
 func setup(d: ShipDesign, crew: int) -> void:
+	add_to_group(&"ships")
 	sim = CrewSim.new()
 	add_child(sim)
 	sim.setup(d, crew)
@@ -40,6 +41,7 @@ func setup(d: ShipDesign, crew: int) -> void:
 	helm.weigh()
 	sim.state.pieces.changed.connect(helm.weigh)
 	sim.died.connect(_corpse)
+	sim.teleported.connect(_blink)
 	fx = ShipFx.new()
 	add_child(fx)
 	fx.bind(hulk, sim.state)
@@ -114,3 +116,12 @@ func _corpse(local: Vector3, fling: Vector3, shirt: Color) -> void:
 		var t := global_transform
 		var drift := Vector3(vel.x, 0.0, vel.y)
 		CrewCorpse.spawn(get_parent(), t * local, t.basis * fling + drift, shirt)
+
+
+## A teleporter flash where someone left and where they arrived.
+func _blink(from: Vector2, to: Vector2) -> void:
+	if get_parent():
+		for p in [from, to]:
+			var i := sim.state.design.index_at(Vector2i((p / ShipView.CELL).floor()))
+			var w: Vector2 = sim.state.pieces.xf[i] * p if i >= 0 else p
+			FxKit.sparks(get_parent(), global_transform * Vector3(w.x, 1.0, w.y))

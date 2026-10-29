@@ -18,6 +18,8 @@ const BAIL := Vector2(4.0, 14.0)  # seconds before someone leaves a dead piece
 ## out. Anyone aboard a cut-off piece stays inside a while, then suits up
 ## and jetpacks for an airlock. True when that took their turn.
 static func survive(sim: CrewSim, c: CrewMember, delta: float) -> bool:
+	if c.hidden:
+		return false  # safe in a pod
 	if c.eva:
 		c.air -= delta
 		if c.air <= 0.0:
@@ -26,7 +28,7 @@ static func survive(sim: CrewSim, c: CrewMember, delta: float) -> bool:
 		return false
 	var p := sim.state.pieces
 	var i := sim.state.design.index_at(Vector2i((c.pos / ShipView.CELL).floor()))
-	if i < 0 or not p.drifting(i):
+	if i < 0 or not p.drifting(i) or _pad_aboard(sim.state, i):
 		c.strand = -1.0
 		return false
 	if c.strand < 0.0:
@@ -102,3 +104,12 @@ static func fly(c: CrewMember, to: Vector2, delta: float, land := false,
 		c.alt = maxf(c.alt - CLIMB * delta, 0.0)
 		return c.alt <= 0.0
 	return true
+
+
+## Piece of module i has a working teleporter: nobody there is stranded.
+static func _pad_aboard(s: ShipState, i: int) -> bool:
+	for k in s.size():
+		if s.module(k).teleporter and s.hp[k] > 0.0 \
+				and s.pieces.piece_of[k] == s.pieces.piece_of[i]:
+			return true
+	return false

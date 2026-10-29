@@ -52,6 +52,7 @@ func draw(crew: Array[CrewMember], sim: CrewSim, delta: float) -> void:
 			var yaw := atan2(-face.x, -face.z)
 			b.rotation.y = lerp_angle(b.rotation.y, yaw, minf(delta * TURN, 1.0))
 		b.position = at
+		b.visible = not c.hidden
 		_rings[k].visible = c.selected
 		_play(k, _anim(c), c.species.speed)
 		var col: Color = CrewJob.COLORS[c.job.type if c.job else &""]

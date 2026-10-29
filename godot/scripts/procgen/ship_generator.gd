@@ -28,7 +28,7 @@ static func generate(core: ShipModule, pool: Array[ShipModule],
 ## A random flyable test ship: a bridge with an airlock, a thruster,
 ## fuel, ammo and power always aboard.
 static func sandbox(seed_: int, parts := 16) -> ShipDesign:
-	var pool: Array[ShipModule] = ModuleLibrary.all().filter(
+	var pool: Array[ShipModule] = ModuleLibrary.buildable().filter(
 			func(m): return m.category != "command")
 	var rng := RandomNumberGenerator.new()
 	rng.seed = seed_

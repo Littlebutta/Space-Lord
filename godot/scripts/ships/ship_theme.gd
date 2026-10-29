@@ -75,10 +75,23 @@ func shape(p: PackedVector2Array) -> PackedVector2Array:
 
 
 ## This theme's Blender model for `m`, or null to use the placeholder.
+## Bigger tiers (ShipModule.look) use their own model once one exists.
 func model(m: ShipModule) -> PackedScene:
 	if model_dir.is_empty():
 		return m.model
 	if not _models.has(m.id):
 		var p := model_dir.path_join(String(m.id) + ".glb")
-		_models[m.id] = load(p) if ResourceLoader.exists(p) else m.model
+		var base := ModuleLibrary.by_id(m.look) if m.look else null
+		_models[m.id] = load(p) if ResourceLoader.exists(p) \
+				else (model(base) if base else m.model)
 	return _models[m.id]
+
+
+## Scale for `m`'s model: 1, or how much bigger it is than the part
+## whose model it borrows.
+func model_scale(m: ShipModule) -> Vector3:
+	var base := ModuleLibrary.by_id(m.look) if m.look else null
+	if base == null or ResourceLoader.exists(model_dir.path_join(String(m.id) + ".glb")):
+		return Vector3.ONE
+	var k := Vector2(m.size) / Vector2(base.size)
+	return Vector3(k.x, 1.0 if m.category == "hull" else minf(k.x, k.y), k.y)

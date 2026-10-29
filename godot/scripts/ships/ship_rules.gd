@@ -70,14 +70,15 @@ static func problems(d: ShipDesign) -> Array[String]:
 	return out
 
 
-## Cell gap from module `i` to the closest `need` (id or category),
-## or -1 when the ship has none (other warnings cover that).
+## Cell gap from module `i` to the closest `need` (id, any tier of it,
+## or category), or -1 when the ship has none (other warnings cover that).
 static func nearest(d: ShipDesign, i: int, need: String) -> int:
 	var best := -1
 	var a := d.rect(i)
 	for j in d.modules.size():
 		var m := d.modules[j]
-		if j == i or (String(m.id) != need and m.category != need):
+		var kin := String(m.id) == need or String(m.id).begins_with(need + "_t")  # tiers
+		if j == i or not kin and m.category != need:
 			continue
 		var b := d.rect(j)
 		var gx := maxi(0, maxi(b.position.x - a.end.x, a.position.x - b.end.x))
