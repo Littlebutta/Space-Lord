@@ -36,6 +36,8 @@ func _fill() -> void:
 					Wallet.hire.bind(d, sp)).tooltip_text = sp.blurb
 		_buy("Food in hold %.0f" % Wallet.cargo.get("food", 0.0),
 				"Buy 20 (%d cr)" % (20 * Wallet.PRICES.food), Wallet.buy_food.bind(d, 20.0))
+		_buy("Fuel %.0f / %.0f" % [Fleet.tank(), Fleet.cap()],
+				"Fill (%d cr)" % ceili(Fleet.room() * Wallet.PRICES.fuel), Wallet.buy_fuel.bind(INF))
 	else:
 		_line("Build and save a ship to hire crew or buy food")
 	_body.add_child(UiKit.header("Sell ore"))

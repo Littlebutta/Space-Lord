@@ -4,7 +4,9 @@ extends CanvasLayer
 
 const HELP := "Space pause · 1/2 speed · WASD pan · middle mouse drag rotate\n" \
 		+ "Wheel zoom · B ship builder (refits near a station) · C crew · V battle\n" \
-		+ "Right click fly your ship there, or to a wreck, asteroid or station ping"
+		+ "Left click your ship to select it (click space to let go)\n" \
+		+ "Right click with it selected: fly there, or to a wreck, asteroid, station or jump point\n" \
+		+ "Flying burns fuel. Out of fuel? Select your ship and send an SOS"
 const SCREENS := {"Ship Builder": KEY_B, "Crew": KEY_C, "Battle": KEY_V}
 
 var _clock := Label.new()

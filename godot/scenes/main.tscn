@@ -1,19 +1,28 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://scripts/map/star_system.gd" id="1_sys"]
 [ext_resource type="Script" path="res://scripts/camera/rts_camera.gd" id="2_cam"]
 [ext_resource type="Script" path="res://scripts/ui/hud.gd" id="3_hud"]
 [ext_resource type="Script" path="res://scripts/map/map_fleet.gd" id="4_fleet"]
 
+[ext_resource type="Shader" path="res://assets/materials/space_sky.gdshader" id="5_sky"]
+
+[sub_resource type="ShaderMaterial" id="SkyMat"]
+shader = ExtResource("5_sky")
+
+[sub_resource type="Sky" id="Sky"]
+sky_material = SubResource("SkyMat")
+
 [sub_resource type="Environment" id="Env"]
-background_mode = 1
-background_color = Color(0.01, 0.012, 0.03, 1)
+background_mode = 2
+sky = SubResource("Sky")
 ambient_light_source = 2
 ambient_light_color = Color(0.3, 0.33, 0.5, 1)
-ambient_light_energy = 0.35
+ambient_light_energy = 0.6
 tonemap_mode = 2
 glow_enabled = true
 glow_bloom = 0.15
+ssao_enabled = true
 
 [sub_resource type="StandardMaterial3D" id="SunMat"]
 albedo_color = Color(1, 0.75, 0.4, 1)
@@ -33,7 +42,6 @@ environment = SubResource("Env")
 
 [node name="StarSystem" type="Node3D" parent="."]
 script = ExtResource("1_sys")
-system_seed = 1337
 
 [node name="Sun" type="MeshInstance3D" parent="StarSystem"]
 cast_shadow = 0

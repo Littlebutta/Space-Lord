@@ -4,7 +4,7 @@ extends RefCounted
 ## ore and food in the hold, which crew are aboard and which part
 ## blueprints they own. Static like Travel, so it lasts the whole run.
 
-const PRICES := {"iron": 2, "copper": 4, "silicon": 5, "gold": 20, "food": 2}
+const PRICES := {"iron": 2, "copper": 4, "silicon": 5, "gold": 20, "food": 2, "fuel": 3}
 const SELL_SHARE := 0.8  # stations buy ore at this share of PRICES
 const SAVE := "user://ships/player.tres"
 
@@ -64,6 +64,10 @@ static func board(s: Storage) -> void:
 		if n > 0.0 and k not in Materials.ALL:
 			left[k] = n  # ore that doesn't fit is lost, food waits
 	cargo = left
+	if s.capacity.has("fuel"):  # the fuel carried on the map comes aboard
+		var f := Fleet.tank()
+		s.take("fuel", INF)
+		s.put("fuel", f)
 
 
 ## Leaving a scene: ore gained there goes into the carried hold.
@@ -73,6 +77,8 @@ static func unload(s: Storage, aboard: Array) -> void:
 		if n > 0.0:
 			cargo[k] = cargo.get(k, 0.0) + n
 	_base.clear()
+	if s.capacity.has("fuel"):
+		Fleet.fuel = s.get_amount("fuel")
 	crew = aboard
 	crewed = true
 
@@ -94,4 +100,13 @@ static func buy_food(d: ShipDesign, qty: float) -> bool:
 	if n < 1.0 or not pay(int(ceil(n * PRICES.food))):
 		return false
 	cargo["food"] = cargo.get("food", 0.0) + n
+	return true
+
+
+## Buys up to `qty` fuel for the fleet's tanks.
+static func buy_fuel(qty: float) -> bool:
+	var n := minf(qty, Fleet.room())
+	if n < 1.0 or not pay(int(ceil(n * PRICES.fuel))):
+		return false
+	Fleet.add_fuel(n)
 	return true

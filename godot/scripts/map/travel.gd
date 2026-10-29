@@ -1,8 +1,9 @@
 class_name Travel
 extends RefCounted
 ## The player's place on the system map, kept across scene changes, and
-## the map sites (wrecks, asteroid nodes, the system's neutral station)
-## they can stop at. Ore left in each asteroid node is remembered here too.
+## the map sites (wrecks, asteroid nodes, the system's neutral station,
+## jump points to the next systems) they can stop at. Each system's sites
+## are kept, so ore left in an asteroid node is remembered after a jump.
 
 const SPEED := 6.0  # map units per game hour
 const REACH := 4.0  # this close to a site counts as arrived
@@ -13,7 +14,12 @@ static var dest: Variant = null  # Vector3 to fly to, or null
 static var heading := 0.0
 static var aim := -1  # site we're flying to, or -1
 static var here := -1  # site whose local scene is open, or -1
-static var sites: Array[Dictionary] = []  # {kind, pos, name, ore, seed, faction}
+static var sites: Array[Dictionary] = []  # {kind, pos, name, ore, seed, faction, to}
+static var system := 0  # which star system we're in; jumps go to +-1
+static var _visited := {}  # system -> its sites
+const NAMES := ["Kestrel", "Vanta", "Orrin's Reach", "Hollow Gate", "Cinder",
+		"Lumen Drift", "Tarsis", "Ebon Wake", "Sable", "Halcyon"]
+const EDGE := 165.0  # jump points sit this far out
 
 
 ## Test sites: one wreck and a few asteroid nodes, made once per run.
@@ -32,6 +38,34 @@ static func make_sites(seed_: int) -> void:
 		sites.append({kind = &"asteroids", pos = p, name = "Asteroids",
 				ore = rng.randf_range(150.0, 400.0), seed = rng.randi()})
 	_station(rng)
+	for to in [system - 1, system + 1]:
+		var a := rng.randf() * TAU
+		sites.append({kind = &"jump", pos = Vector3(cos(a), 0, sin(a)) * EDGE,
+				name = "Jump to %s" % system_name(to), ore = 0.0, seed = rng.randi(), to = to})
+
+
+static func system_seed(k := system) -> int:
+	return 1337 + k * 7919
+
+
+static func system_name(k := system) -> String:
+	var n: String = NAMES[posmod(k, NAMES.size())]
+	return n if absi(k) < NAMES.size() else "%s %d" % [n, absi(k) / NAMES.size() + 1]
+
+
+## Moves to system `to`, arriving beside its jump point back here.
+static func jump(to: int) -> void:
+	var from := system
+	_visited[system] = sites.duplicate()
+	system = to
+	sites.assign(_visited.get(to, []))
+	make_sites(system_seed())
+	for s in sites:
+		if s.kind == &"jump" and s.to == from:
+			pos = s.pos * (1.0 - REACH * 3.0 / EDGE)
+	dest = null
+	aim = -1
+	here = -1
 
 
 ## Moves along by game time; returns the site just reached, or -1.
