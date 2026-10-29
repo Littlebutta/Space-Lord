@@ -13,7 +13,8 @@ static var _cache := {}
 static func stream(clip: StringName, loop := false) -> AudioStream:
 	var key := String(clip) + ("~" if loop else "")
 	if not _cache.has(key):
-		var s := load(DIR + String(clip) + ".ogg") as AudioStreamOggVorbis
+		var path := DIR + String(clip) + ".ogg"
+		var s := load(path) as AudioStreamOggVorbis if ResourceLoader.exists(path) else null
 		if s and loop:
 			s = s.duplicate()
 			s.loop = true
@@ -47,3 +48,18 @@ static func player(clip: StringName, db := 0.0, reach := 60.0,
 	p.max_distance = reach
 	p.attenuation_model = AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE
 	return p
+
+
+## Plays `clip` once, not placed in the world (menus, the builder, orders).
+static func flat(clip: StringName, db := 0.0) -> void:
+	var s := stream(clip)
+	var tree := Engine.get_main_loop() as SceneTree
+	if s == null or tree == null:
+		return
+	var p := AudioStreamPlayer.new()
+	p.stream = s
+	p.volume_db = db
+	p.pitch_scale = randf_range(0.95, 1.05)
+	p.finished.connect(p.queue_free)
+	tree.root.add_child(p)
+	p.play()

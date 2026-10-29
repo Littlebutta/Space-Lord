@@ -5,7 +5,7 @@ extends Node3D
 
 const HELP := "X damage · B wreck a module · F fire · V outside view · Alt or H module cards\n" \
 		+ "Left click/drag select crew · right click order them (R releases)\n" \
-		+ "Click your ship, then right click to fly it · E stop · Space follow ship\n" \
+		+ "Click your ship, then right click to fly it (drag to set facing) · E stop · Space follow ship\n" \
 		+ "WASD pan · middle drag rotate · wheel zoom · Esc map\n" \
 		+ "Blue operating · yellow hauling · green repairing · pink spacewalk · grey idle"
 
@@ -83,8 +83,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		var hit = Plane(Vector3.UP, 0.0).intersects_ray(
 				cam.project_ray_origin(b.position), cam.project_ray_normal(b.position))
 		if hit != null:
-			_ship.goal = Vector2(hit.x, hit.z)
-			_marker.ping(_ship.goal)
+			_marker.press(Vector2(hit.x, hit.z))
 	var key := event as InputEventKey
 	if key == null or not key.pressed or key.echo:
 		return

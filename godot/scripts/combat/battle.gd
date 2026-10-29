@@ -1,12 +1,14 @@
 extends Node3D
 ## Battle sandbox: your ship (the saved design, or a random one) against
 ## a random enemy. Both crews run their ships; guns fire on their own at
-## whatever is in range. A ship whose bridge is cut off or destroyed is beaten, and guns stop
-## shooting at it unless you right click it again to finish it off.
+## whatever is in range. A ship whose bridge is cut off or destroyed is
+## beaten, and guns stop shooting at it unless you right click it again
+## to finish it off.
 ## The enemy fights to suit its guns (ShipTactics).
 
 const START := 55.0  # metres apart at the start, inside gun range
-const HELP := "Click your ship, right click to fly · right click a beaten enemy to keep firing\n" \
+const HELP := "Click your ship, right click to fly (hold and drag to set facing)\n" \
+		+ "Right click a beaten enemy to keep firing\n" \
 		+ "E stop · left click/drag select crew, right click order them · Space follow\n" \
 		+ "V outside view · Alt/H module cards · Esc map · WASD pan · middle mouse rotate · wheel zoom"
 
@@ -111,8 +113,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		if hit != null and _on(_foe, Vector2(hit.x, hit.z)):
 			_attack = _beaten(_foe)  # only a fresh order counts once it's beaten
 		elif hit != null:
-			_me.goal = Vector2(hit.x, hit.z)
-			_marker.ping(_me.goal)
+			_marker.press(Vector2(hit.x, hit.z))
 	var key := event as InputEventKey
 	if key == null or not key.pressed or key.echo:
 		return

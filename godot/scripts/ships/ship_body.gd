@@ -26,6 +26,7 @@ var vel := Vector2.ZERO  # world metres per second
 var spin := 0.0  # radians per second
 var goal: Variant = null  # world point to fly to, or null
 var look: Variant = null  # world point to keep the nose on (AI), or null
+var heading: Variant = null  # world direction to face on arrival, or null
 var holding := false  # after halt(): kill even slow drift, stay put
 
 
@@ -74,6 +75,7 @@ func world(local: Vector2) -> Vector2:
 ## Stops moving and turning as well as the engines can, then holds here.
 func halt() -> void:
 	goal = null
+	heading = null
 	holding = true
 
 
@@ -83,13 +85,17 @@ func halt() -> void:
 func _fly(delta: float) -> void:
 	var want := Vector2.ZERO
 	var face := -at.y  # the bow points up the grid (-z)
+	var near := true  # close enough to swing round to `heading`
 	if goal != null:
 		var to: Vector2 = goal - at * helm.com
 		if to.length() < ARRIVE:
 			goal = null  # close enough: drag and the helm settle it
 		else:
 			want = to.normalized() * minf(TOP, sqrt(2.0 * BRAKE * to.length()))
-			face = to if to.length() > HOP else face
+			near = to.length() <= HOP
+			face = to if not near else face
+	if heading != null and near:
+		face = heading
 	if look != null:
 		face = look - at * helm.com
 	var dv := want - vel
@@ -128,3 +134,4 @@ func _blink(from: Vector2, to: Vector2) -> void:
 			var i := sim.state.design.index_at(Vector2i((p / ShipView.CELL).floor()))
 			var w: Vector2 = sim.state.pieces.xf[i] * p if i >= 0 else p
 			FxKit.sparks(get_parent(), global_transform * Vector3(w.x, 1.0, w.y))
+			Sfx.play(get_parent(), &"teleport", global_transform * Vector3(w.x, 1.0, w.y), -6.0, 40.0)

@@ -113,6 +113,8 @@ func _click(button: MouseButton) -> void:
 		var twin := design.index_at(_twin(_cell))
 		var i := design.index_at(_cell)
 		design.remove_at(_cell)
+		if i >= 0:
+			Sfx.flat(&"part_remove", -6.0)
 		if sym and twin >= 0 and twin != i:
 			design.remove_at(_twin(_cell))
 	elif button == MOUSE_BUTTON_MIDDLE and _locked(design.index_at(_cell)):
@@ -138,6 +140,7 @@ func _place() -> void:
 		_ui.flash(why)
 		return
 	design.add(picked, _origin(), turn, theme_id)
+	Sfx.flat(&"part_place", -4.0)
 	var size := ShipDesign.turned(picked, turn)
 	var at := ShipDesign.mirror_cell(_origin(), size)
 	if sym and at != _origin() and not design.add(picked, at, ShipDesign.mirror(turn), theme_id):
@@ -242,7 +245,9 @@ func _sync() -> void:
 
 func _on_action(what: String) -> void:
 	match what:
-		"rotate": turn = turn - turn % 4 + (turn + 1) % 4
+		"rotate":
+			turn = turn - turn % 4 + (turn + 1) % 4
+			Sfx.flat(&"part_rotate", -14.0)
 		"mirror": turn = (turn + 4) % 8
 		"symmetry":
 			sym = not sym
