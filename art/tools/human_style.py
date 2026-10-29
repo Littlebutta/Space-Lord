@@ -16,7 +16,7 @@ C = {
     "brass": ("#9a7448", "metal"), "hazard": "#c9971f", "red": "#9c3328",
     "white": "#cfc9bb", "accent": ("#ffffff", "accent"),
     "glass": ("#28414d", "glass"), "screen": "#3fd6c8", "amber": "#ffab3d",
-    "lamp": "#ffe1b0", "power": "#59c8ff", "crate": ("#5f6648", "crate"), "crate2": ("#7a5a3a", "crate"),
+    "lamp": "#ffe1b0", "power": "#59c8ff", "ion": "#4aa8ff", "crate": ("#5f6648", "crate"), "crate2": ("#7a5a3a", "crate"),
     "cloth": ("#59606a", "fabric"), "sheet": ("#9a9a92", "fabric"),
     "plate": ("#6a7078", "metal"), "grate": ("#43474d", "metal"),
 }

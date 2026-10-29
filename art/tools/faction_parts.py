@@ -86,7 +86,7 @@ def _bio_head(mid, h):
 def _tentacles(mid, new_part):
     """Bio thrusters: tentacles trailing back (+z) from the engine and a
     feeding maw; the game makes them writhe when the engine pushes."""
-    if mid != "engine":
+    if mid not in ("engine", "engine_ion"):
         return
     t = new_part("Tentacle")
     for k, (x, y) in enumerate(((-0.4, 1.2), (0.4, 1.2), (0.0, 1.8), (-0.2, 0.7), (0.3, 0.6))):

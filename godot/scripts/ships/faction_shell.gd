@@ -130,7 +130,9 @@ static func _clip(region: PackedVector2Array, shaped: Array[PackedVector2Array])
 		for q in Geometry2D.intersect_polygons(region, s):
 			if not Geometry2D.is_polygon_clockwise(q):
 				out.append(q)
-	return out if not out.is_empty() else [region]
+	if out.is_empty():  # nothing clipped: keep the whole region
+		out.append(region)
+	return out
 
 
 ## The band round `region` (inside the ship) that the creep may cover.

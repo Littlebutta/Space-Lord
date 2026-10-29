@@ -110,6 +110,32 @@ def engine(i, e, pts):
     return [((0, 1.9, -0.6), C["amber"])]
 
 
+def ion_engine(i, e, pts):
+    """Blocked: back half z > 0. No crew; the front is a service walkway.
+    An ion chamber ringed with blue field coils, fed by capacitor cables,
+    and a wide gridded nozzle outside."""
+    floor(i, pts, grates=[(-1, -2), (0, -1)])
+    i.box((0, 1.0, 1.0), (1.9, 2.0, 1.9), C["gun"], 0.08, seg=2)
+    i.cyl((0, 1.0, 1.0), 0.55, 1.9, C["dark"], "z", 16, bevel=0.03)
+    for z in (0.35, 0.75, 1.15, 1.55):  # field coils
+        i.cyl((0, 1.0, z), 0.7, 0.1, C["steel"], "z", 16, bevel=0.02)
+        i.cyl((0, 1.0, z), 0.72, 0.04, C["ion"], "z", 16, glow=True)
+    for x in (-0.8, 0.8):
+        pipe(i, (x, 0.2, 0.1), (x, 1.8, 0.1), 0.06, "gun")
+        i.box((x, 1.0, 0.06), (0.12, 0.5, 0.06), C["ion"], glow=True)
+    screen(i, (0, 1.5, 0.05), 0.4, 0.2, col="ion")
+    e.box((0, ROOF + 0.15, 0.9), (1.5, 0.3, 2.0), C["hull"], 0.1, seg=2)
+    for z in (0.4, 0.8, 1.2):  # cooling fins
+        e.box((0, ROOF + 0.4, z), (1.1, 0.22, 0.05), C["steel"], 0.01)
+    e.box((0, ROOF - 0.9, 2.35), (1.5, 1.1, 0.7), C["gun"], 0.12, seg=2)
+    e.box((0, ROOF - 0.9, 2.7), (1.3, 0.9, 0.04), C["ion"], glow=True)
+    for x in (-0.33, 0.0, 0.33):  # the accelerator grid
+        e.box((x, ROOF - 0.9, 2.73), (0.04, 0.9, 0.04), C["dark"])
+    for y in (-0.22, 0.22):
+        e.box((0, ROOF - 0.9 + y, 2.73), (1.3, 0.04, 0.04), C["dark"])
+    return [((0, 1.9, -0.6), C["ion"])]
+
+
 def crew_quarters(i, e, pts):
     """Blocked: bunks at x < -1 and x > 1 (z < 0), along the back (z > 1,
     x > -1), lockers and desk at x < -1 (z > 0)."""
