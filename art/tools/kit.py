@@ -189,6 +189,12 @@ class Part:
         rot = Vector((0, 0, 1)).rotation_difference(d).to_matrix().to_4x4()
         return self._finish(v, col, glow, smooth, Matrix.Translation((a + b) / 2) @ rot)
 
+    def stretch(self, sx, sz, dy=0.0):
+        """Scales the floor plan by sx, sz (Godot x, z) and lifts by dy;
+        heights stay put so crew still fit (bigger tiers of a part)."""
+        bmesh.ops.transform(self.bm, verts=self.bm.verts,
+                            matrix=Matrix.Translation((0, 0, dy)) @ Matrix.Diagonal((sx, sz, 1, 1)))
+
     def wall(self, a, b, y0, y1, t, col, bevel=0.02):
         """Straight wall of thickness t from floor point a to b (x, z)."""
         a, b = Vector(a), Vector(b)

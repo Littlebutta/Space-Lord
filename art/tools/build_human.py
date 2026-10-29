@@ -58,19 +58,58 @@ PARTS = {
     "sensor_mast": ((1, 1), None, hx.sensor_mast),
 }
 
+# Bigger tiers: the base part stretched over the larger footprint (heights
+# kept, so crew fit) under a raised, stepped housing; see build().
+TIERS = {t: base for base in ("engine", "fuel_tank", "cargo_hold", "cannon", "turret")
+         for t in (base + "_t2", base + "_t3")}
+RAISE = {"_t2": 0.45, "_t3": 0.85}  # how much taller the outside housing is
+PARTS["teleporter"] = ((2, 2), None, hs.teleporter)
+PARTS["breach_pod"] = ((2, 3), None, hs.breach_pod)
+
+
+def _tres(mid):
+    """(size, outline) of a module from its .tres in the game data."""
+    path = os.path.join(ROOT, "godot", "data", "modules", mid + ".tres")
+    size, outline = (1, 1), None
+    for line in open(path):
+        if line.startswith("size = Vector2i("):
+            size = tuple(int(v) for v in line[16:-2].split(","))
+        if line.startswith("outline = PackedVector2Array("):
+            v = [float(x) for x in line[29:-2].split(",")]
+            outline = list(zip(v[0::2], v[1::2]))
+    return size, outline
+
+
+for _m in ("armor_bevel", "armor_block", "armor_curve", "armor_half", "armor_wedge",
+           "armor_wedge_wide"):  # new armor pieces from the game data
+    PARTS[_m] = _tres(_m) + (hh.armor,)
+for _t, _b in TIERS.items():
+    PARTS[_t] = (_tres(_t)[0], None, PARTS[_b][2])
+
 
 def build(mid, mats, decor=None):
     size, outline, fn = PARTS[mid]
     root = kit.empty(mid)
+    key, sx, sz, up = mid, 1.0, 1.0, 0.0
+    if mid in TIERS:  # build the base part, then stretch it to this size
+        key = TIERS[mid]
+        base = PARTS[key][0]
+        sx, sz, up = size[0] / base[0], size[1] / base[1], RAISE[mid[-3:]]
+        size = base
     outside = fn.__module__ == "human_exterior"  # one mesh, shown in both views
     inner, outer = kit.Part("Body" if outside else "Interior"), kit.Part("Exterior")
     own = decor and decor["replace"] and not outside  # faction's own outside
     lamps = fn(inner, kit.Part("Unused") if own else outer, poly(outline, size))
     if decor and not outside:
-        decor["ext"](mid, outer, poly(outline, size))
+        decor["ext"](key, outer, poly(outline, size))
     extras = []
     if decor and decor["extra"]:  # e.g. Bio tentacles, the game animates them
-        decor["extra"](mid, lambda name: extras.append(kit.Part(name)) or extras[-1])
+        decor["extra"](key, lambda name: extras.append(kit.Part(name)) or extras[-1])
+    for p in [inner] + extras + [FILLS[k] for k in FILLS]:
+        p.stretch(sx, sz)
+    outer.stretch(sx, sz, up)
+    if mid in TIERS and not own:
+        _housing(outer, poly(None, PARTS[mid][0]), up)
     for x in extras:
         x.build(mats, root)
     inner.build(mats, root)
@@ -80,18 +119,31 @@ def build(mid, mats, decor=None):
     FILLS.clear()
     head = None
     heads = {"turret": hs.turret_head, "mining_laser": hs.mining_head}
-    if mid in heads:  # a turning head the game aims; markers ride on it
+    if key in heads:  # a turning head the game aims; markers ride on it
         head = kit.Part("Head")
         if decor and decor["head"]:
-            decor["head"](mid, head)
+            decor["head"](key, head)
         else:
-            heads[mid](head)
+            heads[key](head)
+        head.stretch(sx, sz, up)
         head = head.build(mats, root)
-    for name, pos in MARKERS.get(mid, []):
-        kit.empty(name, pos, head or root)
-    for k, (pos, col) in enumerate(lamps):
-        kit.lamp("Lamp%d" % k, pos, col, root)
+    for name, (x, y, z) in MARKERS.get(key, []):
+        kit.empty(name, (x * sx, y + up, z * sz), head or root)
+    for k, ((x, y, z), col) in enumerate(lamps):
+        kit.lamp("Lamp%d" % k, (x * sx, y, z * sz), col, root)
     return root
+
+
+def _housing(e, pts, up):
+    """A bigger tier's raised outside housing: two bevelled steps over the
+    hull top, inside its chamfer, so the part stands proud of the ship
+    without looking like a box."""
+    from human_style import C, ROOF, _shrink
+    lo = _shrink(pts, 0.9)
+    hi = _shrink(pts, 0.9 + up * 0.8)
+    e.slab(lo, ROOF - 0.05, ROOF + up * 0.55, C["hull"], 0.15)
+    e.slab(_shrink(lo, 0.05), ROOF + up * 0.45, ROOF + up * 0.5, C["accent"])
+    e.slab(hi, ROOF + up * 0.5, ROOF + up, C["steel"], 0.12)
 
 
 def main(out=OUT, blend="human_modules.blend", decor=None):

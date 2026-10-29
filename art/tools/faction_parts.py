@@ -51,19 +51,23 @@ def _growth(e, x, z, rng, y):
 def _bio_ext(mid, e, pts):
     rng = _rng("bio", mid)
     y = ROOF + 0.1
-    if mid == "bridge":  # a great eye
-        e.ball((0, y + 0.3, -0.6), 1.0, C["hull"], 2, (1.2, 0.7, 1.0))
-        e.ball((0, y + 0.55, -1.25), 0.45, C["white"], 2, (1.0, 1.0, 0.7))
-        e.ball((0, y + 0.58, -1.5), 0.22, C["screen"], 2, (1.0, 1.0, 0.5), glow=True)
+    if mid == "bridge":  # a great eye, set into the flesh under folded lids
+        e.cyl((0, y + 0.02, -0.5), 0.75, 0.1, C["white"], sides=24)
+        e.cyl((0, y + 0.08, -0.5), 0.35, 0.04, C["screen"], sides=24, glow=True)
+        for s in (-1, 1):
+            e.prism((-0.9, y, -0.5 + s * 0.6), (0.9, y, -0.5 + s * 0.6), 0.22, C["hull"], 10, 0.22, smooth=True)
     elif mid == "cannon":  # a bone spine along the barrel line
         for k in range(8):
             z = -3.0 + k * 0.8
-            e.ball((0, y + 0.3, z), 0.32, C["white"], 1, (1.0, 0.8, 1.3))
+            e.prism((0, y, z - 0.3), (0, y, z + 0.3), 0.28, C["white"], 8, 0.2, smooth=True)
             e.prism((0, y + 0.4, z), (0, y + 0.9, z + 0.3), 0.08, C["white"], 6, 0.0)
         e.prism((0, y + 0.3, -3.0), (0, y + 0.3, -3.8), 0.3, C["white"], 8, 0.05)
     elif mid in ("generator", "fuel_tank", "supply_depot"):  # swollen organs
-        e.ball((0, y - 0.05, 0), 0.9, C["red"], 2, (1.2, 0.5, 1.0))  # sunk in, not perched
-        e.ball((0, y + 0.35, 0), 0.25, C["power"], 1, glow=True)
+        for a in range(5):  # an organ: ridges coiled round a glowing gland
+            t = a / 5 * 2 * math.pi
+            e.prism((math.cos(t) * 0.3, y, math.sin(t) * 0.3), (math.cos(t + 1.0) * 0.9, y, math.sin(t + 1.0) * 0.9),
+                    0.18, C["red"], 10, 0.08, smooth=True)
+        e.cyl((0, y + 0.05, 0), 0.25, 0.1, C["power"], sides=16, glow=True)
     for x, z in _spots(rng, pts, 3 if len(pts) == 4 else 1):
         _growth(e, x, z, rng, y)
 
@@ -71,8 +75,9 @@ def _bio_ext(mid, e, pts):
 def _bio_head(mid, h):
     """Turret or mining head: a muscled pod with bone barrels."""
     y = ROOF + 0.4
-    h.ball((0, y + 0.4, 0), 1.0, C["hull"], 2, (1.0, 0.6, 1.1))
-    h.ball((0, y + 0.7, 0.2), 0.5, C["red"], 2, (1.0, 0.6, 1.0))
+    h.prism((0, y + 0.45, 1.0), (0, y + 0.45, -0.6), 0.85, C["hull"], 14, 0.55, smooth=True)  # muscle
+    for s in (-1, 1):
+        h.prism((s * 0.6, y + 0.2, 0.8), (s * 0.4, y + 0.6, -0.5), 0.25, C["red"], 10, 0.15, smooth=True)
     for x in ((-0.45, 0.45) if mid == "turret" else (0.0,)):
         h.prism((x, y + 0.55, -0.4), (x, y + 0.55, -2.6), 0.2, C["white"], 8, 0.12, smooth=True)
         h.ball((x, y + 0.55, -2.65), 0.14, C["screen"] if mid == "turret" else C["amber"], 1, glow=True)
