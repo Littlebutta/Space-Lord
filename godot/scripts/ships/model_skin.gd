@@ -71,6 +71,12 @@ static func apply(n: Node, t: ShipTheme) -> void:
 			_skin(c, mat)
 		elif c is OmniLight3D:
 			_lamp(c)
+	if t and t.shell == &"flesh":  # Bio outsides are living flesh too
+		for name in ["Exterior*", "Head*", "Body*"]:
+			for mi: MeshInstance3D in n.find_children(name, "MeshInstance3D", true, false):
+				for k in mi.mesh.get_surface_count():
+					if mi.get_surface_override_material(k) == mat:
+						mi.set_surface_override_material(k, faction_material(&"flesh"))
 
 
 ## Outside view shows the hull shell, inside view the deck and crew.
@@ -139,11 +145,11 @@ static func cut_shell(t: ShipTheme, holes: Array, cuts: Array = []) -> ShaderMat
 	m.set_shader_parameter(&"cuts", c)
 	m.set_shader_parameter(&"cut_count", mini(cuts.size(), 48))
 	var v := PackedVector4Array()
-	for r: Rect2 in holes.slice(0, 8):
+	for r: Rect2 in holes.slice(0, 48):
 		v.append(Vector4(r.position.x, r.position.y, r.end.x, r.end.y))
-	v.resize(8)
+	v.resize(48)
 	m.set_shader_parameter(&"holes", v)
-	m.set_shader_parameter(&"hole_count", mini(holes.size(), 8))
+	m.set_shader_parameter(&"hole_count", mini(holes.size(), 48))
 	return m
 
 

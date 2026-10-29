@@ -20,7 +20,8 @@ void fragment() {
 	float line = 1.0 - smoothstep(0.02, 0.07, abs(v - 0.5));
 	float fine = 1.0 - smoothstep(0.01, 0.04, abs(texture(veins, obj.xz * 0.7).r - 0.5));
 	vec3 mottled = skin.rgb * (0.8 + 0.35 * texture(veins, obj.xz * 0.05).r);
-	ALBEDO = mix(mix(mottled * COLOR.rgb, vein.rgb, fine * 0.35), vein.rgb, line * 0.8);
+	float lum = dot(COLOR.rgb, vec3(0.3, 0.59, 0.11));  // part shading, not its colour
+	ALBEDO = mix(mix(mottled * mix(1.0, lum * 2.2, 0.5), vein.rgb, fine * 0.35), vein.rgb, line * 0.8);
 	ROUGHNESS = 0.38 + v * 0.2;
 	NORMAL_MAP = texture(detail, obj.xz * 0.6).rgb;  // pores and wrinkles
 	NORMAL_MAP_DEPTH = 1.2;

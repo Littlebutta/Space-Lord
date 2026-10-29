@@ -208,22 +208,27 @@ static func make(d: ShipDesign, y0: float, mods: Array = []) -> Node3D:
 			groups[tid] = []
 		groups[tid].append(i)
 	var ship := outlines(d, all)
+	var gaps := gap_cells(d, all)
+	var gap_rects := gaps.map(func(c): return Rect2(Vector2(c) * ShipView.CELL, Vector2.ONE * ShipView.CELL))
 	for tid in groups:
 		var t := ShipTheme.by_id(tid)
 		var mine: Array = groups[tid]
 		if t.shell in [&"chamfer", &"plates"]:
 			var cuts := all.filter(func(i): return not mine.has(i)).map(func(i): return _rect(d, i))
-			root.add_child(_mesh(build(d, y0, all), ModelSkin.cut_shell(t, holes(d, mine), cuts)))
+			var open := holes(d, mine) + gap_rects  # glass parts and gaps stay open
+			root.add_child(_mesh(build(d, y0, all), ModelSkin.cut_shell(t, open, cuts)))
+			if not gaps.is_empty():
+				root.add_child(_mesh(_gap_walls(d, y0, mine, gaps), ModelSkin.shell_material(t)))
 			if t.shell == &"plates":
 				for p in outlines(d, mine):
 					root.add_child(_mesh(FactionShell.plates(p, ship, y0 + HEIGHT, hash(p[0])),
 							ModelSkin.shell_material(t)))
-					root.add_child(FactionDressing.dress(t.shell, p, ship, y0, hash(p[0]) + 1))
+					root.add_child(FactionDressing.dress(t.shell, p, ship, y0, randi()))
 		else:
 			for p in outlines(d, mine):
-				var m := FactionShell.build(t.shell, p, ship, y0, hash(p[0]))
+				var m := FactionShell.build(t.shell, p, ship, gap_rects, y0, randi())
 				root.add_child(_mesh(m, ModelSkin.faction_material(t.shell)))
-				root.add_child(FactionDressing.dress(t.shell, p, ship, y0, hash(p[0]) + 1))
+				root.add_child(FactionDressing.dress(t.shell, p, ship, y0, randi()))
 	root.add_child(beacons(d, y0, all))
 	return root
 
@@ -238,3 +243,56 @@ static func _mesh(m: Mesh, mat: Material) -> MeshInstance3D:
 static func _rect(d: ShipDesign, i: int) -> Rect2:
 	var r := d.rect(i)
 	return Rect2(Vector2(r.position) * ShipView.CELL, Vector2(r.size) * ShipView.CELL)
+
+
+## Empty cells walled in by the ship (gaps inside it), which the hull
+## leaves open instead of roofing over.
+static func gap_cells(d: ShipDesign, mods: Array) -> Array[Vector2i]:
+	var full := {}
+	var box := Rect2i()
+	for i in mods:
+		var r := d.rect(i)
+		box = r if full.is_empty() else box.merge(r)
+		for x in range(r.position.x, r.end.x):
+			for y in range(r.position.y, r.end.y):
+				full[Vector2i(x, y)] = true
+	var outside := {}
+	var todo: Array[Vector2i] = [box.position - Vector2i.ONE]
+	var grow := box.grow(1)
+	while not todo.is_empty():  # flood the space round the ship
+		var c: Vector2i = todo.pop_back()
+		if outside.has(c) or full.has(c) or not grow.has_point(c):
+			continue
+		outside[c] = true
+		for s in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
+			todo.append(c + s)
+	var out: Array[Vector2i] = []
+	for x in range(box.position.x, box.end.x):
+		for y in range(box.position.y, box.end.y):
+			var c := Vector2i(x, y)
+			if not full.has(c) and not outside.has(c):
+				out.append(c)
+	return out
+
+
+## Walls of the chamfered hull facing into the gaps, beside `mine`.
+static func _gap_walls(d: ShipDesign, y0: float, mine: Array, gaps: Array[Vector2i]) -> ArrayMesh:
+	var own := {}
+	for i in mine:
+		var r := d.rect(i)
+		for x in range(r.position.x, r.end.x):
+			for y in range(r.position.y, r.end.y):
+				own[Vector2i(x, y)] = true
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var c := ShipView.CELL
+	for g in gaps:
+		for s in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
+			if not own.has(g + s):
+				continue
+			var mid := (Vector2(g) + Vector2(0.5, 0.5) + Vector2(s) * 0.5) * c
+			var along := Vector2(s.y, s.x) * c * 0.5
+			var n := Vector3(-s.x, 0, -s.y)  # faces into the gap
+			_quad(st, _v(mid - along, y0), _v(mid + along, y0), _v(mid + along, y0 + HEIGHT),
+					_v(mid - along, y0 + HEIGHT), n, PAINT)
+	return st.commit()

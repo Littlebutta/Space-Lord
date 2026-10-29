@@ -97,7 +97,10 @@ func _physics_process(delta: float) -> void:
 			var held := Vector3(cr.face.x * 0.45, 1.0, cr.face.y * 0.45)  # out in front
 			if cr.species.pulls():  # floated along by mind, over their head
 				held = Vector3(0.0, 2.1 + sin(Time.get_ticks_msec() * 0.003) * 0.1, 0.0)
-			n.position = _world(ship.sim.local3d(cr) + held)
+			if cr.hand != null and not cr.species.pulls():  # in their hands, as drawn
+				n.global_position = cr.hand
+			else:
+				n.position = _world(ship.sim.local3d(cr) + held)
 			continue
 		n.position += c.vel * delta
 		c.vel *= 1.0 - DAMP * delta

@@ -54,6 +54,8 @@ func draw(crew: Array[CrewMember], sim: CrewSim, delta: float) -> void:
 			var yaw := atan2(-face.x, -face.z)
 			b.rotation.y = lerp_angle(b.rotation.y, yaw, minf(delta * TURN, 1.0))
 		b.position = at
+		if b.is_inside_tree():
+			c.hand = b.global_transform * Vector3(0.0, 1.05, -0.38)
 		b.visible = not c.hidden
 		_rings[k].visible = c.selected
 		_play(k, _anim(c), c.species.speed)
@@ -119,6 +121,8 @@ func _ring() -> MeshInstance3D:
 ## module's equipment next to them (its blocked deck), else the bow when
 ## operating, else the job module.
 func _facing(c: CrewMember, sim: CrewSim, at: Vector3) -> Vector3:
+	if c.eva:  # flying outside: the way they last flew
+		return Vector3(c.face.x, 0.0, c.face.y)
 	if not c.arrived():
 		var to := c.path[0]
 		return Vector3(to.x, at.y, to.y) - at

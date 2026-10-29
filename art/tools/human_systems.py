@@ -75,7 +75,7 @@ def turret(i, e, pts):
         i.cyl((x, 1.62, 1.5), 0.25, 0.06, C["amber"], sides=14, glow=True)
     i.cyl((0, FLOOR + 0.01, 0.2), 1.0, 0.02, C["hazard"], sides=32, smooth=False)
     i.cyl((0, FLOOR + 0.015, 0.2), 0.92, 0.02, C["plate"], sides=32, smooth=False)
-    e.cyl((0, ROOF + 0.15, 0), 1.5, 0.3, C["steel"], sides=24, bevel=0.04)
+    e.cyl((0, ROOF + 0.15, 0), 1.3, 0.3, C["steel"], sides=24, bevel=0.04)
     return [((0, 2.1, 0.2), C["lamp"])]
 
 
@@ -213,10 +213,10 @@ def shipdock(i, e, pts):
                  ((-1.8, -1.8), (-1.8, 0.6)), ((1.8, -1.8), (1.8, 0.6))):
         i.wall(a, b, FLOOR, FLOOR + 0.012, 0.1, C["hazard"], 0.0)  # cradle
     for x in (-2.6, 2.6):  # exterior docking clamps and beacons
-        e.box((x, ROOF + 0.3, -0.4), (0.5, 0.6, 2.6), C["hull"], 0.08, seg=2)
-        e.box((x * 0.82, ROOF + 0.55, -0.4), (0.5, 0.15, 2.2), C["accent"], 0.03)
-        e.ball((x, ROOF + 0.7, -1.6), 0.08, C["amber"], 1, glow=True)
-    e.box((0, ROOF + 0.05, -0.4), (3.6, 0.1, 2.6), C["steel"], 0.04)
+        e.box((x * 0.77, ROOF + 0.3, -0.4), (0.5, 0.6, 2.6), C["hull"], 0.08, seg=2)
+        e.box((x * 0.7, ROOF + 0.55, -0.4), (0.5, 0.15, 2.2), C["accent"], 0.03)
+        e.ball((x * 0.77, ROOF + 0.7, -1.6), 0.08, C["amber"], 1, glow=True)
+    e.box((0, ROOF + 0.05, -0.4), (3.0, 0.1, 2.6), C["steel"], 0.04)
     return [((0, 2.1, -0.4), C["lamp"]), ((0, 2.1, 1.0), C["lamp"])]
 
 
@@ -255,9 +255,9 @@ def capacitor(i, e, pts):
     i.box((0, 1.6, -0.9), (1.8, 0.1, 0.12), C["steel"], 0.02)
     pipe(i, (-0.8, 1.6, -0.55), (0.8, 1.6, -0.55), 0.04, "metal", False)
     screen(i, (0.75, 1.1, -0.15), 0.3, 0.25, col="power")
-    e.box((0, ROOF + 0.05, -0.4), (1.6, 0.1, 0.9), C["gun"], 0.03)
+    e.box((0, ROOF + 0.05, 0), (0.7, 0.1, 0.7), C["gun"], 0.03)
     for x in (-0.5, 0.0, 0.5):
-        e.cyl((x, ROOF + 0.15, -0.4), 0.15, 0.12, C["steel"], sides=10, bevel=0.02)
+        e.cyl((x * 0.44, ROOF + 0.15, 0), 0.1, 0.12, C["steel"], sides=10, bevel=0.02)
     return []
 
 
@@ -306,6 +306,6 @@ def repair_bay(i, e, pts):
     i.cyl((1.6, 1.85, -0.75), 0.04, 0.6, C["metal"], sides=6)  # welding arm
     i.box((1.6, 1.55, -0.55), (0.12, 0.12, 0.3), C["hazard"], 0.02)
     i.ball((1.6, 1.5, -0.38), 0.04, C["screen"], 1, glow=True)
-    e.box((0, ROOF + 0.06, -0.3), (3.4, 0.12, 1.2), C["steel"], 0.04)
-    e.box((0, ROOF + 0.14, -0.3), (0.5, 0.06, 0.5), C["hazard"], 0.02)
+    e.box((0, ROOF + 0.06, 0), (2.6, 0.12, 0.7), C["steel"], 0.04)
+    e.box((0, ROOF + 0.14, 0), (0.45, 0.06, 0.45), C["hazard"], 0.02)
     return [((0, 2.1, -0.2), C["lamp"])]

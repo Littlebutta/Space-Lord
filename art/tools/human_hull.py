@@ -78,7 +78,7 @@ def armor(i, e, pts):
     _bulkhead(i, pts, 1.1)
     for x, z in pts if len(pts) == 4 else []:  # hazard corner inlays, flush
         i.box((x * 0.8, FLOOR + 0.004, z * 0.8), (0.3, 0.01, 0.3), C["hazard"])
-    k = [(x * 0.8, z * 0.8) for x, z in pts]
+    k = [(x * 0.35, z * 0.35) for x, z in pts]  # inside the hull edge
     e.slab(k, ROOF, ROOF + 0.12, C["steel"], 0.04)
     bolts(e, k, ROOF + 0.12, 0.12)
     return []
@@ -138,8 +138,8 @@ def ammo_rack(i, e, pts):
         i.box((0.5, y + 0.12, -0.53), (0.2, 0.03, 0.03), C["dark"])
     console(i, 0.55, -0.2, (0, 1), 0.6, "amber")
     i.box((0, FLOOR + 0.004, -0.02), (1.9, 0.01, 0.08), C["hazard"])
-    e.box((0, ROOF + 0.04, -0.2), (1.2, 0.08, 1.1), C["gun"], 0.03)
-    e.box((0, ROOF + 0.1, -0.2), (0.9, 0.05, 0.8), C["red"], 0.02)
+    e.box((0, ROOF + 0.04, 0), (0.7, 0.08, 0.7), C["gun"], 0.03)
+    e.box((0, ROOF + 0.1, 0), (0.55, 0.05, 0.55), C["red"], 0.02)
     bolts(e, [(-0.55, -0.7), (0.55, -0.7), (0.55, 0.3), (-0.55, 0.3)], ROOF + 0.08, 0.02)
     return [((0, 2.1, 0.2), C["lamp"])]
 
@@ -198,9 +198,9 @@ def airlock(i, e, pts):
         i.box((0.5 + (-0.3, 0.3, 0, 0)[k], FLOOR + 0.07, (0, 0, -0.3, 0.3)[k]),
               (0.08, 0.03, 0.08), C["metal"], 0.01)
     screen(i, (0.5, 1.2, -0.95), 0.4, 0.3, col="amber")
-    e.cyl((0.4, ROOF + 0.06, 0), 0.6, 0.12, C["gun"], sides=24, bevel=0.03)
-    e.cyl((0.4, ROOF + 0.13, 0), 0.5, 0.04, C["hazard"], sides=24)
-    e.ball((0.7, ROOF + 0.1, -0.7), 0.06, C["amber"], 1, glow=True)
+    e.cyl((0, ROOF + 0.06, 0), 0.35, 0.12, C["gun"], sides=24, bevel=0.03)
+    e.cyl((0, ROOF + 0.13, 0), 0.27, 0.04, C["hazard"], sides=24)
+    e.ball((0.3, ROOF + 0.1, -0.3), 0.06, C["amber"], 1, glow=True)
     return [((0.4, 2.1, 0), C["amber"])]
 
 
@@ -225,7 +225,7 @@ def supply_depot(i, e, pts):
     i.box((1.08, 0.7, 0.0), (0.12, 0.5, 0.35), C["red"], 0.02)  # pump
     for z in (-0.4, 0.4):
         i.box((0, FLOOR + 0.004, z), (1.6, 0.01, 0.06), C["hazard"])
-    e.box((0, ROOF + 0.05, 0), (2.8, 0.1, 2.8), C["steel"], 0.04)
+    e.box((0, ROOF + 0.05, 0), (2.6, 0.1, 2.6), C["steel"], 0.04)
     for x in (-0.7, 0.7):
-        e.box((x, ROOF + 0.12, 0), (1.2, 0.04, 2.6), C["gun"], 0.02)
+        e.box((x, ROOF + 0.12, 0), (1.0, 0.04, 2.4), C["gun"], 0.02)
     return [((0, 2.2, 0), C["lamp"])]

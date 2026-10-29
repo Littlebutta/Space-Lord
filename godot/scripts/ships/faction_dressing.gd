@@ -7,8 +7,8 @@ extends RefCounted
 ## at the hull's height (y0 + top), sunk in a little so they grow out.
 
 const PER_M2 := {  # pieces per square metre of region, by kind
-	&"blob": 0.35, &"spine": 0.25, &"stalk": 0.08,
-	&"spire": 0.12, &"shard": 0.6,
+	&"spine": 0.3, &"stalk": 0.12,
+	&"spire": 0.025, &"shard": 0.45,
 	&"pipe": 0.15, &"junk": 0.25,
 }
 
@@ -18,7 +18,7 @@ static func dress(style: StringName, region: PackedVector2Array,
 	var root := Node3D.new()
 	var rng := RandomNumberGenerator.new()
 	rng.seed = seed
-	var kinds: Array = {&"flesh": [&"blob", &"spine", &"stalk"],
+	var kinds: Array = {&"flesh": [&"spine", &"stalk"],
 			&"facets": [&"spire", &"shard"], &"plates": [&"pipe", &"junk"]}.get(style, [])
 	var area := absf(_area(region))
 	for kind in kinds:
@@ -26,11 +26,22 @@ static func dress(style: StringName, region: PackedVector2Array,
 		for k in int(area * PER_M2[kind]):
 			var p := _inside(region, rng)
 			var e := FactionShell._edge(p, ship)
-			if e < 0.6:  # keep off the very edge, where the hull rolls down
+			if e < 1.2:  # keep off the edge, where the hull rolls down
 				continue
 			xfs.append(_place(kind, Vector3(p.x, y0 + _top(style) * sqrt(clampf(e / 1.8, 0, 1)), p.y), rng))
 		if not xfs.is_empty():
 			root.add_child(_multi(_mesh(kind), _material(kind), xfs, rng))
+	if style == &"facets":  # crystals growing out over the neighbours
+		var edge: Array[Transform3D] = []
+		for band in FactionShell._reach(region, FactionShell._shape(ship, false)):
+			for k in int(absf(_area(band)) * 0.5):
+				var p := _inside(band, rng)
+				var out := FactionShell._edge(p, [region]) / FactionShell.REACH
+				if rng.randf() > out and FactionShell._edge(p, ship) > 0.9:
+					var at := Vector3(p.x, y0 + HullShell.HEIGHT, p.y)
+					edge.append(_place(&"shard", at, rng).scaled_local(Vector3.ONE * (1.0 - out * 0.6)))
+		if not edge.is_empty():
+			root.add_child(_multi(_mesh(&"shard"), _material(&"shard"), edge, rng))
 	return root
 
 
@@ -39,9 +50,11 @@ static func _top(style: StringName) -> float:
 
 
 static func _place(kind: StringName, at: Vector3, rng: RandomNumberGenerator) -> Transform3D:
-	var tilt: float = {&"spire": 0.45, &"shard": 0.7, &"spine": 0.6, &"stalk": 0.4}.get(kind, 0.15)
+	var tilt: float = {&"shard": 0.7, &"spine": 0.6, &"stalk": 0.4}.get(kind, 0.15)
 	var b := Basis.from_euler(Vector3(rng.randf_range(-tilt, tilt), rng.randf() * TAU,
 			rng.randf_range(-tilt, tilt)))
+	if kind == &"spire":  # lean hard so the ship stays low
+		b = Basis(Vector3.UP, rng.randf() * TAU) * Basis(Vector3.RIGHT, rng.randf_range(0.9, 1.3))
 	var s: Vector3
 	match kind:
 		&"blob": s = Vector3(1, rng.randf_range(0.4, 0.8), 1) * rng.randf_range(0.25, 0.8)
