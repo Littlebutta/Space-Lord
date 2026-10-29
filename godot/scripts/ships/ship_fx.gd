@@ -46,11 +46,12 @@ func fire(i: int) -> void:
 	if n == null:
 		return  # headless sims (tests) have nothing to draw on
 	var laser := is_laser(state.module(i))
+	var to = state.aim.get(i)  # where battle guns say the shot goes
 	for m: Node3D in n.find_children("Muzzle*", "", true, false):
 		if laser:
-			GunFx.laser(_world(), m)
+			GunFx.laser(_world(), m, to)
 		else:
-			GunFx.cannon(_world(), m)
+			GunFx.cannon(_world(), m, to == null)
 	Sfx.play(_world(), &"laser_fire" if laser else &"cannon_fire", n.global_position)
 	var head := n.find_child("Head*", true, false) as Node3D
 	if head:  # kicks back along its barrel, whichever way it points

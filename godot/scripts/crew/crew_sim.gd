@@ -44,9 +44,7 @@ func setup(d: ShipDesign, count: int) -> void:
 ## Hires one more; `sp` null means human.
 func add_crew(sp: CrewSpecies = null) -> void:
 	var c := CrewMember.new(NAMES[crew.size() % NAMES.size()], sp)
-	c.pos = _home() + Vector2(randf() - 0.5, randf() - 0.5)
-	if not nav.walkable(c.pos):  # don't start inside equipment
-		c.pos = _home()
+	c.pos = _free_spot()
 	crew.append(c)
 	crew_changed.emit()
 
@@ -334,3 +332,23 @@ func _home() -> Vector2:
 		if state.module(i).berths > 0:
 			return state.spot(i)
 	return state.spot(0)
+
+
+## A walkable spot near the berths clear of everyone aboard, rings
+## outward, so a crew comes aboard spread out rather than in one heap.
+## Only spots joined to the first walkable one count.
+func _free_spot() -> Vector2:
+	var home := _home()
+	var anchor := Vector2.INF
+	for ring in 10:
+		var n := maxi(ring * 6, 1)
+		for k in n:
+			var p := home + Vector2.from_angle(TAU * k / n + ring) * ring * RADIUS * 2.2
+			if not nav.walkable(p):
+				continue
+			if anchor == Vector2.INF:
+				anchor = p
+			if nav.connected(anchor, p) \
+					and crew.all(func(o): return o.pos.distance_to(p) >= RADIUS * 2.0):
+				return p
+	return home if anchor == Vector2.INF else anchor

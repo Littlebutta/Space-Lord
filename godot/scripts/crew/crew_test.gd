@@ -10,7 +10,6 @@ const HELP := "X damage · B wreck a module · F fire · V outside view · Alt o
 		+ "Blue operating · yellow hauling · green repairing · pink spacewalk · grey idle"
 
 @onready var _ship: ShipBody = $Ship
-@onready var _info: Label = $UI/Info
 var _marker := MoveMarker.new()
 var _last := Vector2.ZERO  # ship middle last frame, for the camera to follow
 var _follow := false  # Space: camera rides along with the ship
@@ -47,24 +46,12 @@ func _process(_delta: float) -> void:
 	if _follow:
 		$Camera.focus += Vector3(mid.x - _last.x, 0.0, mid.y - _last.y)
 	_last = mid
-	var s := _ship.sim.state
-	var running := 0
-	for i in s.size():
-		running += int(s.is_running(i))
-	var t := _site + "\n" if _site else ""
-	t += "Modules running %d / %d · speed %.1f m/s" % [running, s.size(),
-			_ship.vel.length()]
-	t += " · crew lost %d\n" % _ship.sim.lost if _ship.sim.lost else "\n"
-	_info.text = t.strip_edges()
 
 
-## Status card bottom-left with a cards toggle; controls behind "?".
+## Ship panel top right, a cards toggle bottom-left; controls (and
+## what to do at this site) behind "?".
 func _hud() -> void:
-	var card := PanelContainer.new()
-	var box := VBoxContainer.new()
-	card.add_child(box)
-	_info.reparent(box)
-	_info.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+	ShipHud.new().bind($UI, _ship)
 	var cards := Button.new()
 	cards.text = "Module cards (Alt)"
 	cards.toggle_mode = true
@@ -72,12 +59,11 @@ func _hud() -> void:
 	cards.toggled.connect(func(on): $UI/Tags.visible = on)
 	$UI/Tags.visibility_changed.connect(
 			func(): cards.set_pressed_no_signal($UI/Tags.visible))
-	box.add_child(cards)
-	UiKit.pin($UI, card, Control.PRESET_BOTTOM_LEFT)
+	UiKit.pin($UI, cards, Control.PRESET_BOTTOM_LEFT)
 	var res := ResourceBar.new()
 	res.source = func(): return _ship.sim.state.storage
 	UiKit.pin($UI, res, Control.PRESET_CENTER_TOP)
-	UiKit.help($UI, HELP)
+	UiKit.help($UI, (_site + "\n" if _site else "") + HELP)
 
 
 ## Alt (or H) toggles the module cards. Caught in _input, before any

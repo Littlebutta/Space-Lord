@@ -22,6 +22,7 @@ var auto := PackedFloat32Array()  # seconds of unmanned firing left
 var burning := {}  # engines firing this tick (they burn fuel)
 var pieces: ShipPieces  # how the ship has broken apart
 var power: ShipPower  # generators and capacitors
+var aim := {}  # gun -> world point (Vector3) its next shot heads for; ShipGuns sets it
 
 
 func _init(d: ShipDesign, fill := 0.5) -> void:
@@ -252,10 +253,11 @@ func shoot(i: int) -> bool:
 
 
 ## Burns the on-hand supplies of running modules; engines only use fuel
-## while they are actually firing.
+## while they are actually firing, generators as hard as they work.
 func tick(hours: float) -> void:
 	for i in size():
 		if is_running(i) and (module(i).thrust <= 0.0 or burning.has(i)):
 			var up: Dictionary = module(i).upkeep
+			var k := maxf(power.busy, ShipPower.IDLE) if module(i).power_out > 0.0 else 1.0
 			for res in up:
-				stock[i][res] = maxf(stock[i][res] - up[res] * hours, 0.0)
+				stock[i][res] = maxf(stock[i][res] - up[res] * hours * k, 0.0)
