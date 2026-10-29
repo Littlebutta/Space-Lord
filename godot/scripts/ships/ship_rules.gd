@@ -71,13 +71,17 @@ static func problems(d: ShipDesign) -> Array[String]:
 
 
 ## Cell gap from module `i` to the closest `need` (id, any tier of it,
-## or category), or -1 when the ship has none (other warnings cover that).
+## a cargo hold or other part that stores the same, or category), or -1
+## when the ship has none (other warnings cover that).
 static func nearest(d: ShipDesign, i: int, need: String) -> int:
 	var best := -1
 	var a := d.rect(i)
+	var nm := ModuleLibrary.by_id(StringName(need))
 	for j in d.modules.size():
 		var m := d.modules[j]
 		var kin := String(m.id) == need or String(m.id).begins_with(need + "_t")  # tiers
+		kin = kin or nm and not nm.storage.is_empty() \
+				and nm.storage.keys().all(func(k): return m.storage.has(k))
 		if j == i or not kin and m.category != need:
 			continue
 		var b := d.rect(j)

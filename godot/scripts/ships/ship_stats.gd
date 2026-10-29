@@ -56,6 +56,8 @@ func _check(d: ShipDesign) -> void:
 		warnings.append("No engines: the ship can't move")
 	if power_out <= 0.0 and d.modules.any(func(m): return m.shot_power > 0.0):
 		warnings.append("Lasers need a reactor for power")
+	if power_out <= 0.0 and d.modules.any(func(m): return m.drive_power > 0.0):
+		warnings.append("Ion thrusters need a reactor for power")
 	for res in upkeep:
 		if storage.get(res, 0.0) <= 0.0:
 			warnings.append("Uses %s but has no storage for it" % res)

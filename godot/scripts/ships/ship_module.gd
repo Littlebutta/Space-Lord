@@ -16,6 +16,8 @@ extends Resource
 @export var crew := 0  # crew needed to operate it
 @export var berths := 0  # crew it can house
 @export var thrust := 0.0  # engine push, needs fuel upkeep
+## Ion drive: power used per second while firing instead of fuel.
+@export var drive_power := 0.0
 ## Seconds an engine can fire with nobody at it before crew must take over.
 @export var auto_time := 0.0
 @export var firepower := 0.0  # damage per second, needs ammo upkeep
@@ -42,8 +44,6 @@ extends Resource
 ## Resources to rebuild it from wreckage in the field; empty means its
 ## mass in parts. See ShipState.rebuild_cost.
 @export var rebuild := {}
-## Bulk supply store (depot): haulers restock from it before other stores.
-@export var bulk := false
 @export var airlock := false  # crew can go outside (EVA) from here
 ## Onboard shipyard: lets the ship refit and do major repairs in space.
 @export var shipdock := false

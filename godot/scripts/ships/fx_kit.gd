@@ -7,6 +7,8 @@ extends RefCounted
 
 const FIRE := Color(1.0, 0.62, 0.25)
 const HOT := Color(1.0, 0.9, 0.7)
+const ION := Color(0.35, 0.65, 1.0)  # ion drive glow
+const ION_HOT := Color(0.85, 0.95, 1.0)
 
 static var _sprite: GradientTexture2D
 static var _mats := {}  # Color -> additive billboard material
@@ -14,16 +16,17 @@ static var _wreck: Array[Mesh] = []
 
 
 ## Engine plume: a particle trail and a warm light, blowing +z.
-static func exhaust() -> Node3D:
+static func exhaust(ion := false) -> Node3D:
 	var root := Node3D.new()
 	root.name = &"FxExhaust"
 	for layer in 2:  # a wide orange plume round a tight white-hot core
 		var p := particles(80 if layer == 0 else 40, 0.55 if layer == 0 else 0.25,
 				Vector3(0, 0, 1), 7.0 if layer == 0 else 2.0,
-				Vector2(7.0, 10.0) if layer == 0 else Vector2(10.0, 14.0), 1.0 if layer == 0 else 0.45)
+				Vector2(7.0, 10.0) if layer == 0 else Vector2(10.0, 14.0), 1.0 if layer == 0 else 0.45,
+				ION_HOT if ion else HOT, ION if ion else FIRE)
 		p.local_coords = false  # leaves a trail when the ship moves
 		root.add_child(p)
-	var l := light(FIRE, 2.5, 6.0)
+	var l := light(ION if ion else FIRE, 2.5, 6.0)
 	l.position.z = 0.6
 	root.add_child(l)
 	return root
@@ -132,7 +135,7 @@ static func _wreck_meshes() -> Array[Mesh]:
 
 
 static func particles(n: int, life: float, dir: Vector3, spread: float,
-		speed: Vector2, size: float) -> GPUParticles3D:
+		speed: Vector2, size: float, hot := HOT, fire := FIRE) -> GPUParticles3D:
 	var p := GPUParticles3D.new()
 	p.amount = n
 	p.lifetime = life
@@ -150,8 +153,8 @@ static func particles(n: int, life: float, dir: Vector3, spread: float,
 	pm.scale_curve = CurveTexture.new()
 	pm.scale_curve.curve = c
 	var g := Gradient.new()
-	g.set_color(0, HOT)
-	g.set_color(1, Color(FIRE, 0.0))
+	g.set_color(0, hot)
+	g.set_color(1, Color(fire, 0.0))
 	pm.color_ramp = GradientTexture1D.new()
 	pm.color_ramp.gradient = g
 	p.process_material = pm

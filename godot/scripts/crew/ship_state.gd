@@ -230,12 +230,15 @@ func is_running(i: int) -> bool:
 
 ## Engine i can fire now: running, or able to run a while unmanned.
 func can_fire(i: int) -> bool:
+	if power.charge < module(i).drive_power * 0.1:
+		return false  # ion drive with a flat grid
 	return is_running(i) or hp[i] > 0.0 and pieces.powered(i) and supplied(i) and auto[i] > 0.0
 
 
 ## Engine i fired for `delta` seconds; unmanned it uses up auto time.
 func fire(i: int, delta: float) -> void:
 	burning[i] = true
+	power.draw(minf(module(i).drive_power * delta, power.charge))
 	if not manned(i):
 		auto[i] = maxf(auto[i] - delta, 0.0)
 

@@ -44,13 +44,17 @@ static func sandbox(seed_: int, parts := 16) -> ShipDesign:
 	return g
 
 
-## Bolts `m` on somewhere if the design has none (e.g. an airlock).
+## Bolts `m` on somewhere if the design has none (e.g. an airlock),
+## where crew can walk to it from the bridge if any such spot is found.
 static func ensure(d: ShipDesign, m: ShipModule, rng: RandomNumberGenerator) -> void:
 	for tries in 200:
 		if d.modules.has(m):
 			return
 		var r := d.rect(rng.randi() % d.modules.size())
-		d.add(m, _neighbor(r.position, r.size, m.size, rng))
+		var at := _neighbor(r.position, r.size, m.size, rng)
+		if d.add(m, at) and tries < 150 \
+				and not ShipNav.new(d).connected(d.spot(0), d.spot(d.modules.size() - 1)):
+			d.remove_at(at)  # walled off from the crew: try elsewhere
 
 
 ## A cell where a module of size `s` touches the side of an existing one.
