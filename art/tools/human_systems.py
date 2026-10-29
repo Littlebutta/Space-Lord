@@ -309,3 +309,45 @@ def repair_bay(i, e, pts):
     e.box((0, ROOF + 0.06, 0), (2.6, 0.12, 0.7), C["steel"], 0.04)
     e.box((0, ROOF + 0.14, 0), (0.45, 0.06, 0.45), C["hazard"], 0.02)
     return [((0, 2.1, -0.2), C["lamp"])]
+
+
+def teleporter(i, e, pts):
+    """Teleporter. Blocked: the two front corners (emitter pylons); crew
+    step onto the pad in the middle."""
+    floor(i, pts)
+    i.cyl((0, FLOOR + 0.02, 0), 1.2, 0.05, C["gun"], sides=32, bevel=0.01)
+    i.cyl((0, FLOOR + 0.05, 0), 1.0, 0.03, C["steel"], sides=32)
+    for k in range(3):  # glowing rings in the pad
+        i.cyl((0, FLOOR + 0.07 + k * 0.001, 0), 0.9 - k * 0.3, 0.01, C["power"], sides=32, glow=True)
+    for x in (-1.5, 1.5):  # emitter pylons over the pad
+        i.cyl((x, 1.0, -1.5), 0.25, 2.0, C["steel"], sides=12, bevel=0.03)
+        for y in (0.6, 1.2, 1.8):
+            i.cyl((x, y, -1.5), 0.3, 0.08, C["power"], sides=12, glow=True)
+        i.bar((x, 1.9, -1.5), (x * 0.3, 2.15, -0.4), 0.05, C["gun"])
+    i.ball((0, 2.2, 0), 0.12, C["power"], 1, glow=True)
+    e.cyl((0, ROOF + 0.1, 0), 1.2, 0.2, C["steel"], sides=24, bevel=0.04)
+    e.cyl((0, ROOF + 0.22, 0), 0.9, 0.04, C["power"], sides=24, glow=True)
+    return [((0, 1.8, 0), C["power"])]
+
+
+def breach_pod(i, e, pts):
+    """Breaching pod bay. Blocked: the front row z < -1 (launch tube and
+    the pod); crew wait on the benches behind it to board."""
+    floor(i, pts, grates=[(-1, 1), (0, 1)])
+    i.box((0, 0.9, -2.0), (3.6, 1.8, 1.9), C["gun"], 0.08, seg=2)  # launch tube
+    rings = []
+    for k in range(9):  # the drop pod: a pointed capsule nose-first
+        t = k / 8
+        z = -2.9 + t * 1.8
+        r = 0.75 * min(1.0, (t * 3) ** 0.6) * (1 - 0.3 * max(0.0, t - 0.75) * 4)
+        rings.append((z, [(r * math.cos(a / 12 * 2 * math.pi), 1.0 + r * math.sin(a / 12 * 2 * math.pi))
+                          for a in range(12)]))
+    i.loft(rings, C["hazard"])
+    i.box((0, 1.0, -1.1), (1.0, 1.0, 0.1), C["red"], 0.03)  # boarding hatch
+    console(i, 1.4, -1.25, (0, 1), 0.6, "amber")
+    for x in (-1.0, 1.0):  # where the boarding party waits
+        i.box((x, FLOOR + 0.004, 0.9), (1.2, 0.01, 1.6), C["hazard"])
+    e.box((0, ROOF + 0.06, -2.0), (2.4, 0.12, 1.4), C["gun"], 0.04)
+    for x in (-0.6, 0.6):
+        e.box((x, ROOF + 0.14, -2.0), (1.1, 0.04, 1.2), C["hazard"], 0.02)
+    return [((0, 2.0, 0.8), C["lamp"])]
