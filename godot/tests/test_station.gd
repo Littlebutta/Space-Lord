@@ -38,6 +38,15 @@ func _init() -> void:
 	var cr := Wallet.credits
 	_check(Wallet.hire(d, sp) and Wallet.crew_for(d).back() == &"crystal", "hired a crystal")
 	_check(Wallet.credits == cr - sp.hire_cost, "paid the species hire cost")
+	Fleet.fuel = 3.0
+	Travel.dest = Travel.pos + Vector3(100, 0, 0)
+	Fleet.travel(50.0)
+	_check(Travel.dest == null and Fleet.fuel == 0.0 and Fleet.stranded(), "ran dry and stopped")
+	Fleet.call_sos(0.0)
+	_check(Fleet.sos.kind in Fleet.SOS_KINDS and Fleet.sos_progress(99.0) == 1.0, "SOS answered")
+	var jumps: Array = Travel.sites.filter(func(s): return s.kind == &"jump")
+	Travel.jump(jumps[0].to)
+	_check(Travel.system == jumps[0].to and Travel.sites.size() == 8, "jumped to the next system")
 	print("station tests: %s" % ("FAILED %d" % _fails if _fails else "ok"))
 	quit(1 if _fails else 0)
 
