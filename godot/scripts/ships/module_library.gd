@@ -19,6 +19,11 @@ static func all() -> Array[ShipModule]:
 	return _all
 
 
+## Parts the builder offers (cosmetic bits like antennas are left out).
+static func buildable() -> Array[ShipModule]:
+	return all().filter(func(m): return m.buildable)
+
+
 static func by_id(id: StringName) -> ShipModule:
 	for m in all():
 		if m.id == id:

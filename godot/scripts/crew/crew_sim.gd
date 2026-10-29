@@ -8,6 +8,8 @@ signal crew_changed
 signal crew_lost(who: String)
 ## Someone died: where (this node's space), which way they fly, shirt.
 signal died(at: Vector3, fling: Vector3, shirt: Color)
+## Someone used a teleporter pad: from and to, ship-local metres.
+signal teleported(from: Vector2, to: Vector2)
 
 const SPEED := 3.0  # metres per second
 const CARRY := 20.0  # units per haul trip
@@ -128,6 +130,8 @@ func _work(c: CrewMember, delta: float) -> void:
 			CrewMining.work(self, c, delta)
 		&"salvage":
 			CrewSalvage.work(self, c, delta)
+		&"breach":
+			CrewBreach.work(self, c, delta)
 		&"haul":
 			c.timer += delta
 			if c.timer < LOAD_TIME:
@@ -170,6 +174,10 @@ func _walk(c: CrewMember, delta: float) -> void:
 	if d <= move:
 		c.pos = to
 		c.path.remove_at(0)
+		if c.path.size() > 1 and c.path[0] == to:  # on a teleporter: blink to the next
+			c.pos = c.path[1]
+			c.path = c.path.slice(2)
+			teleported.emit(to, c.pos)
 	else:
 		c.pos += (to - c.pos) / d * move
 
@@ -206,6 +214,7 @@ func drop(c: CrewMember) -> void:
 		c.cargo = 0.0
 	if c.job and c.job.worker == c:
 		c.job.worker = null
+	c.hidden = false
 	c.job = null
 	c.stage = 0
 	c.timer = 0.0
@@ -218,7 +227,7 @@ func drop(c: CrewMember) -> void:
 func _separate() -> void:
 	var grid := {}
 	for c in crew:
-		if c.eva:
+		if c.eva or c.hidden:
 			continue
 		var k := Vector2i((c.pos / (RADIUS * 2.0)).floor())
 		if grid.has(k):
@@ -273,7 +282,7 @@ func _on_broken() -> void:
 	nav = ShipNav.new(state.intact())
 	board.nav = nav
 	for c in crew.duplicate():
-		if c.eva:
+		if c.eva or c.hidden:
 			continue
 		if not nav.walkable(c.pos):
 			var i := state.design.index_at(Vector2i((c.pos / ShipView.CELL).floor()))
@@ -322,7 +331,9 @@ func nearest_store(res: String, from: Vector2, skip: int) -> int:
 		if i == skip or not m.storage.has(res) or state.hp[i] <= 0.0 \
 				or not nav.connected(from, at):
 			continue
-		var d := from.distance_to(at) / (BULK_PULL if m.bulk else 1.0)
+		var d := from.distance_to(at) if nav.pads.is_empty() \
+				else ShipNav.length(from, nav.route(from, at))  # teleports may be shorter
+		d /= BULK_PULL if m.bulk else 1.0
 		if d < best_d:
 			best = i
 			best_d = d

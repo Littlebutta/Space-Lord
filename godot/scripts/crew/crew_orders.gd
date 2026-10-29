@@ -7,7 +7,8 @@ extends Control
 ## CrewOutside. R puts the selected
 ## crew back on their usual duties. Left click the ship itself to select
 ## it (click empty space to drop it); right click while it is selected is
-## left to the scene, to fly it.
+## left to the scene, to fly it. Left click a breaching pod out on a
+## boarding to select it, then Recall (or R) brings it home.
 
 const PICK := 18.0  # pixels from a crew member that still picks them
 const DRAG := 6.0  # pixels moved before a click becomes a box
@@ -17,12 +18,27 @@ var ship_selected := true  # right click flies the ship
 var _from := Vector2.ZERO
 var _down := false
 var _box := Rect2()
+var _recall := Button.new()
 
 
 func bind(b: ShipBody) -> void:
 	body = b
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_recall.text = "Recall breaching pod (R)"
+	_recall.visible = false
+	_recall.pressed.connect(_recall_pods)
+	UiKit.pin(self, _recall, Control.PRESET_CENTER_BOTTOM)
+
+
+func _process(_delta: float) -> void:
+	_recall.visible = BreachPod.all(body).any(func(p): return p.selected and p.visible)
+
+
+func _recall_pods() -> void:
+	for p in BreachPod.all(body):
+		if p.selected:
+			p.recall()
 
 
 func selected() -> Array[CrewMember]:
@@ -46,7 +62,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		var at = _deck(b.position) if out.is_empty() else null
 		if not out.is_empty():
 			for c in selected():
-				if CrewOutside.order(body.sim, c, out) and out.kind != &"salvage":
+				if CrewOutside.order(body.sim, c, out) and not out.kind in [&"salvage", &"breach"]:
 					break  # one crew member is enough to fetch a thing
 		elif at != null:
 			for c in selected():
@@ -57,6 +73,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		_box = r if r.size.length() > DRAG else Rect2()
 		queue_redraw()
 	elif event is InputEventKey and event.pressed and event.keycode == KEY_R:
+		_recall_pods()
 		for c in selected():
 			release(body.sim, c)
 
@@ -64,9 +81,16 @@ func _unhandled_input(event: InputEvent) -> void:
 func _pick(r: Rect2, add: bool) -> void:
 	var cam := get_viewport().get_camera_3d()
 	var box := r.size.length() > DRAG
+	for p in BreachPod.all(body):
+		var near := cam.unproject_position(p.global_position).distance_to(r.position) < PICK * 2.0
+		p.selected = p.visible and near and not box
+		if p.selected:
+			return
 	var best: CrewMember = null
 	var best_d := PICK
 	for c in body.sim.crew:
+		if c.hidden:
+			continue
 		var w := body.sim.global_transform * body.sim.local3d(c)
 		var s := cam.unproject_position(w + Vector3.UP * 0.9)
 		if not add:

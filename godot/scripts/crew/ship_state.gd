@@ -163,6 +163,14 @@ func reattach(i: int) -> bool:
 	return true
 
 
+## An intact cargo hold aboard: crew can bring loose ore and salvage in.
+func has_hold() -> bool:
+	for i in size():
+		if module(i).hold and hp[i] > 0.0:
+			return true
+	return false
+
+
 ## Nearest intact airlock on the ship itself to `from`, or -1.
 func airlock(from: Vector2) -> int:
 	var best := -1

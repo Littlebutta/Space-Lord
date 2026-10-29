@@ -14,8 +14,8 @@ const GRAB := 1.0  # seconds to net a chunk
 ## still fits in the hold.
 static func want(board: JobBoard, want: Dictionary) -> void:
 	var f: MiningField = board.field
-	if f == null:
-		return
+	if f == null or not board.state.has_hold():
+		return  # nowhere to stow it
 	var planned := {}
 	for j: CrewJob in board.jobs.values().duplicate():
 		if j.type == &"mine" and j.worker and j.worker.stage <= 1 \
@@ -41,7 +41,7 @@ static func want(board: JobBoard, want: Dictionary) -> void:
 static func work(sim: CrewSim, c: CrewMember, delta: float) -> void:
 	var f: MiningField = sim.board.field
 	var s := sim.state
-	if f == null or s.storage.free_space(c.job.res) <= 0.0:
+	if f == null or s.storage.free_space(c.job.res) <= 0.0 or not s.has_hold():
 		sim.finish(c)  # hold full: stop, dropping anything carried
 		return
 	match c.stage:

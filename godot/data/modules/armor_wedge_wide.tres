@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ShipModule" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ships/ship_module.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"armor_wedge_wide"
+display_name = "Armor Wide Slope"
+category = "hull"
+size = Vector2i(2, 1)
+look = &"armor_slope"
+outline = PackedVector2Array(0, 0, 0, 1, 2, 1)
+color = Color(0.42, 0.44, 0.5, 1)
+mass = 3.0
+materials = {"iron": 6.0}
+hp = 400.0
+salvage = {"alloy": 3.0}
+blocked = Array[Rect2]([Rect2(1, 0, 1, 0.5)])
+access = PackedVector2Array(0.5, 0.75)

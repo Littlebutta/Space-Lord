@@ -19,7 +19,7 @@ func _initialize() -> void:
 	var d := SiteScene.prepare(ShipGenerator.sandbox(3))
 	var ship := ShipBody.new()
 	root.add_child(ship)
-	ship.setup(d, maxi(int(d.total(&"berths")), int(d.total(&"crew")) + 2))
+	ship.setup(d, maxi(int(d.total(&"berths")), int(d.total(&"crew")) + 6))  # spare hands for ore runs
 	var f := MiningField.new()
 	root.add_child(f)
 	f.bind(ship, Travel.site())

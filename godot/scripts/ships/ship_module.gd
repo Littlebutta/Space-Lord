@@ -63,3 +63,14 @@ extends Resource
 ## means anywhere near the middle.
 @export var access := PackedVector2Array()
 @export var model: PackedScene  # Blender .glb scene, optional
+## Bigger tiers borrow a smaller part's model, scaled to fit, until
+## they get their own: the id of the part to borrow.
+@export var look := &""
+## Shows in the builder's parts list (cosmetic bits are placed by code).
+@export var buildable := true
+## Cargo hold: lets crew bring loose ore and salvage aboard.
+@export var hold := false
+## Teleporter pad: crew hop between pads, even onto drifted pieces.
+@export var teleporter := false
+## Breaching pod bay: crew it launches in a pod to board a dead ship.
+@export var breach := 0

@@ -89,8 +89,9 @@ static func make_part(m: ShipModule, r: Rect2i, turn: int, t: ShipTheme,
 		if m.exterior:  # the model is the whole part: no placeholder
 			mi.mesh = null
 		model.rotation.y = -turn * PI / 2.0
+		model.scale = t.model_scale(m)
 		if turn >= 4:
-			model.scale.x = -1.0
+			model.scale.x = -model.scale.x
 		model.position.y = DECK * 0.5
 		mi.add_child(model)
 	mi.position = center(r)

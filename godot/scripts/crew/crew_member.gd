@@ -16,6 +16,7 @@ var timer := 0.0
 var cargo := 0.0  # haul: units in hand
 var source := -1  # haul: storage module loaded from
 var eva := false  # outside the hull; pos is in the ship's frame
+var hidden := false  # riding in a breaching pod: not drawn, not in the way
 var air := 0.0  # seconds of air left in their suit while outside
 var alt := 0.0  # outside: metres above the deck (see CrewEva.fly)
 var face := Vector2.UP  # outside: which way they last flew, ship frame

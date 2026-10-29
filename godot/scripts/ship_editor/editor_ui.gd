@@ -10,12 +10,15 @@ signal theme_picked(id: StringName)
 
 const HELP := "LMB place · RMB remove · MMB paint theme · R rotate · F mirror part\n" \
 		+ "X symmetry (builds both sides) · M move parts (works anywhere)\n" \
+		+ "G crew view: walkable deck, click a part for its crew routes · Ctrl+Z undo\n" \
 		+ "V outside view · WASD pan · middle drag rotate · wheel zoom\n" \
 		+ "Esc map · the ship's nose points up the screen"
 const TOOLS := [["move", "Move", "Pick parts up and set them down (M). Allowed anywhere."],
 		["symmetry", "Symmetry", "Build both sides at once across the amber line (X)"],
 		["mirror", "Mirror", "Flip the part left-right (F)"],
-		["rotate", "Rotate", "Turn the part (R)"]]
+		["rotate", "Rotate", "Turn the part (R)"],
+		["walk", "Crew view", "Where crew can walk; click a part to see their supply routes (G)"],
+		["undo", "Undo", "Undo the last change (Ctrl+Z)"]]
 
 var _stats := RichTextLabel.new()
 var _warn := RichTextLabel.new()
@@ -46,7 +49,7 @@ func _ready() -> void:
 		var b := Button.new()
 		b.text = t[1]
 		b.tooltip_text = t[2]
-		b.toggle_mode = t[0] in ["move", "symmetry"]
+		b.toggle_mode = t[0] in ["move", "symmetry", "walk"]
 		b.focus_mode = Control.FOCUS_NONE
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b.pressed.connect(action.emit.bind(t[0]))
@@ -93,7 +96,7 @@ func _palette() -> VBoxContainer:
 	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var group := ButtonGroup.new()
 	var grid: GridContainer
-	for m in ModuleLibrary.all():
+	for m in ModuleLibrary.buildable():
 		if grid == null or m.category != grid.name:
 			box.add_child(UiKit.header(m.category))
 			grid = GridContainer.new()
@@ -120,10 +123,11 @@ func show_mode(text: String, refit: bool) -> void:
 	_mode.add_theme_color_override(&"font_color", UiStyle.OK if refit else UiStyle.WARN)
 
 
-## Keeps the Move and Symmetry buttons in step with keys.
-func show_tools(moving: bool, sym: bool) -> void:
+## Keeps the toggle buttons in step with keys.
+func show_tools(moving: bool, sym: bool, walk: bool) -> void:
 	_tools.move.set_pressed_no_signal(moving)
 	_tools.symmetry.set_pressed_no_signal(sym)
+	_tools.walk.set_pressed_no_signal(walk)
 
 
 func _on_theme(k: int) -> void:

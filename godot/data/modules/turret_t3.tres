@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="ShipModule" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ships/ship_module.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"turret_t3"
+display_name = "Laser Turret III"
+category = "weapon"
+size = Vector2i(4, 4)
+look = &"turret"
+color = Color(0.9, 0.15, 0.12, 1)
+mass = 20.0
+materials = {"iron": 40.0, "copper": 14.0, "silicon": 14.0, "gold": 4.0}
+hp = 620.0
+crew = 4
+firepower = 75.0
+swivel = true
+shot_power = 90.0
+salvage = {"alloy": 10.0, "electronics": 8.0}
+blocked = Array[Rect2]([Rect2(0, 0, 4, 1.5), Rect2(0, 3.5, 0.5, 0.5), Rect2(3.5, 3.5, 0.5, 0.5)])
+access = PackedVector2Array(1, 1.75, 1.75, 1.75, 2.25, 1.75, 3, 1.75)
