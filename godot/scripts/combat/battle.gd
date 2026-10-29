@@ -1,12 +1,11 @@
 extends Node3D
 ## Battle sandbox: your ship (the saved design, or a random one) against
 ## a random enemy. Both crews run their ships; guns fire on their own at
-## whatever is in range. The enemy closes to gun range and circles. A
-## ship whose bridge is cut off or destroyed is beaten, and guns stop
+## whatever is in range. A ship whose bridge is cut off or destroyed is beaten, and guns stop
 ## shooting at it unless you right click it again to finish it off.
+## The enemy fights to suit its guns (ShipTactics).
 
 const START := 55.0  # metres apart at the start, inside gun range
-const STANDOFF := 35.0  # the enemy circles at about this range
 const HELP := "Click your ship, right click to fly · right click a beaten enemy to keep firing\n" \
 		+ "E stop · left click/drag select crew, right click order them · Space follow\n" \
 		+ "V outside view · Alt/H module cards · Esc map · WASD pan · middle mouse rotate · wheel zoom"
@@ -20,6 +19,7 @@ var _guns: Array[ShipGuns] = []
 var _follow := true
 var _last := Vector2.ZERO
 var _think := 0.0
+var _ai: ShipTactics
 
 
 func _ready() -> void:
@@ -37,6 +37,7 @@ func _ready() -> void:
 	_foe.at = Transform2D(PI, Vector2(0.0, -START))  # nose to nose
 	_foe.hulk.sealed = true  # never see inside the enemy, only broken-off bits
 	_foe.sim.sealed = true
+	_ai = ShipTactics.new(_foe)
 	$Panel.bind(_me.sim)
 	$UI/Tags.bind(_me)
 	$UI/Tags.guns = _guns[0]
@@ -59,14 +60,11 @@ func _physics_process(delta: float) -> void:
 	_think -= delta
 	if _think <= 0.0:
 		_think = 1.0
-		_steer_foe()
-
-
-## The enemy heads for a spot at standoff range, sliding round you.
-func _steer_foe() -> void:
-	var me := _me.world(_me.pivot())
-	var off := (_foe.world(_foe.pivot()) - me).normalized().rotated(0.35)
-	_foe.goal = me + off * STANDOFF
+		if _beaten(_foe):
+			_foe.goal = null
+			_foe.look = null
+		else:
+			_ai.think(_me)
 
 
 func _process(_delta: float) -> void:

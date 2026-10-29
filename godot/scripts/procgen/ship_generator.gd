@@ -2,7 +2,9 @@ class_name ShipGenerator
 extends RefCounted
 ## Grows random ship designs from a core module so every encounter, and
 ## every wreck to salvage, is different. Ships keep to one theme with
-## the odd part from another, like a patched-up hull.
+## the odd part from another, like a patched-up hull. Thrusters are left
+## out of the random growth and fitted last (ShipDrives) so every ship
+## has mirrored main engines and side thrusters to steer with.
 
 
 static func generate(core: ShipModule, pool: Array[ShipModule],
@@ -11,6 +13,7 @@ static func generate(core: ShipModule, pool: Array[ShipModule],
 	var themes := ShipTheme.all()
 	var d := ShipDesign.new()
 	d.add(core, Vector2i.ZERO, 0, tid)
+	pool = pool.filter(func(m): return m.thrust <= 0.0)
 	var tries := parts * 10
 	while d.modules.size() < parts and tries > 0:
 		tries -= 1
@@ -22,19 +25,22 @@ static func generate(core: ShipModule, pool: Array[ShipModule],
 		var t: StringName = themes[rng.randi() % themes.size()].id if rng.randf() < mix else tid
 		if d.add(m, at, turn, t) and not ShipNav.reaches_all(d):
 			d.remove_at(at)  # would wall crew off from part of the ship
+	ShipDrives.fit(d, rng, tid)
 	return d
 
 
-## A random flyable test ship: a bridge with an airlock, a thruster,
-## fuel, ammo and power always aboard.
+## A random flyable test ship: a bridge with an airlock, engines,
+## fuel, ammo, power and at least one gun always aboard.
 static func sandbox(seed_: int, parts := 16) -> ShipDesign:
 	var pool: Array[ShipModule] = ModuleLibrary.buildable().filter(
 			func(m): return m.category != "command")
 	var rng := RandomNumberGenerator.new()
 	rng.seed = seed_
 	var g := generate(ModuleLibrary.by_id(&"bridge"), pool, rng, parts)
-	for id in [&"airlock", &"engine", &"fuel_tank", &"ammo_rack", &"generator", &"capacitor"]:
+	for id in [&"airlock", &"fuel_tank", &"ammo_rack", &"generator", &"capacitor"]:
 		ensure(g, ModuleLibrary.by_id(id), rng)
+	if g.total(&"firepower") <= 0.0:
+		ensure(g, ModuleLibrary.by_id(&"turret"), rng)
 	return g
 
 
