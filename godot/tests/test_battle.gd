@@ -28,6 +28,7 @@ func _init() -> void:
 		ga.tick(far, 1.0 / 30.0)
 	_check(shots[0] == 0, "nothing fires out of range")
 	_clash()
+	_random_ships()
 	print("battle tests: %s" % ("FAILED %d" % _fails if _fails else "ok"))
 	quit(1 if _fails else 0)
 
@@ -42,6 +43,28 @@ func _clash() -> void:
 	ShipClash.resolve(a, b)
 	_check(a.vel.y > -5.0 and b.vel.y < 0.0, "rammed ships bounce apart")
 	_check(_hp(a) < ha and _hp(b) < hb, "and both take damage")
+
+
+## Random ships get main engines plus side thrusters to turn both ways,
+## and the AI picks a plan that suits their guns.
+func _random_ships() -> void:
+	var bad := 0
+	for k in 12:
+		var b := ShipBody.new()
+		b.setup(ShipGenerator.sandbox(k * 31 + 5), 0)
+		b.helm.weigh()
+		var mains := 0
+		for i in b.sim.state.size():
+			mains += int(b.helm.push(i).normalized().y < -0.9)
+		var turns := [false, false]
+		for i in b.sim.state.size():
+			var t := b.helm.twist(i, b.helm.push(i))
+			turns[int(t > 0.0)] = turns[int(t > 0.0)] or absf(t) > 1.0
+		bad += int(mains < 2 or not (turns[0] and turns[1]))
+		var ai := ShipTactics.new(b)
+		ai.think(_ship(Vector2(0.0, -40.0), PI))
+		bad += int(ai.plan == &"" or ai.plan == &"flee")
+	_check(bad == 0, "random ships can fly, turn and fight (%d bad)" % bad)
 
 
 ## Bridge, a corridor under it, a laser turret and a charged capacitor.

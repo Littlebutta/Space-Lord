@@ -25,6 +25,7 @@ var at := Transform2D.IDENTITY  # ship-local (x, z) -> world (x, z)
 var vel := Vector2.ZERO  # world metres per second
 var spin := 0.0  # radians per second
 var goal: Variant = null  # world point to fly to, or null
+var look: Variant = null  # world point to keep the nose on (AI), or null
 var heading: Variant = null  # world direction to face on arrival, or null
 var holding := false  # after halt(): kill even slow drift, stay put
 
@@ -95,6 +96,8 @@ func _fly(delta: float) -> void:
 			face = to if not near else face
 	if heading != null and near:
 		face = heading
+	if look != null:
+		face = look - at * helm.com
 	var dv := want - vel
 	if dv.length() < (0.05 if holding and goal == null else SLACK):
 		dv = Vector2.ZERO
