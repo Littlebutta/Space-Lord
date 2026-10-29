@@ -20,6 +20,7 @@ var hidden := false  # riding in a breaching pod: not drawn, not in the way
 var air := 0.0  # seconds of air left in their suit while outside
 var alt := 0.0  # outside: metres above the deck (see CrewEva.fly)
 var face := Vector2.UP  # outside: which way they last flew, ship frame
+var hand: Variant = null  # world point between their hands, set by CrewLook
 var order := false  # following a player order; the job board leaves them be
 var selected := false
 var strand := -1.0  # aboard a cut-off piece: seconds until they bail out

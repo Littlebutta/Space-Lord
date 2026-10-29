@@ -6,7 +6,7 @@ shader_type spatial;
 
 #include "res://assets/materials/pbr.gdshaderinc"
 
-uniform vec4 holes[8];
+uniform vec4 holes[48];
 uniform int hole_count = 0;
 uniform vec4 cuts[48];
 uniform int cut_count = 0;
@@ -22,7 +22,7 @@ void fragment() {
 		}
 	}
 	for (int k = 0; k < cut_count; k++) {
-		if (inside(cuts[k], -0.01)) {
+		if (inside(cuts[k], -0.05)) {  // takes its edge walls too
 			discard;
 		}
 	}

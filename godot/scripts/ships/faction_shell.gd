@@ -2,82 +2,110 @@ class_name FactionShell
 extends RefCounted
 ## Outside hulls for the non-Human factions, built over one theme's
 ## region of the ship (see HullShell.make):
-##   flesh   - Bio: one lumpy, swelling mass that rolls down to the deck.
-##   facets  - Crystal: big flat-shaded crystal facets at uneven heights.
-##   plates  - Scrap: the Human shell under a pile of mismatched, tilted
-##             plates with spikes jutting from the edges.
-## Heights fall off only toward the ship's real outer edge, so where two
-## factions meet inside the ship both hulls are at full height and blend.
+##   flesh   - Bio: one lumpy, swelling mass with rounded edges.
+##   facets  - Crystal: flat-shaded crystal facets with chamfered edges.
+##   plates  - Scrap: salvage plates and spikes on the Human-style shell.
+## Heights fall off only toward the ship's real outer edge (and gaps in
+## it), so factions meet at full height. Flesh and crystal also creep a
+## random, ragged way onto their neighbours' hulls (infected, or grown
+## over), different every time the hull is built.
 
 const FLESH_H := 2.7  # a little taller than Human (bigger is fine for crew)
 const FACET_H := 2.6
+const REACH := 1.6  # how far the creep can spread onto neighbours
+const SKIRT := 0.45  # how far the edge rolls down past the deck top
 
 
 ## Mesh for `style` over polygon `region`; `ship` is the whole ship's
-## outline (for distance to its edge), y0 the deck top.
+## outline, `gaps` empty cells inside it (left open), y0 the deck top.
 static func build(style: StringName, region: PackedVector2Array,
-		ship: Array[PackedVector2Array], y0: float, seed: int) -> ArrayMesh:
+		ship: Array[PackedVector2Array], gaps: Array, y0: float, seed: int) -> ArrayMesh:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = seed
-	match style:
-		&"flesh":
-			return _field(region, ship, y0, rng, 0.32, FLESH_H, true)
-		&"facets":
-			return _field(region, ship, y0, rng, 0.9, FACET_H, false)
-	return null
+	var smooth := style == &"flesh"
+	var shaped := _shape(ship, smooth)
+	var edges: Array = shaped.duplicate()  # distances drop toward these
+	for g: Rect2 in gaps:
+		edges.append(PackedVector2Array([g.position, Vector2(g.end.x, g.position.y), g.end,
+				Vector2(g.position.x, g.end.y)]))
+	return _field(region, shaped, edges, gaps, y0, rng, 0.32 if smooth else 0.85,
+			FLESH_H if smooth else FACET_H, smooth)
 
 
-## A height field over `region`: Delaunay triangles through jittered
-## grid points every `step` metres plus the outline, raised by `top`
-## and rounded down near the ship's edge. Smooth (flesh) or faceted.
-static func _field(region: PackedVector2Array, ship: Array[PackedVector2Array], y0: float,
-		rng: RandomNumberGenerator, step: float, top: float, smooth: bool) -> ArrayMesh:
-	var pts := PackedVector2Array()
-	for i in region.size():  # the outline, cut into short runs
-		var a := region[i]
-		var b := region[(i + 1) % region.size()]
-		var n := maxi(int(a.distance_to(b) / step), 1)
-		for k in n:
-			pts.append(a.lerp(b, float(k) / n))
-	var box := Rect2(region[0], Vector2.ZERO)
-	for v in region:
-		box = box.expand(v)
-	var y := box.position.y + step * 0.5
-	while y < box.end.y:
-		var x := box.position.x + step * 0.5
-		while x < box.end.x:
-			var p := Vector2(x, y) + Vector2(rng.randf() - 0.5, rng.randf() - 0.5) * step * 0.6
-			if Geometry2D.is_point_in_polygon(p, region) and _edge(p, [region]) > step * 0.3:
-				pts.append(p)
-			x += step
-		y += step
+## The ship outline with its corners broken: rounded for flesh,
+## chamfered for crystal.
+static func _shape(ship: Array[PackedVector2Array], round: bool) -> Array[PackedVector2Array]:
+	var out: Array[PackedVector2Array] = []
+	var join := Geometry2D.JOIN_ROUND if round else Geometry2D.JOIN_SQUARE
+	for p in ship:
+		for q in Geometry2D.offset_polygon(p, -0.7, join):
+			for r in Geometry2D.offset_polygon(q, 0.7, join):
+				if not Geometry2D.is_polygon_clockwise(r):
+					out.append(r)
+	return out if not out.is_empty() else ship
+
+
+static func _field(region: PackedVector2Array, shaped: Array[PackedVector2Array], edges: Array,
+		gaps: Array, y0: float, rng: RandomNumberGenerator, step: float, top: float,
+		smooth: bool) -> ArrayMesh:
+	var mine := _clip(region, shaped)  # this faction's part, corners broken
+	var reach := _reach(region, shaped)  # where it may creep onto others
 	var noise := FastNoiseLite.new()
 	noise.seed = rng.randi()
 	noise.frequency = 0.22 if smooth else 0.5
+	var pts := PackedVector2Array()
 	var hs := PackedFloat32Array()
 	var ins := PackedFloat32Array()  # 0 where it meets another faction
+	var keep := PackedByteArray()  # 1: part of the hull or of the creep
+	for poly in mine:  # outlines, cut into short runs
+		for i in poly.size():
+			var a := poly[i]
+			var b := poly[(i + 1) % poly.size()]
+			for k in maxi(int(a.distance_to(b) / step), 1):
+				pts.append(a.lerp(b, float(k) / maxi(int(a.distance_to(b) / step), 1)))
+	var box := Rect2(region[0], Vector2.ZERO)
+	for v in region:
+		box = box.expand(v)
+	box = box.grow(REACH)
+	var y := box.position.y
+	while y < box.end.y:
+		var x := box.position.x
+		while x < box.end.x:
+			var p := Vector2(x, y) + Vector2(rng.randf() - 0.5, rng.randf() - 0.5) * step * 0.6
+			if (_in(p, mine) or _in(p, reach)) and not _in_gap(p, gaps) and _edge(p, mine) > step * 0.3:
+				pts.append(p)
+			x += step
+		y += step
 	for p in pts:
-		var e := _edge(p, ship)
-		var rise := sqrt(clampf(e / (1.8 if smooth else 1.0), 0.0, 1.0))
+		var e := _edge(p, edges)
+		var own := _in(p, mine) or _edge(p, mine) < 0.01
 		var lump := noise.get_noise_2dv(p) * (0.55 if smooth else 0.5)
 		if smooth:  # folds and wrinkles on top of the big swells
 			lump += noise.get_noise_2dv(p * 4.3 + Vector2(17, 3)) * 0.12
 			lump += absf(noise.get_noise_2dv(p * 9.0 + Vector2(5, 41))) * -0.06
 		else:
 			lump += rng.randf_range(-0.35, 0.35)
-		# meet a neighbouring faction at the Human hull height, swell inside
-		var inner := clampf(_edge(p, [region]) / 1.5, 0.0, 1.0)
-		ins.append(inner)
-		hs.append(y0 + (HullShell.HEIGHT + (top - HullShell.HEIGHT + lump) * inner) * rise)
+		var rise := sqrt(clampf(e / (1.8 if smooth else 1.0), 0.0, 1.0))
+		if own:
+			var inner := clampf(_edge(p, [region]) / 1.5, 0.0, 1.0) if _in(p, [region]) else 0.0
+			hs.append(y0 - SKIRT * (1.0 - rise) + (HullShell.HEIGHT + SKIRT + (top - HullShell.HEIGHT + lump) * inner) * rise)
+			ins.append(inner)
+			keep.append(1)
+		else:  # the creep: a thin skin over the neighbour, ragged at its edge
+			var out := _edge(p, [region]) / REACH
+			var bevel := clampf(_edge(p, shaped) / HullShell.BEVEL, 0.0, 1.0)
+			hs.append(y0 + HullShell.HEIGHT - HullShell.BEVEL * (1.0 - bevel) + 0.05 + 0.12 * (1.0 - out))
+			ins.append(0.0)
+			keep.append(int(noise.get_noise_2dv(p * 0.7 + Vector2(91, 7)) * 0.5 + 0.5 > out + 0.15))
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var tri := Geometry2D.triangulate_delaunay(pts)
 	for k in range(0, tri.size(), 3):
-		var c := (pts[tri[k]] + pts[tri[k + 1]] + pts[tri[k + 2]]) / 3.0
-		if not Geometry2D.is_point_in_polygon(c, region):
+		var ids := [tri[k], tri[k + 1], tri[k + 2]]
+		var c := (pts[ids[0]] + pts[ids[1]] + pts[ids[2]]) / 3.0
+		if _in_gap(c, gaps) or not (_in(c, mine) or (_in(c, reach) and keep[ids[0]] and keep[ids[1]] and keep[ids[2]])):
 			continue
 		var tint := Color(1, 1, 1).darkened(rng.randf() * 0.25)  # facet shading
-		var ids := [tri[k], tri[k + 1], tri[k + 2]]
 		var vs: Array[Vector3] = []
 		for j in ids:
 			vs.append(Vector3(pts[j].x, hs[j], pts[j].y))
@@ -85,15 +113,51 @@ static func _field(region: PackedVector2Array, ship: Array[PackedVector2Array], 
 			vs = [vs[0], vs[2], vs[1]]
 			ids = [ids[0], ids[2], ids[1]]
 		for j in 3:
-			var v := vs[j]
 			st.set_color(Color(tint, ins[ids[j]]))  # alpha: how free it is to breathe
-			st.set_uv(Vector2(v.x, v.z) * 0.25)
-			st.add_vertex(v)
+			st.set_uv(Vector2(vs[j].x, vs[j].z) * 0.25)
+			st.add_vertex(vs[j])
 	if smooth:
 		st.index()
 	st.generate_normals()
 	st.generate_tangents()  # for the detail normal maps
 	return st.commit()
+
+
+## `region` cut to the corner-broken ship outline.
+static func _clip(region: PackedVector2Array, shaped: Array[PackedVector2Array]) -> Array[PackedVector2Array]:
+	var out: Array[PackedVector2Array] = []
+	for s in shaped:
+		for q in Geometry2D.intersect_polygons(region, s):
+			if not Geometry2D.is_polygon_clockwise(q):
+				out.append(q)
+	return out if not out.is_empty() else [region]
+
+
+## The band round `region` (inside the ship) that the creep may cover.
+static func _reach(region: PackedVector2Array, shaped: Array[PackedVector2Array]) -> Array[PackedVector2Array]:
+	var out: Array[PackedVector2Array] = []
+	for grown in Geometry2D.offset_polygon(region, REACH, Geometry2D.JOIN_ROUND):
+		for s in shaped:
+			for q in Geometry2D.intersect_polygons(grown, s):
+				if not Geometry2D.is_polygon_clockwise(q):
+					for r in Geometry2D.clip_polygons(q, region):
+						if not Geometry2D.is_polygon_clockwise(r):
+							out.append(r)
+	return out
+
+
+static func _in(p: Vector2, polys: Array) -> bool:
+	for poly: PackedVector2Array in polys:
+		if Geometry2D.is_point_in_polygon(p, poly):
+			return true
+	return false
+
+
+static func _in_gap(p: Vector2, gaps: Array) -> bool:
+	for g: Rect2 in gaps:
+		if g.grow(-0.05).has_point(p):
+			return true
+	return false
 
 
 ## Shortest distance from `p` to the edges of polygons `polys`.
