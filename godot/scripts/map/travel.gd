@@ -20,6 +20,8 @@ static var _visited := {}  # system -> its sites
 const NAMES := ["Kestrel", "Vanta", "Orrin's Reach", "Hollow Gate", "Cinder",
 		"Lumen Drift", "Tarsis", "Ebon Wake", "Sable", "Halcyon"]
 const EDGE := 165.0  # jump points sit this far out
+const PLANET_REACH := 10.0  # widest planet + rings + moons
+const BELT_REACH := 5.0
 
 
 ## Test sites: one wreck and a few asteroid nodes, made once per run.
@@ -28,20 +30,55 @@ static func make_sites(seed_: int) -> void:
 		return
 	var rng := RandomNumberGenerator.new()
 	rng.seed = seed_
-	sites.append({kind = &"wreck", pos = Vector3(-60, 0, 45), name = "Wreck",
+	sites.append({kind = &"wreck", pos = _free(rng, 50.0, 110.0), name = "Wreck",
 			ore = 0.0, seed = rng.randi()})
-	while sites.size() < 5:
-		var a := rng.randf() * TAU
-		var p := Vector3(cos(a), 0.0, sin(a)) * rng.randf_range(40.0, 120.0)
-		if site_at(p, 30.0) >= 0:
-			continue  # keep pings apart
-		sites.append({kind = &"asteroids", pos = p, name = "Asteroids",
+	for k in 4:
+		sites.append({kind = &"asteroids", pos = _free(rng, 40.0, 130.0), name = "Asteroids",
 				ore = rng.randf_range(150.0, 400.0), seed = rng.randi()})
 	_station(rng)
 	for to in [system - 1, system + 1]:
-		var a := rng.randf() * TAU
-		sites.append({kind = &"jump", pos = Vector3(cos(a), 0, sin(a)) * EDGE,
+		sites.append({kind = &"jump", pos = _free(rng, EDGE, EDGE + 40.0),
 				name = "Jump to %s" % system_name(to), ore = 0.0, seed = rng.randi(), to = to})
+
+
+## The system's orbits {radius, reach, belt, phase, seed}, the same
+## every time for a seed. Neighbours' reaches never overlap.
+static func lanes() -> Array[Dictionary]:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = system_seed() + 71
+	var out: Array[Dictionary] = []
+	var r := 14.0  # past the sun and its halo
+	var prev := 0.0
+	for i in rng.randi_range(4, 8):
+		var belt := rng.randf() < 0.25
+		var reach := BELT_REACH if belt else PLANET_REACH
+		r += prev + reach + rng.randf_range(4.0, 34.0)
+		prev = reach
+		out.append({radius = r, reach = reach, belt = belt,
+				phase = rng.randf() * TAU, seed = rng.randi()})
+	return out
+
+
+## True when a still object `room` wide at distance d from the sun stays
+## clear of every orbiting body.
+static func clear_of_orbits(d: float, room: float) -> bool:
+	for l in lanes():
+		if absf(d - l.radius) < l.reach + room:
+			return false
+	return true
+
+
+## A spot lo..hi from the sun that no planet or belt sweeps through and
+## that keeps clear of the other sites; further out if none is free.
+static func _free(rng: RandomNumberGenerator, lo: float, hi: float) -> Vector3:
+	for tries in 200:
+		var span := hi - lo + tries * 2.0  # widen the band when it's crowded
+		var d := lo + rng.randf() * span
+		var a := rng.randf() * TAU
+		var p := Vector3(cos(a), 0.0, sin(a)) * d
+		if clear_of_orbits(d, 7.0) and site_at(p, 30.0) < 0:
+			return p
+	return Vector3(hi + 300.0, 0.0, 0.0)
 
 
 static func system_seed(k := system) -> int:
@@ -104,13 +141,7 @@ static func site() -> Dictionary:
 static func _station(rng: RandomNumberGenerator) -> void:
 	var fs := ShipTheme.all().filter(func(t): return t.id != &"human")
 	var f: ShipTheme = fs[rng.randi() % fs.size()] if fs else ShipTheme.all()[0]
-	var p := Vector3.ZERO
-	for tries in 20:  # keep clear of the other pings
-		var a := rng.randf() * TAU
-		p = Vector3(cos(a), 0, sin(a)) * 75.0
-		if site_at(p, 30.0) < 0:
-			break
-	sites.append({kind = &"station", pos = p,
+	sites.append({kind = &"station", pos = _free(rng, 60.0, 100.0),
 			name = "%s Station" % f.display_name, ore = 0.0, seed = rng.randi(),
 			faction = f.id})
 

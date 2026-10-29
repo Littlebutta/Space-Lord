@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1")
 id = &"supply_depot"
-display_name = "Supply Depot"
+display_name = "Supply Depot (retired)"
 category = "storage"
 size = Vector2i(2, 2)
 color = Color(0.4, 0.5, 0.38, 1)
@@ -14,5 +14,5 @@ materials = {"iron": 10.0, "copper": 0.5}
 hp = 160.0
 storage = {"ammo": 150.0, "fuel": 300.0, "food": 120.0}
 salvage = {"alloy": 5.0}
-bulk = true
+buildable = false
 blocked = Array[Rect2]([Rect2(0, 0, 0.5, 2), Rect2(1.5, 0, 0.5, 2)])

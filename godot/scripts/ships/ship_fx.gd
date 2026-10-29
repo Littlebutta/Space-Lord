@@ -89,19 +89,19 @@ func _process(delta: float) -> void:
 		_last[i] = n.global_transform
 		if state.module(i).thrust > 0.0:
 			var on := 1.0 if thrust_all or state.is_running(i) else 0.0
-			_exhaust(n, (helm.throttle.get(i, 0.0) if helm else on) if alive else 0.0)
+			_exhaust(n, (helm.throttle.get(i, 0.0) if helm else on) if alive else 0.0, i)
 		var p := state.pieces
 		_flicker(n, alive and (p.drifting(i) or not p.powered(i)), delta)
 
 
 ## Exhaust at `level` 0..1: the flame grows, brightens and thickens
 ## with the throttle, so engines spool up and down rather than snap.
-func _exhaust(n: Node3D, level: float) -> void:
+func _exhaust(n: Node3D, level: float, i: int) -> void:
 	var on := level > 0.02
 	for z: Node3D in n.find_children("Nozzle*", "", true, false):
 		var fx := z.get_node_or_null(^"FxExhaust") as Node3D
 		if fx == null and on:
-			fx = FxKit.exhaust()
+			fx = FxKit.exhaust(state.module(i).drive_power > 0.0)
 			var roar := Sfx.player(&"engine_loop", -6.0, 50.0, true)
 			if roar:
 				fx.add_child(roar)

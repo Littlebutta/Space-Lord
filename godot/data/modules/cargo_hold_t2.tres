@@ -14,6 +14,6 @@ mass = 9.0
 materials = {"iron": 20.0, "copper": 1.0}
 hp = 280.0
 hold = true
-storage = {"iron": 150.0, "copper": 100.0, "silicon": 100.0, "gold": 38.0, "parts": 100.0, "food": 125.0}
+storage = {"iron": 150.0, "copper": 100.0, "silicon": 100.0, "gold": 38.0, "parts": 100.0, "ammo": 75.0, "fuel": 150.0, "food": 125.0}
 salvage = {"alloy": 9.0}
 blocked = Array[Rect2]([Rect2(0, 0, 1, 1), Rect2(2, 0, 1, 1), Rect2(0, 2, 1, 1), Rect2(2, 2, 1, 1)])

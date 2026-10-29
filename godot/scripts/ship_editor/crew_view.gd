@@ -71,7 +71,7 @@ static func routes(d: ShipDesign, nav: ShipNav, i: int) -> Array:
 
 
 ## Store of `res` crew would fetch from for a part at `to`: the shortest
-## walk, bulk depots counted as CrewSim.BULK_PULL times closer. -1 if none.
+## walk. -1 if none.
 static func store(d: ShipDesign, nav: ShipNav, res: String, to: Vector2) -> int:
 	var best := -1
 	var best_n := INF
@@ -80,7 +80,6 @@ static func store(d: ShipDesign, nav: ShipNav, res: String, to: Vector2) -> int:
 		if not m.storage.has(res) or not nav.connected(d.spot(k), to):
 			continue
 		var n := ShipNav.length(d.spot(k), nav.route(d.spot(k), to))
-		n /= CrewSim.BULK_PULL if m.bulk else 1.0
 		if n < best_n:
 			best = k
 			best_n = n

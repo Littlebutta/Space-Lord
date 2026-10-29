@@ -41,31 +41,26 @@ func _init() -> void:
 	_run(sim, 40.0)
 	var fed := hungry.all(func(i): return s.is_running(i) or s.hp[i] < s.module(i).hp)
 	_check(fed, "haulers restocked every module")
-	_check_depot()
+	_check_ion()
 	_check_species()
 	print("crew tests: %s" % ("FAILED %d" % _fails if _fails else "ok"))
 	sim.free()
 	quit(1 if _fails else 0)
 
 
-## Haulers restock from a Supply Depot over an equally near cargo hold.
-func _check_depot() -> void:
+## Ion thrusters fire with no crew or fuel, burning grid power instead.
+func _check_ion() -> void:
 	var d := ShipDesign.new()
 	d.add(ModuleLibrary.by_id(&"bridge"), Vector2i.ZERO)
-	d.add(ModuleLibrary.by_id(&"cargo_hold"), Vector2i(2, 0))
-	d.add(ModuleLibrary.by_id(&"supply_depot"), Vector2i(0, 2))
-	var sim := CrewSim.new()
-	sim.setup(d, 3)
-	sim.state.stock[0]["food"] = 0.0
-	var from_depot := false
-	for k in 600:
-		sim._physics_process(1.0 / 30.0)
-		for c in sim.crew:
-			if c.job and c.job.type == &"haul" and c.cargo > 0.0:
-				from_depot = from_depot or c.source == 2
-	_check(from_depot, "haulers prefer the supply depot")
-	_check(sim.state.supplied(0), "bridge restocked from the depot")
-	sim.free()
+	d.add(ModuleLibrary.by_id(&"capacitor"), Vector2i(2, 0))
+	d.add(ModuleLibrary.by_id(&"engine_ion"), Vector2i(0, 2))
+	var s := ShipState.new(d)
+	_check(s.can_fire(2), "ion thruster fires unmanned and unfuelled")
+	var before := s.power.charge
+	s.fire(2, 1.0)
+	_check(s.power.charge < before, "ion thruster burns power")
+	s.power.charge = 0.0
+	_check(not s.can_fire(2), "ion thruster stops on a flat grid")
 
 
 ## The ship has storage for everything module i burns.

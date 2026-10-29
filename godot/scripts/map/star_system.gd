@@ -3,9 +3,8 @@ extends Node3D
 ## Procedurally places planets and asteroid belts around the star of the
 ## system we're in (Travel.system) and moves them along their orbits
 ## using GameClock time. Each system gets its own star colour and sky.
-
-@export var body_count := Vector2i(4, 8)
-@export var orbit_scale := 0.6  # bigger = slower orbits
+## Orbits come from Travel.lanes(): spaced so bodies (moons and rings included)
+## never touch each other, and Travel keeps its fixed sites out of them.
 
 const STARS := [Color(1, 0.65, 0.3), Color(1, 0.85, 0.6), Color(0.65, 0.8, 1),
 		Color(1, 0.45, 0.25), Color(0.95, 0.95, 1)]
@@ -17,15 +16,12 @@ func _ready() -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = Travel.system_seed()
 	_star(rng)
-	var r := 18.0
-	for i in rng.randi_range(body_count.x, body_count.y):
-		r += rng.randf_range(12.0, 24.0)
-		var belt := rng.randf() < 0.25
-		var body: Node3D = _belt(rng, r) if belt else MapArt.planet(rng)
+	for l in Travel.lanes():
+		rng.seed = l.seed
+		var body: Node3D = _belt(rng, l.radius) if l.belt else MapArt.planet(rng)
 		add_child(body)
-		var period := orbit_scale * pow(r, 1.5)  # Kepler-ish, in hours
-		_orbits.append({node = body, radius = r, period = period,
-				phase = rng.randf() * TAU, belt = belt})
+		_orbits.append({node = body, radius = l.radius, phase = l.phase, belt = l.belt,
+				period = 0.6 * pow(l.radius, 1.5)})  # Kepler-ish, in hours
 
 
 func _process(delta: float) -> void:

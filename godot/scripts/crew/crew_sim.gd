@@ -13,7 +13,6 @@ signal teleported(from: Vector2, to: Vector2)
 
 const SPEED := 3.0  # metres per second
 const CARRY := 20.0  # units per haul trip
-const BULK_PULL := 3.0  # haulers walk this much further to use a bulk store
 const LOAD_TIME := 0.6  # seconds to load or unload
 const REPAIR_RATE := 6.0  # hp per second, so guns can outpace repairs
 const THINK := 0.5  # seconds between job board passes
@@ -319,7 +318,7 @@ func _draw(delta: float) -> void:
 		_looks[k].draw(by[k], self, delta)
 
 
-## Closest intact store for `res`, bulk stores (supply depots) first.
+## Closest intact store for `res` by walk (teleports count).
 func nearest_store(res: String, from: Vector2, skip: int) -> int:
 	var best := skip if state.module(skip).storage.has(res) else -1
 	var best_d := INF
@@ -331,7 +330,6 @@ func nearest_store(res: String, from: Vector2, skip: int) -> int:
 			continue
 		var d := from.distance_to(at) if nav.pads.is_empty() \
 				else ShipNav.length(from, nav.route(from, at))  # teleports may be shorter
-		d /= BULK_PULL if m.bulk else 1.0
 		if d < best_d:
 			best = i
 			best_d = d
