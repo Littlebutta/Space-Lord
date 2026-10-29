@@ -30,6 +30,8 @@ static func resolve(a: ShipBody, b: ShipBody) -> void:
 	a.vel += n * j / ma
 	b.vel -= n * j / mb
 	if -closing > SAFE:
+		var at := a.world(a.sim.state.pieces.world(hit[0]))
+		Sfx.play(a, &"ship_bump", Vector3(at.x, 1.0, at.y), minf(-closing * 2.0 - 6.0, 4.0), 80.0)
 		var dmg := HARM * -closing
 		a.sim.state.damage(hit[0], dmg * mb / (ma + mb))
 		b.sim.state.damage(hit[1], dmg * ma / (ma + mb))

@@ -134,9 +134,11 @@ func _physics_process(delta: float) -> void:
 				mode = &"docked"
 			elif crew.size() == left.size():
 				mode = &"out"
+				Sfx.play(self, &"pod_launch", Vector3(at.x, UP, at.y), 0.0, 70.0)
 		&"out":
 			if _fly(target.world(anchor), delta):
 				mode = &"latched"
+				Sfx.play(self, &"pod_latch", Vector3(at.x, UP, at.y), 0.0, 70.0)
 		&"latched":
 			at = target.world(anchor)
 		&"recall":

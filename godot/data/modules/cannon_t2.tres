@@ -15,6 +15,7 @@ materials = {"iron": 28.0, "copper": 5.0, "silicon": 1.0}
 hp = 320.0
 crew = 3
 firepower = 110.0
+reach = 95.0
 needs_near = {"ammo_rack": 6}
 upkeep = {"ammo": 5.0}
 salvage = {"alloy": 8.4, "parts": 4.5}

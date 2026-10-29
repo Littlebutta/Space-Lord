@@ -7,7 +7,8 @@ extends Node3D
 
 const START := 55.0  # metres apart at the start, inside gun range
 const STANDOFF := 35.0  # the enemy circles at about this range
-const HELP := "Click your ship, right click to fly · right click a beaten enemy to keep firing\n" \
+const HELP := "Click your ship, right click to fly (hold and drag to set facing)\n" \
+		+ "Right click a beaten enemy to keep firing\n" \
 		+ "E stop · left click/drag select crew, right click order them · Space follow\n" \
 		+ "V outside view · Alt/H module cards · Esc map · WASD pan · middle mouse rotate · wheel zoom"
 
@@ -113,8 +114,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		if hit != null and _on(_foe, Vector2(hit.x, hit.z)):
 			_attack = _beaten(_foe)  # only a fresh order counts once it's beaten
 		elif hit != null:
-			_me.goal = Vector2(hit.x, hit.z)
-			_marker.ping(_me.goal)
+			_marker.press(Vector2(hit.x, hit.z))
 	var key := event as InputEventKey
 	if key == null or not key.pressed or key.echo:
 		return

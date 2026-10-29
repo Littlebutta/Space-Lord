@@ -53,17 +53,18 @@ func tick(foe: ShipBody, delta: float) -> void:
 		dir = dir.rotated(randf_range(-SPREAD, SPREAD))
 		var dmg := s.module(i).firepower * RELOAD * DAMAGE
 		var beam := s.module(i).shot_power > 0.0
-		var hit := _first(foe, from, dir * RANGE) if beam else Vector2(-1, 1)
-		var end := from + dir * RANGE * hit.y
+		var far := reach(i)
+		var hit := _first(foe, from, dir * far) if beam else Vector2(-1, 1)
+		var end := from + dir * far * hit.y
 		s.aim[i] = Vector3(end.x, 1.0, end.y)
 		var ok := s.shoot(i)
 		s.aim.erase(i)
 		if not ok:
 			continue
 		if beam:  # lands at once
-			_strike(i, foe, from, dir * RANGE, dmg)
+			_strike(i, foe, from, dir * far, dmg)
 		else:
-			_slugs.append([i, from, dir * SLUG, RANGE, dmg, _slug_fx(i, from, dir)])
+			_slugs.append([i, from, dir * SLUG, far, dmg, _slug_fx(i, from, dir)])
 
 
 ## Moves slugs along; each hits the first enemy module it passes through.
@@ -193,6 +194,12 @@ static func aim_head(n: Node3D, to: Vector3, delta: float) -> bool:
 	return absf(off) < LINED_UP
 
 
+## How far gun i shoots: bigger tiers reach further.
+func reach(i: int) -> float:
+	var r := me.sim.state.module(i).reach
+	return r if r > 0.0 else RANGE
+
+
 ## Nearest intact enemy module gun i can hit: anything in range for a
 ## turret, for a fixed gun only what its nose line passes through.
 func _target(i: int, from: Vector2, foe: ShipBody) -> int:
@@ -200,7 +207,7 @@ func _target(i: int, from: Vector2, foe: ShipBody) -> int:
 	var nose := _nose(i)
 	var free := me.sim.state.module(i).swivel
 	var best := -1
-	var best_d := RANGE
+	var best_d := reach(i)
 	for k in fs.size():
 		if fs.hp[k] <= 0.0 or fs.pieces.drifting(k):
 			continue
