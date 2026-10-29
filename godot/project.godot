@@ -18,6 +18,7 @@ UiSkin="*res://scripts/autoload/ui_skin.gd"
 Display="*res://scripts/autoload/display.gd"
 Graphics="*res://scripts/autoload/graphics.gd"
 UiSounds="*res://scripts/autoload/ui_sounds.gd"
+Music="*res://scripts/autoload/music.gd"
 
 [display]
 

@@ -9,6 +9,9 @@ extends Node3D
 
 const SPARK_RATE := 0.7  # sparks per second on each broken module
 const SPARK_GAP := 0.4  # seconds between spark sounds
+const HUM_NEAR := 18.0  # camera this close hears the interior hum fully
+const HUM_FAR := 45.0  # and from this far, not at all
+const HUM_DB := -16.0  # kept quiet: it's a backdrop
 
 ## Every working thruster fires, e.g. while the ship is under way. When
 ## off, a thruster only fires while it is crewed and fuelled.
@@ -22,6 +25,7 @@ var sim: CrewSim  # when set, spacewalks hiss the airlock
 var _outside := {}  # crew member -> was outside last frame
 var _spark_cd := 0.0
 var _stock_cd := 0.0
+var _hum: AudioStreamPlayer
 var _alive := PackedByteArray()
 var _last := {}  # module -> last global transform, for debris
 
@@ -33,10 +37,10 @@ func bind(h: HulkView, s: ShipState) -> void:
 	_alive.resize(s.size())
 	for i in s.size():
 		_alive[i] = int(s.hp[i] > 0.0)
-	var hum := Sfx.player(&"ship_hum", -4.0, 45.0, true)
-	if hum:
-		hum.autoplay = true
-		add_child(hum)
+	_hum = AudioStreamPlayer.new()
+	_hum.stream = _interior()
+	_hum.volume_db = -80.0
+	add_child(_hum)
 
 
 ## Fires module i's guns from every muzzle: red beams for lasers,
@@ -70,6 +74,7 @@ func _process(delta: float) -> void:
 		_stock_cd = 0.5
 		_stock()
 	_spacewalks()
+	_hum_level(delta)
 	for i in state.size():
 		var alive := state.hp[i] > 0.0
 		if _alive[i] and not alive and _last.has(i):
@@ -193,3 +198,28 @@ func _writhe(n: Node3D, on: bool, delta: float) -> void:
 		k = move_toward(k, 1.0 if on else 0.0, delta * 2.0)
 		t.set_meta(&"thrust", k)
 		t.set_instance_shader_parameter(&"thrust", k)
+
+
+## The interior hum fades in quietly as the camera closes on the decks.
+func _hum_level(delta: float) -> void:
+	var cam := get_viewport().get_camera_3d() if _hum else null
+	if cam == null:
+		return
+	var d := cam.global_position.distance_to(global_position)
+	var k := clampf((HUM_FAR - d) / (HUM_FAR - HUM_NEAR), 0.0, 1.0)
+	var db := lerpf(-60.0, HUM_DB, sqrt(k))
+	_hum.volume_db = lerpf(_hum.volume_db, db, minf(delta * 4.0, 1.0))
+	if k > 0.0 and not _hum.playing:
+		_hum.play()
+	elif k == 0.0 and _hum.playing and _hum.volume_db < -55.0:
+		_hum.stop()
+
+
+## Devin's recorded interior ambience, looped; the synth hum otherwise.
+static func _interior() -> AudioStream:
+	var s := load(Sfx.DIR + "ship_interior.mp3") as AudioStreamMP3 \
+			if ResourceLoader.exists(Sfx.DIR + "ship_interior.mp3") else null
+	if s == null:
+		return Sfx.stream(&"ship_hum", true)
+	s.loop = true
+	return s
