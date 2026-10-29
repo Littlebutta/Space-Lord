@@ -38,7 +38,7 @@ func bind(h: HulkView, s: ShipState) -> void:
 	for i in s.size():
 		_alive[i] = int(s.hp[i] > 0.0)
 	_hum = AudioStreamPlayer.new()
-	_hum.stream = Sfx.stream(&"ship_hum", true)
+	_hum.stream = _interior()
 	_hum.volume_db = -80.0
 	add_child(_hum)
 
@@ -213,3 +213,13 @@ func _hum_level(delta: float) -> void:
 		_hum.play()
 	elif k == 0.0 and _hum.playing and _hum.volume_db < -55.0:
 		_hum.stop()
+
+
+## Devin's recorded interior ambience, looped; the synth hum otherwise.
+static func _interior() -> AudioStream:
+	var s := load(Sfx.DIR + "ship_interior.mp3") as AudioStreamMP3 \
+			if ResourceLoader.exists(Sfx.DIR + "ship_interior.mp3") else null
+	if s == null:
+		return Sfx.stream(&"ship_hum", true)
+	s.loop = true
+	return s
