@@ -15,6 +15,7 @@ materials = {"iron": 22.0, "copper": 7.0, "silicon": 7.0, "gold": 1.5}
 hp = 340.0
 crew = 3
 firepower = 32.0
+reach = 90.0
 swivel = true
 shot_power = 38.0
 salvage = {"alloy": 5.5, "electronics": 6.0}
