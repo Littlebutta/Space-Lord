@@ -4,6 +4,8 @@ extends Control
 ## power, then a bar per supply it burns and one for damage. The left
 ## edge shows its state (green running, amber idle, red wrecked). Plain
 ## hull and armour only get a card while damaged. Alt hides them all.
+## Reactors also show the capacitors' charge; in a fight, guns show
+## what they're aimed at, or why they're silent.
 
 const BG := Color(0.04, 0.06, 0.09, 0.82)
 const RUN := Color(0.35, 0.85, 0.5)
@@ -16,6 +18,7 @@ const NEAR := 25.0  # cards shrink when the camera is further than this
 const FAR := 70.0  # zoomed out further than this, cards would just pile up
 
 var body: ShipBody
+var guns: ShipGuns  # set in battle
 var _cards: Array[PanelContainer] = []
 var _bars: Array[Dictionary] = []  # per card: "hp"/resource -> ProgressBar
 var _wait := 0.0
@@ -118,6 +121,16 @@ func _fill(i: int) -> void:
 		t.append("No power")
 	if m.crew > 0 and not dead:
 		t.append("Crew %d/%d" % [mini(s.operators[i], m.crew), m.crew])
+	if m.power_out > 0.0 and not dead:
+		var cap := s.power.stored()
+		t.append("Capacitors %d/%d" % [roundi(cap.x), roundi(cap.y)] if cap.y > 0.0 \
+				else "No capacitors")
+	if guns and m.firepower > 0.0 and not dead:
+		var why := guns.why(i)
+		if guns.target(i) >= 0:
+			t.append("Target: " + guns.target_name(i))
+		elif why not in ["", "no target", "charging"]:
+			t.append(why.capitalize())
 	line.text = " · ".join(t)
 	line.visible = not t.is_empty()
 	for k in bars:

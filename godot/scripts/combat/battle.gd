@@ -2,16 +2,19 @@ extends Node3D
 ## Battle sandbox: your ship (the saved design, or a random one) against
 ## a random enemy. Both crews run their ships; guns fire on their own at
 ## whatever is in range. The enemy closes to gun range and circles. A
-## ship whose bridge is cut off or destroyed is beaten.
+## ship whose bridge is cut off or destroyed is beaten, and guns stop
+## shooting at it unless you right click it again to finish it off.
 
 const START := 55.0  # metres apart at the start, inside gun range
 const STANDOFF := 35.0  # the enemy circles at about this range
-const HELP := "Battle · click ship, right click fly · E stop · left click/drag select crew, right click order them" \
-		+ " · Space follow · V outside view · Alt/H module cards · Esc map\nWASD pan · middle mouse rotate · wheel zoom"
+const HELP := "Click your ship, right click to fly · right click a beaten enemy to keep firing\n" \
+		+ "E stop · left click/drag select crew, right click order them · Space follow\n" \
+		+ "V outside view · Alt/H module cards · Esc map · WASD pan · middle mouse rotate · wheel zoom"
 
 @onready var _me: ShipBody = $Me
 @onready var _foe: ShipBody = $Foe
-@onready var _info: Label = $UI/Info
+var _hud := ShipHud.new()
+var _attack := false  # ordered to keep shooting a beaten enemy
 var _marker := MoveMarker.new()
 var _guns: Array[ShipGuns] = []
 var _follow := true
@@ -36,6 +39,10 @@ func _ready() -> void:
 	_foe.sim.sealed = true
 	$Panel.bind(_me.sim)
 	$UI/Tags.bind(_me)
+	$UI/Tags.guns = _guns[0]
+	_hud.bind($UI, _me, _foe)
+	_hud.engaged = func(): return _guns[0].engaged()
+	UiKit.help($UI, HELP)
 	$UI/Orders.bind(_me)
 	add_child(_marker)
 	_marker.bind(_me, $UI/Orders)
@@ -44,6 +51,8 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	_guns[0].hold = _beaten(_foe) and not _attack
+	_guns[1].hold = _beaten(_me)
 	_guns[0].tick(_foe, delta)
 	_guns[1].tick(_me, delta)
 	ShipClash.resolve(_me, _foe)
@@ -65,38 +74,24 @@ func _process(_delta: float) -> void:
 	if _follow:
 		$Camera.focus += Vector3(mid.x - _last.x, 0.0, mid.y - _last.y)
 	_last = mid
-	var t := "You: %s · Enemy: %s\n" % [_status(_me), _status(_foe)]
-	if _beaten(_foe) or _beaten(_me):
-		t = ("VICTORY" if _beaten(_foe) else "DEFEAT") + " · Esc back to the map\n" + t
-	_info.text = t + _idle_guns() + HELP
-
-
-## One line per idle gun of yours and why, so silent guns get noticed.
-func _idle_guns() -> String:
-	var s := _me.sim.state
-	var t := ""
-	for i in s.size():
-		var why := _guns[0].why(i) if s.module(i).firepower > 0.0 else ""
-		if why != "" and why != "charging":
-			t += "%s: %s\n" % [s.module(i).display_name, why]
-	return t
-
-
-func _status(b: ShipBody) -> String:
-	var s := b.sim.state
-	var hp := 0.0
-	var top := 0.0
-	for i in s.size():
-		hp += s.hp[i]
-		top += s.module(i).hp
-	return "hull %d%% · crew %d · speed %.1f" % [roundi(100.0 * hp / top), b.sim.crew.size(),
-			b.vel.length()]
+	var won := _beaten(_foe)
+	_hud.say("" if not (won or _beaten(_me)) else ("VICTORY" if won else "DEFEAT") + " · Esc to map")
 
 
 ## Beaten: the bridge is gone or cut off from the ship.
 func _beaten(b: ShipBody) -> bool:
 	var p := b.sim.state.pieces
 	return p.main < 0 or not p.has_bridge(p.main)
+
+
+## World point p lies on one of b's intact modules.
+func _on(b: ShipBody, p: Vector2) -> bool:
+	var s := b.sim.state
+	for k in s.size():
+		var r := Vector2(s.design.rect(k).size).length() * ShipView.CELL * 0.5
+		if s.hp[k] > 0.0 and b.world(s.pieces.world(k)).distance_to(p) < r:
+			return true
+	return false
 
 
 ## Alt (or H) toggles the module cards; caught in _input like the crew
@@ -115,7 +110,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		var cam: Camera3D = $Camera
 		var hit = Plane(Vector3.UP, 0.0).intersects_ray(
 				cam.project_ray_origin(b.position), cam.project_ray_normal(b.position))
-		if hit != null:
+		if hit != null and _on(_foe, Vector2(hit.x, hit.z)):
+			_attack = _beaten(_foe)  # only a fresh order counts once it's beaten
+		elif hit != null:
 			_me.goal = Vector2(hit.x, hit.z)
 			_marker.ping(_me.goal)
 	var key := event as InputEventKey

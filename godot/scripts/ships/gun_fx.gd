@@ -10,36 +10,58 @@ const LASER := Color(1.0, 0.12, 0.08)
 const RANGE := 60.0  # metres the shot travels before it bursts
 
 
-## Cannon shot from muzzle `m` (fires along its -z).
-static func cannon(world: Node, m: Node3D) -> void:
+## Cannon shot from muzzle `m` (fires along its -z). `fly` false when
+## ShipGuns flies the slug itself (see slug).
+static func cannon(world: Node, m: Node3D, fly := true) -> void:
 	_flash(m, FxKit.HOT, 2.2)
 	_smoke(world, m.global_position)
+	if not fly:
+		return
 	var xf := m.global_transform
-	var end := xf.origin - xf.basis.z.normalized() * RANGE
-	var slug := MeshInstance3D.new()
+	var fwd := -xf.basis.z.normalized()
+	var end := xf.origin + fwd * RANGE
+	var s := slug(world, xf.origin, fwd)
+	var tw := s.create_tween()
+	tw.tween_property(s, "global_position", end, RANGE / 160.0)
+	tw.tween_callback(land.bind(s))
+
+
+## A hot slug at `at` heading along `dir`, for the caller to move.
+static func slug(world: Node, at: Vector3, dir: Vector3) -> Node3D:
+	var s := MeshInstance3D.new()
 	var bm := BoxMesh.new()
 	bm.size = Vector3(0.14, 0.14, 2.6)
 	bm.material = FxKit.glow_mat(SLUG, false)
-	slug.mesh = bm
-	slug.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	world.add_child(slug)
-	slug.global_transform = xf
-	slug.add_child(FxKit.light(SLUG, 2.0, 5.0))
-	var tw := slug.create_tween()
-	tw.tween_property(slug, "global_position", end, RANGE / 160.0)
-	tw.tween_callback(_impact.bind(world, end, SLUG))
-	tw.tween_callback(slug.queue_free)
+	s.mesh = bm
+	s.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	world.add_child(s)
+	s.global_transform = Transform3D(Basis.looking_at(dir), at)
+	s.add_child(FxKit.light(SLUG, 2.0, 5.0))
+	return s
 
 
-## Laser shot from muzzle `m`: a beam that lasts a moment.
-static func laser(world: Node, m: Node3D) -> void:
+## A slug's end: a burst where it is, then it's gone.
+static func land(s: Node3D) -> void:
+	_impact(s.get_parent(), s.global_position, SLUG)
+	s.queue_free()
+
+
+## Laser shot from muzzle `m`: a beam that lasts a moment, out to world
+## point `to` when given (where it struck), else RANGE along its -z.
+static func laser(world: Node, m: Node3D, to = null) -> void:
 	_flash(m, LASER, 1.2)
 	var xf := m.global_transform
+	var fwd := -xf.basis.z.normalized()
+	var end: Vector3 = xf.origin + fwd * RANGE
+	if to is Vector3:
+		end = Vector3(to.x, xf.origin.y, to.z)
+		fwd = (end - xf.origin).normalized()
+	var reach := maxf(xf.origin.distance_to(end), 0.1)
 	var beam := MeshInstance3D.new()
 	var cm := CylinderMesh.new()
 	cm.top_radius = 0.07
 	cm.bottom_radius = 0.07
-	cm.height = RANGE
+	cm.height = reach
 	cm.radial_segments = 8
 	cm.material = FxKit.glow_mat(LASER, false)
 	beam.mesh = cm
@@ -52,13 +74,12 @@ static func laser(world: Node, m: Node3D) -> void:
 	core.mesh = cc
 	beam.add_child(core)
 	world.add_child(beam)
-	var fwd := -xf.basis.z.normalized()
 	beam.global_transform = Transform3D(Basis(Quaternion(Vector3.UP, fwd)),
-			xf.origin + fwd * RANGE * 0.5)
+			xf.origin + fwd * reach * 0.5)
 	var tw := beam.create_tween()
 	tw.tween_property(beam, "scale", Vector3(0.05, 1.0, 0.05), 0.3)
 	tw.tween_callback(beam.queue_free)
-	_impact(world, xf.origin + fwd * RANGE, LASER)
+	_impact(world, end, LASER)
 
 
 ## Muzzle pop: a round flash, a flare stretched forward, sparks, light.
